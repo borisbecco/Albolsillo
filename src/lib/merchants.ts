@@ -11,7 +11,7 @@ const CATEGORY_RULES: [RegExp, string][] = [
   [/netflix|spotify|disney|hbo|youtube|chatgpt|openai|icloud/i, "subs"],
   [/farmacity|farmacia|osde|swiss|m[eé]dic/i, "salud"],
   [/zara|nike|adidas|dafiti/i, "ropa"],
-  [/easy|sodimac|mercado ?libre|ikea/i, "hogar"],
+  [/easy|sodimac|mercado ?libre|ikea|fr[aá]vega|garbarino|musimundo|on city|cetrogar/i, "hogar"],
   [/steam|cine|ticketek|recital|playstation/i, "ocio"],
   [/sellos|\biva\b|percep|impuesto|afip|arca/i, "impuestos"],
   [/edenor|edesur|metrogas|personal|telecentro|movistar|claro|aysa/i, "servicios"],

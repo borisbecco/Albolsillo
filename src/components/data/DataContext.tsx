@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiClientError, api } from "@/lib/api-client";
 import type { UserDto } from "@/lib/auth/session";
-import type { AccountDto, BillDto, CardDto, PersonDto, TxDto } from "@/lib/dto";
+import type { AccountDto, BillDto, CardDto, InstallmentDto, PersonDto, TxDto } from "@/lib/dto";
+import type { ParsedRow } from "@/lib/import/statement";
 import type { GoalDto, InvestmentDto } from "@/lib/savings";
 import type { SharedDto } from "@/lib/shared";
 import type { Currency } from "@/lib/money";
@@ -27,6 +28,17 @@ export type Bootstrap = {
   goals: GoalDto[];
   investments: InvestmentDto[];
   shared: SharedDto[];
+  installments: InstallmentDto[];
+};
+
+export type ImportPreview = {
+  import_id: string;
+  bank: string | null;
+  period: string | null;
+  balance_ars: string | null;
+  min_payment: string | null;
+  due_date: string | null;
+  rows: (ParsedRow & { duplicate: boolean })[];
 };
 
 export type SharedDraft = {
@@ -135,6 +147,9 @@ type Data = {
   pendingCount: number;
   /** Reintenta todas las altas pendientes (al volver la conexión). */
   retryPending: () => Promise<number>;
+  installments: InstallmentDto[];
+  importStatement: (cardId: string, file: File) => Promise<ImportPreview | null>;
+  confirmImport: (importId: string, rowIds: string[], categories: Record<string, string>) => Promise<number | null>;
   startMonth: (d: { month: string; budget_mode: "keep" | "infl" | "spent"; budgets: { category_id: string; amount: number }[]; drop_bills: string[] }) => Promise<boolean>;
   /** Cotizaciones del día (null mientras carga). */
   fx: FxResponse | null;
@@ -195,6 +210,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [ipc, setIpc] = useState<IpcRow[]>([]);
   const [people, setPeople] = useState(initial.people);
   const [shared, setShared] = useState(initial.shared);
+  const [installments, setInstallments] = useState(initial.installments);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -771,6 +787,42 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail, setUser],
   );
 
+  // ─── Importar resumen ───
+
+  const importStatement = useCallback(
+    async (cardId: string, file: File) => {
+      const form = new FormData();
+      form.append("card_id", cardId);
+      form.append("file", file);
+      try {
+        return await api<ImportPreview>("/imports", { method: "POST", body: form });
+      } catch (e) {
+        fail(e, "No pudimos leer el resumen. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail],
+  );
+
+  const confirmImport = useCallback(
+    async (importId: string, rowIds: string[], categories: Record<string, string>) => {
+      try {
+        const res = await api<{ imported: number; transactions: TxDto[]; card: CardDto; installments: InstallmentDto[] }>(`/imports/${importId}/confirm`, {
+          method: "POST",
+          body: JSON.stringify({ row_ids: rowIds, categories }),
+        });
+        setTransactions((l) => sortTx([...res.transactions.map((t) => ({ ...t, status: "synced" as const })), ...l]));
+        setCards((l) => l.map((c) => (c.id === res.card.id ? res.card : c)));
+        setInstallments((l) => [...l.filter((i) => i.card_id !== res.card.id), ...res.installments]);
+        return res.imported;
+      } catch (e) {
+        fail(e, "No pudimos importar los movimientos. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail],
+  );
+
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
@@ -809,6 +861,9 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     pendingCount,
     retryPending,
     startMonth,
+    installments,
+    importStatement,
+    confirmImport,
     fx,
     rate,
     toDisplay,

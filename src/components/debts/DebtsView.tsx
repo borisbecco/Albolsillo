@@ -15,8 +15,8 @@ import { dueInfo } from "./obligations";
 import d from "./debts.module.css";
 
 export function DebtsView() {
-  const { month, isPastMonth, flash, setDebtSheet } = useShell();
-  const { cards, bills, isBillPaid, payBill, unpayBill, toDisplay, user } = useDebtsData();
+  const { month, isPastMonth, flash, setDebtSheet, setImportFor } = useShell();
+  const { cards, bills, installments, isBillPaid, payBill, unpayBill, toDisplay, user } = useDebtsData();
   const [busyBill, setBusyBill] = useState<string | null>(null);
   const mShort = MONTH_SHORT[Number(month.slice(5)) - 1];
 
@@ -40,7 +40,7 @@ export function DebtsView() {
       <section className={d.block}>
         <div className={d.blockHead}>
           <span className={d.blockTitle}>Tarjetas de crédito</span>
-          <button className={d.pillBtn} onClick={() => flash("Importar resumen llega en un próximo paso.")}>
+          <button className={d.pillBtn} onClick={() => (cards.length ? setImportFor({ cardId: null }) : flash("Primero agregá la tarjeta"))}>
             <span className="material-symbols-rounded">upload_file</span>
             Importar resumen
           </button>
@@ -76,6 +76,29 @@ export function DebtsView() {
                   <strong style={{ color: "var(--red)" }}>{Number(c.tna)}%</strong>
                 </div>
               </div>
+              {installments.some((q) => q.card_id === c.id) && (
+                <div className={d.cuotas}>
+                  <span className={d.cuotasTitle}>Cuotas sin interés</span>
+                  {installments
+                    .filter((q) => q.card_id === c.id)
+                    .map((q) => (
+                      <div key={q.id} className={d.cuota}>
+                        <div>
+                          <span>{q.name}</span>
+                          <span className={d.rowSub}>{formatMoney(Number(q.amount), "ARS")}/mes</span>
+                        </div>
+                        <div className={d.cuotaBar}>
+                          <div>
+                            <div style={{ width: `${(q.n / q.of) * 100}%` }} />
+                          </div>
+                          <span>
+                            {q.n} de {q.of}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </button>
           ))}
           <button className={d.addCard} onClick={() => setDebtSheet({ kind: "card", id: null })}>

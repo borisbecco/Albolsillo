@@ -15,6 +15,7 @@ import { NewMonthModal, laterToday } from "@/components/month/NewMonthModal";
 import { NetBanner, SessionExpiredModal } from "@/components/month/SystemStatus";
 import { currentMonth } from "@/lib/month";
 import { SESSION_EXPIRED_EVENT } from "@/lib/api-client";
+import { ImportModal } from "@/components/import/ImportModal";
 import { ProfilePanel } from "./ProfilePanel";
 import { initials, useShell } from "./ShellContext";
 import s from "./shell.module.css";
@@ -267,6 +268,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ProfilePanel />
       <AlertsPanel />
       {newMonthOpen && <NewMonthModal onClose={() => setNewMonthOpen(false)} />}
+      <ImportModal />
       <SessionExpiredModal />
       <NewTxModal />
       <TxDetail />

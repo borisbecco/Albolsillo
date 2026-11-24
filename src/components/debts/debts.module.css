@@ -339,3 +339,56 @@ select.input {
     margin-left: auto;
   }
 }
+
+/* ─── Cuotas ─── */
+.cuotas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 18px 16px;
+  margin-top: -4px;
+}
+
+.cuotasTitle {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cuota {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cuota > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.cuotaBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cuotaBar > div {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--elev);
+  overflow: hidden;
+}
+
+.cuotaBar > div > div {
+  height: 100%;
+  background: var(--blue);
+}
+
+.cuotaBar span {
+  color: var(--dim);
+  font-size: 12px;
+  white-space: nowrap;
+}

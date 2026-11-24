@@ -5,13 +5,10 @@ import { EMPTY, VIEWS, type EmptyAction, type EmptyCopy, type ViewId } from "@/l
 import { useShell } from "./ShellContext";
 import e from "./empty.module.css";
 
-const LATER: Record<Exclude<EmptyAction, "newTx" | "toDebts" | "newAccount" | "newCard" | "newBill" | "onboarding" | "newGoal" | "simulate" | "newPerson">, string> = {
-  import: "Importar resumen",
-};
 
 export function EmptyState({ copy }: { copy: EmptyCopy }) {
   const router = useRouter();
-  const { openNewTx, setAccountFormOpen, setDebtSheet, flash, force } = useShell();
+  const { openNewTx, setAccountFormOpen, setDebtSheet, force, setImportFor } = useShell();
 
   const run = (a: EmptyAction) => {
     if (a === "newTx") return openNewTx();
@@ -25,7 +22,7 @@ export function EmptyState({ copy }: { copy: EmptyCopy }) {
       setAccountFormOpen(true);
       return router.push(VIEWS.acc.href);
     }
-    flash(`${LATER[a]} llega en un próximo paso.`);
+    if (a === "import") setImportFor({ cardId: null });
   };
 
   return (

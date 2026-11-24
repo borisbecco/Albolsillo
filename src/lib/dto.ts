@@ -1,4 +1,4 @@
-import type { Account, Bill, Card, Person, Transaction } from "@prisma/client";
+import type { Account, Bill, Card, CardInstallment, Person, Transaction } from "@prisma/client";
 
 // Formas que devuelve la API (snake_case, montos como string decimal, fechas YYYY-MM-DD).
 
@@ -68,3 +68,8 @@ export type AccountDto = ReturnType<typeof accountDto>;
 export type CardDto = ReturnType<typeof cardDto>;
 export type PersonDto = ReturnType<typeof personDto>;
 export type BillDto = ReturnType<typeof billDto>;
+
+export function installmentDto(i: CardInstallment) {
+  return { id: i.id, card_id: i.cardId, name: i.name, n: i.n, of: i.of, amount: i.amount.toFixed(2) };
+}
+export type InstallmentDto = ReturnType<typeof installmentDto>;

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ApiError, handle } from "@/lib/http";
 import { requireUserId, toUserDto } from "@/lib/auth/session";
-import { accountDto, billDto, cardDto, personDto, txDto } from "@/lib/dto";
+import { accountDto, billDto, cardDto, installmentDto, personDto, txDto } from "@/lib/dto";
 import { addMonths, currentMonth } from "@/lib/month";
 import { monthRange } from "@/lib/transactions";
 import { goalDto, investmentDto } from "@/lib/savings";
@@ -16,7 +16,7 @@ export const GET = handle(async (req: Request) => {
 
   const live = { userId, deletedAt: null };
   const months = Array.from({ length: 6 }, (_, i) => addMonths(month, i - 5));
-  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared] = await Promise.all([
+  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared, installments] = await Promise.all([
     prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
     prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
@@ -31,6 +31,7 @@ export const GET = handle(async (req: Request) => {
     prisma.goal.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.investment.findMany({ where: { ...live, closedAt: null }, orderBy: { startDate: "asc" } }),
     prisma.sharedExpense.findMany({ where: live, orderBy: [{ date: "desc" }, { createdAt: "desc" }] }),
+    prisma.cardInstallment.findMany({ where: live, orderBy: { createdAt: "asc" } }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
 
@@ -39,6 +40,7 @@ export const GET = handle(async (req: Request) => {
     month,
     accounts: accounts.map(accountDto),
     cards: cards.map(cardDto),
+    installments: installments.map(installmentDto),
     people: people.map(personDto),
     transactions: transactions.map(txDto),
     bills: bills.map(billDto),

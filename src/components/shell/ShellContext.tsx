@@ -34,6 +34,9 @@ type Shell = {
   /** Formulario "Nueva cuenta" abierto (se puede abrir desde otras pantallas). */
   accountFormOpen: boolean;
   setAccountFormOpen: (v: boolean) => void;
+  /** Modal "Importar resumen" (con la tarjeta elegida, si viene de una). */
+  importFor: { cardId: string | null } | null;
+  setImportFor: (v: { cardId: string | null } | null) => void;
   alertsOpen: boolean;
   setAlertsOpen: (v: boolean) => void;
   /** La sesión venció con la app abierta: se muestra el modal bloqueante. */
@@ -106,6 +109,7 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const [debtSheet, setDebtSheet] = useState<DebtSheet>(null);
   const [forced, setForced] = useState<Shell["forced"]>({});
   const [alertsOpen, setAlertsOpen] = useState(false);
+  const [importFor, setImportFor] = useState<{ cardId: string | null } | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const force = useCallback((v: "goals" | "inv" | "shared") => setForced((f) => ({ ...f, [v]: true })), []);
   const isPastMonth = month !== months[months.length - 1];
@@ -146,6 +150,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     force,
     alertsOpen,
     setAlertsOpen,
+    importFor,
+    setImportFor,
     sessionExpired,
     setSessionExpired,
   };

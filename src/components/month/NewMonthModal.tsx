@@ -27,7 +27,7 @@ export function laterToday() {
 /** Modal "Nuevo mes": resumen del mes que cerró, gastos fijos, presupuesto del mes nuevo y resúmenes. */
 export function NewMonthModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
-  const { flash, setMonth } = useShell();
+  const { flash, setMonth, setImportFor } = useShell();
   const { transactions, bills, cards, ipc, rate, budgetFor, startMonth } = useData();
   const cur = currentMonth();
   const prev = addMonths(cur, -1);
@@ -204,6 +204,7 @@ export function NewMonthModal({ onClose }: { onClose: () => void }) {
                     onClick={() => {
                       later();
                       router.push(VIEWS.debts.href);
+                      setImportFor({ cardId: c.id });
                     }}
                   >
                     <span className="material-symbols-rounded">upload_file</span>
