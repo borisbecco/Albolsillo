@@ -3,12 +3,14 @@
 import { useEffect } from "react";
 import { useShell } from "@/components/shell/ShellContext";
 import { useAlerts } from "./useAlerts";
+import { usePush } from "./usePush";
 import a from "./alerts.module.css";
 
 /** Panel de la campana: alertas activas, anticipación y avisos por mail. */
 export function AlertsPanel() {
   const { alertsOpen, setAlertsOpen, user, updatePrefs } = useShell();
   const alerts = useAlerts();
+  const push = usePush();
 
   useEffect(() => {
     if (!alertsOpen) return;
@@ -77,6 +79,27 @@ export function AlertsPanel() {
               check_circle
             </span>
           </div>
+          {push.supported && (
+            <div className={a.channel}>
+              <span className={`${a.icon} material-symbols-rounded`} style={{ color: "var(--acc2)", background: "var(--sel)" }}>
+                devices
+              </span>
+              <div>
+                <strong>En el navegador</strong>
+                <span>{push.enabled ? "Activos en este dispositivo" : "Te avisamos aunque no tengas la app abierta"}</span>
+              </div>
+              <button
+                className={a.switch}
+                role="switch"
+                aria-checked={push.enabled}
+                aria-label="Avisos del navegador"
+                disabled={push.busy}
+                onClick={() => (push.enabled ? push.disable() : push.enable())}
+              >
+                <span />
+              </button>
+            </div>
+          )}
           <div className={a.channel}>
             <span className={`${a.icon} material-symbols-rounded`} style={{ color: "var(--acc2)", background: "var(--sel)" }}>
               mail

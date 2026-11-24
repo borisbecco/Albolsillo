@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ApiClientError, post, setAccessToken } from "@/lib/api-client";
 import { MIN_PASSWORD, MSG, isValidEmail } from "@/lib/auth/validate";
 import type { UserDto } from "@/lib/auth/session";
@@ -16,6 +16,13 @@ export function RegisterForm() {
   const [terms, setTerms] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Desde el link de invitación llega ?email=...
+  useEffect(() => {
+    const e = new URLSearchParams(window.location.search).get("email");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (e) setEmail(e);
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

@@ -8,7 +8,15 @@ const TEMPLATES = path.join(process.cwd(), "src", "emails");
 
 export const appUrl = () => (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
-async function send(to: string, subject: string, html: string, devNote: string) {
+async function send(to: string, subject: string, rawHtml: string, devNote: string) {
+  // El logo de las plantillas apunta a un CDN de ejemplo: se sirve desde la app (PNG de 300 px, @2x).
+  const html = rawHtml.replaceAll("https://cdn.albolsillo.app/brand/albolsillo-logo-horizontal-fondo-claro.png", `${appUrl()}/brand/logo-mail.png`);
+  // Desarrollo: con MAIL_DUMP_DIR, cada mail se guarda también como HTML para revisarlo.
+  if (process.env.MAIL_DUMP_DIR) {
+    const { writeFile, mkdir } = await import("node:fs/promises");
+    await mkdir(process.env.MAIL_DUMP_DIR, { recursive: true });
+    await writeFile(path.join(process.env.MAIL_DUMP_DIR, `${Date.now()}-${subject.replace(/[^\w]+/g, "_").slice(0, 60)}.html`), html);
+  }
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     console.info(`[mail] (sin RESEND_API_KEY) Para: ${to} · ${subject}\n${devNote}`);
@@ -85,6 +93,149 @@ export async function sendInvite(opts: {
     .replaceAll("Lucía", first);
 
   await send(opts.to, `${opts.inviterName.split(" ")[0]} te invitó a dividir gastos en Albolsillo`, html, `Link: ${link}`);
+}
+
+const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+/** "jueves 23" para un día del mes actual (en Argentina). */
+function weekdayLabel(today: string, day: number) {
+  const d = new Date(`${today.slice(0, 8)}${String(day).padStart(2, "0")}T12:00:00Z`);
+  return `${WEEKDAYS[d.getUTCDay()]} ${day}`;
+}
+const inDays = (n: number) => (n === 0 ? "hoy" : n === 1 ? "mañana" : `en ${n} días`);
+
+/** Reemplaza las filas de ejemplo de una tabla (la que sigue a `marker`) por filas generadas. Sin filas, quita la sección. */
+function fillRows(html: string, marker: string, rows: { title: string; sub: string; right: string; rightColor?: string }[]) {
+  const p = html.indexOf(marker);
+  if (p < 0) return html;
+  const pStart = html.lastIndexOf("<p", p);
+  const tStart = html.indexOf("<table", p);
+  const tEnd = html.indexOf("</table>", tStart) + "</table>".length;
+  if (!rows.length) return html.slice(0, pStart) + html.slice(tEnd);
+  const table = html.slice(tStart, tEnd);
+  const sample = table.slice(table.indexOf("<tr>"), table.indexOf("</tr>") + 5);
+  const built = rows
+    .map((r) => {
+      let tr = sample.replace(/(<span class="ink">)[^<]*(<\/span>)/, `$1${esc(r.title)}$2`).replace(/(<span class="mut"[^>]*>)[^<]*(<\/span>)/, `$1${esc(r.sub)}$2`);
+      // Monto de la derecha: el último <span> de la fila.
+      const last = tr.lastIndexOf("<span");
+      const close = tr.indexOf("</span>", last);
+      const open = tr.indexOf(">", last) + 1;
+      let spanTag = tr.slice(last, open);
+      if (r.rightColor) spanTag = spanTag.replace(/color:#[0-9A-Fa-f]{6}/, `color:${r.rightColor}`);
+      tr = tr.slice(0, last) + spanTag + esc(r.right) + tr.slice(close);
+      return tr;
+    })
+    .join("");
+  const head = table.slice(0, table.indexOf("<tr>"));
+  return html.slice(0, tStart) + head + built + "</table>" + html.slice(tEnd);
+}
+
+/** Mail "aviso-vencimiento": una tarjeta o un gasto fijo que vence pronto. */
+export async function sendDueNotice(
+  to: string,
+  today: string,
+  item: { kind: "card" | "bill"; name: string; day: number; daysLeft: number; amount: number; min?: number; suggested?: number; suggestedTag?: string },
+  strategyLabel: string,
+  alertDays: number,
+) {
+  const when = weekdayLabel(today, item.day);
+  const subject = `Tu ${item.name} vence ${inDays(item.daysLeft)}`;
+  const isCard = item.kind === "card";
+  const full = isCard && item.suggested !== undefined && item.suggested >= item.amount - 0.5;
+  let html = await readFile(path.join(TEMPLATES, "aviso-vencimiento.html"), "utf8");
+  html = html
+    .replaceAll("Tu Visa Galicia vence en 3 días", esc(subject))
+    .replaceAll("Tu Visa Galicia vence el jueves 23", `Tu ${esc(item.name)} vence el ${when}`)
+    .replaceAll(
+      "Pagá al menos $ 98.400 antes del jueves 23 para evitar intereses.",
+      isCard ? `Pagá al menos ${money(item.min ?? 0)} antes del ${when} para no entrar en mora.` : `Pagá ${money(item.amount)} antes del ${when}.`,
+    )
+    .replaceAll("Vence en 3 días", item.daysLeft === 0 ? "Vence hoy" : item.daysLeft === 1 ? "Vence mañana" : `Vence en ${item.daysLeft} días`)
+    .replaceAll(
+      "Según tu plan de pagos, te conviene cancelar el total para no pagar intereses este mes.",
+      isCard
+        ? full
+          ? "Según tu plan de pagos, te conviene cancelar el total para no pagar intereses este mes."
+          : `Según tu plan de pagos, este mes te conviene pagar ${money(item.suggested ?? item.min ?? 0)} (${(item.suggestedTag ?? "mínimo").toLowerCase()}).`
+        : "Es un gasto fijo del mes. Cuando lo pagues, marcalo en la app.",
+    )
+    .replace("Saldo total", isCard ? "Saldo total" : "Monto")
+    .replace("$ 486.200", money(item.amount))
+    .replace("Pago mínimo", isCard ? "Pago mínimo" : "Vence")
+    .replace("$ 98.400", isCard ? money(item.min ?? 0) : `el ${when}`)
+    .replace("Sugerido por tu plan", isCard ? "Sugerido por tu plan" : "A pagar")
+    .replace("Estrategia: evitar intereses", isCard ? `Estrategia: ${esc(strategyLabel.toLowerCase())}` : "Gasto fijo")
+    .replace("$ 486.200", money(isCard ? (item.suggested ?? item.min ?? item.amount) : item.amount))
+    .replaceAll("Te avisamos 3 días antes", `Te avisamos ${alertDays} ${alertDays === 1 ? "día" : "días"} antes`)
+    .replaceAll("https://albolsillo.app/plan", `${appUrl()}/plan`)
+    .replaceAll("https://albolsillo.app/configuracion/avisos", `${appUrl()}/`)
+    .replaceAll("https://albolsillo.app/ayuda", "mailto:ayuda@albolsillo.app");
+  await send(to, subject, html, `${subject} · ${money(item.amount)}`);
+}
+
+/** Mail "resumen-diario": gasto de ayer, disponible del mes, próximos vencimientos y alertas. */
+export async function sendDailySummary(opts: {
+  to: string;
+  name: string;
+  today: string;
+  spentYesterday: number;
+  available: number;
+  due: { name: string; day: number; daysLeft: number; amount: number; min?: number; kind: "card" | "bill" }[];
+  budgetAlerts: { name: string; spent: number; limit: number }[];
+  unsubscribeUrl: string;
+}) {
+  const [, m, d] = opts.today.split("-").map(Number);
+  const dateLong = (() => {
+    const w = new Date(`${opts.today}T12:00:00Z`).getUTCDay();
+    const s = `${WEEKDAYS[w]} ${d} de ${MONTHS[m - 1]}`;
+    return s[0].toUpperCase() + s.slice(1);
+  })();
+  const first = esc(opts.name.split(" ")[0] || opts.name);
+  const subject = `Tu resumen de hoy · ${d} ${MONTHS[m - 1].slice(0, 3)}`;
+  const next = opts.due[0];
+  const over = opts.budgetAlerts.find((b) => b.spent >= b.limit);
+  const pre = [
+    opts.spentYesterday ? `Gastaste ${money(opts.spentYesterday)} ayer.` : "Ayer no cargaste gastos.",
+    next ? `${next.daysLeft === 0 ? "Hoy" : next.daysLeft === 1 ? "Mañana" : `En ${next.daysLeft} días`} vence ${next.name}` : "",
+    over ? `${next ? " y te" : "Te"} pasaste en ${over.name.toLowerCase()}.` : next ? "." : "",
+  ].join(" ");
+
+  let html = await readFile(path.join(TEMPLATES, "resumen-diario.html"), "utf8");
+  html = html
+    .replaceAll("Tu resumen de hoy · 20 nov", esc(subject))
+    .replaceAll("Gastaste $ 42.300 ayer. Mañana vence Edenor y te pasaste en ropa.", esc(pre.replace(/\s+/g, " ").trim()))
+    .replaceAll("Jueves 20 de noviembre", esc(dateLong))
+    .replaceAll("Buen día, Lucía", `Buen día, ${first}`)
+    .replace("$ 42.300", money(opts.spentYesterday))
+    .replace("$ 1.284.900", `${opts.available < 0 ? "-" : ""}${money(opts.available)}`);
+
+  html = fillRows(
+    html,
+    "Próximos vencimientos",
+    opts.due.map((x) => {
+      const when = weekdayLabel(opts.today, x.day);
+      const label = x.daysLeft === 0 ? `Hoy · ${when}` : x.daysLeft === 1 ? `Mañana · ${when}` : when[0].toUpperCase() + when.slice(1);
+      return { title: x.name, sub: x.kind === "card" && x.min ? `${label} · mínimo ${money(x.min)}` : label, right: money(x.amount) };
+    }),
+  );
+  html = fillRows(
+    html,
+    "Alertas</p>",
+    opts.budgetAlerts.map((b) => {
+      const pct = Math.round((b.spent / b.limit) * 100);
+      return b.spent >= b.limit
+        ? { title: `Te pasaste en ${b.name}`, sub: `${money(b.spent)} de ${money(b.limit)}`, right: `${pct}%`, rightColor: "#C2414F" }
+        : { title: `${b.name} al ${pct}%`, sub: `Te quedan ${money(b.limit - b.spent)} hasta fin de mes`, right: `${pct}%`, rightColor: "#B7791F" };
+    }),
+  );
+  html = html
+    .replaceAll("https://albolsillo.app/baja?t=abc", opts.unsubscribeUrl)
+    .replaceAll("https://albolsillo.app/configuracion/avisos", `${appUrl()}/`)
+    .replaceAll("https://albolsillo.app/ayuda", "mailto:ayuda@albolsillo.app")
+    .replaceAll('href="https://albolsillo.app"', `href="${appUrl()}"`);
+  await send(opts.to, subject, html, `${subject}\n${pre}`);
 }
 
 export async function sendPasswordReset(to: string, token: string, userAgent: string | null) {

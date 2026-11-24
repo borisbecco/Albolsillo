@@ -35,17 +35,27 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
 | `db:studio` | Abre Prisma Studio |
 
 ## Deploy en Railway
-1. Creá un proyecto con un servicio desde este repo y agregale un Postgres.
-2. En las variables del servicio, poné `DATABASE_URL=${{Postgres.DATABASE_URL}}` y el resto de `.env.example`.
-3. `railway.json` ya configura el build, el pre-deploy (migraciones + seed), el arranque y el healthcheck en `/api/health`.
-4. El job diario de avisos (8:00, hora de Argentina = `0 11 * * *` en UTC) se configura como Cron en Railway contra el endpoint protegido con `CRON_SECRET`. Ese endpoint todavía no existe.
+1. Proyecto con un servicio desde este repo y un Postgres.
+2. Variables del servicio (ver `.env.example`):
+   - `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `JWT_SECRET`, `APP_URL` (la URL pública).
+   - Mails: `RESEND_API_KEY` y `MAIL_FROM` (dominio verificado en Resend, con SPF, DKIM y DMARC).
+   - Avisos push: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (`npx web-push generate-vapid-keys`) y `VAPID_SUBJECT`.
+   - Job diario: `CRON_SECRET` (32+ caracteres al azar).
+3. `railway.json` configura build, pre-deploy (migraciones + seed), arranque y healthcheck.
+4. Job diario de avisos: un servicio Cron en Railway con horario `0 11 * * *` (8:00 de Argentina) que corra
+   `curl -fsS -X POST "$APP_URL/api/v1/cron/alerts" -H "Authorization: Bearer $CRON_SECRET"`.
+
+## Desarrollo
+- Sin `RESEND_API_KEY`, los mails se escriben en la consola. Con `MAIL_DUMP_DIR=/una/carpeta` también se guardan como HTML.
+- El importador de resúmenes usa un parser general (fecha, descripción, cuotas, columnas de pesos y dólares).
+  Falta afinarlo con resúmenes reales de cada banco (API.md pide un parser y tests por banco).
 
 ## Estructura
 ```
 prisma/            schema.prisma (modelo de datos) y seed.ts (categorías)
 public/brand/      logos, isotipo, ícono
 public/bolsi/      las 10 poses de Bolsi (SVG)
-public/emails/     plantillas HTML de los 4 mails
+src/emails/        plantillas HTML de los 4 mails (las usa el servidor)
 src/app/           rutas (App Router), globals.css con los tokens de diseño
 src/lib/db.ts      cliente de Prisma
 ```

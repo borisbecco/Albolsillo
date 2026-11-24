@@ -22,6 +22,9 @@ export const POST = handle(async (req: Request) => {
     data: { name: body.name, email: body.email, passwordHash: await hashPassword(body.password) },
   });
 
+  // Si alguien lo había invitado con este email, sus contactos quedan vinculados.
+  await prisma.person.updateMany({ where: { email: body.email, deletedAt: null, linkedUserId: null }, data: { status: "user", linkedUserId: user.id } });
+
   const session = await createSession(user.id);
   return Response.json(
     { user: toUserDto(user), access_token: session.accessToken },
