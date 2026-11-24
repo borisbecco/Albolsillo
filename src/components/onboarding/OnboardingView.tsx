@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { detectBank, detectNetwork } from "@/lib/banks";
 import { CATEGORY_BY_ID, catColor, catTint } from "@/lib/categories";
 import { guessCategory } from "@/lib/merchants";
-import { maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
 import { currentMonth } from "@/lib/month";
 import type { UserDto } from "@/lib/auth/session";
 import { CardFace } from "@/components/cards/CardFace";
@@ -53,6 +53,8 @@ export function OnboardingView() {
   const [salary, setSalary] = useState(fromDec(user.salary));
   const [payday, setPayday] = useState(user.payday ? String(user.payday) : "");
   const [usd, setUsd] = useState(fromDec(user.usd_income));
+  const [salaryCur, setSalaryCur] = useState<Currency>(user.salary_currency ?? "ARS");
+  const [otherCur, setOtherCur] = useState<Currency>(user.other_income_currency ?? "USD");
   const [cards, setCards] = useState<CardRow[]>(() =>
     savedCards.map((c) => ({
       key: c.id,
@@ -129,6 +131,8 @@ export function OnboardingView() {
       salary: parseAmount(salary) ? toDecimal(parseAmount(salary)) : null,
       payday: payday ? Number(payday) : null,
       usd_income: parseAmount(usd) ? toDecimal(parseAmount(usd)) : null,
+      salary_currency: salaryCur,
+      other_income_currency: otherCur,
       strategy,
       cards: cards.map((c) => ({
         id: c.id,
@@ -193,15 +197,21 @@ export function OnboardingView() {
           {step === 0 && (
             <div className={o.incomeGrid}>
               <label className={o.field}>
-                Sueldo mensual neto (ARS)
+                <span className={o.fieldHead}>
+                  Sueldo mensual neto
+                  <CurSeg value={salaryCur} onChange={setSalaryCur} />
+                </span>
                 <input className={o.big} value={salary} onChange={(e) => edit(setSalary)(maskAmountEvent(e))} inputMode="decimal" placeholder="2.400.000" autoFocus />
               </label>
               <label className={o.field}>
-                Día de cobro
+                <span className={o.fieldHead}>Día de cobro</span>
                 <input className={o.big} value={payday} onChange={(e) => edit(setPayday)(digits(e.target.value, 2))} inputMode="numeric" placeholder="1" />
               </label>
               <label className={o.field}>
-                Otros ingresos mensuales (US$)
+                <span className={o.fieldHead}>
+                  Otros ingresos mensuales
+                  <CurSeg value={otherCur} onChange={setOtherCur} />
+                </span>
                 <input className={o.big} value={usd} onChange={(e) => edit(setUsd)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
               </label>
             </div>
@@ -355,5 +365,31 @@ export function OnboardingView() {
         </div>
       </div>
     </main>
+  );
+}
+
+/** Selector $ / US$ junto al título del campo. */
+function CurSeg({ value, onChange }: { value: Currency; onChange: (c: Currency) => void }) {
+  return (
+    <span className={o.curSeg} role="group" aria-label="Moneda">
+      {(
+        [
+          ["ARS", "$"],
+          ["USD", "US$"],
+        ] as const
+      ).map(([v, l]) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={value === v}
+          onClick={(e) => {
+            e.preventDefault();
+            onChange(v);
+          }}
+        >
+          {l}
+        </button>
+      ))}
+    </span>
   );
 }

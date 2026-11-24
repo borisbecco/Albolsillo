@@ -39,7 +39,7 @@ export function useSummary() {
     const reserve = budgets.filter((b) => b.kind === "var").reduce((s, b) => s + Math.max(0, b.limit - b.spent), 0);
 
     // Ingreso del mes: lo cargado o, si es más, lo esperado según el onboarding (sueldo + US$).
-    const expected = Number(user.salary ?? 0) + toArs(Number(user.usd_income ?? 0), "USD");
+    const expected = toArs(Number(user.salary ?? 0), user.salary_currency) + toArs(Number(user.usd_income ?? 0), user.other_income_currency);
     const income = Math.max(C.inc, expected);
 
     const planCards: PlanCard[] = cards.map((c) => ({

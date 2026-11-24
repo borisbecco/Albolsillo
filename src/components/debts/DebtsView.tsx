@@ -272,6 +272,9 @@ function CardCycle({ card }: { card: CardDto }) {
           <span className="material-symbols-rounded">receipt_long</span>
           Cargar resumen nuevo
         </button>
+        <button className={`${d.iconBtn} material-symbols-rounded`} style={{ flex: "none", height: 36, width: 36 }} title="Editar o eliminar" aria-label={`Editar ${card.name}`} onClick={() => setDebtSheet({ kind: "card", id: card.id })}>
+          edit
+        </button>
       </div>
     </div>
   );

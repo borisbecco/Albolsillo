@@ -132,6 +132,8 @@ export function toUserDto(u: User) {
     salary: u.salary?.toFixed(2) ?? null,
     payday: u.payday,
     usd_income: u.usdIncome?.toFixed(2) ?? null,
+    salary_currency: u.salaryCurrency,
+    other_income_currency: u.otherIncomeCurrency,
     onboarded_at: u.onboardedAt?.toISOString() ?? null,
     last_month_opened: u.lastMonthOpened,
   };

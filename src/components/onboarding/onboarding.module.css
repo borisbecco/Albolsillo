@@ -441,3 +441,38 @@
     font-size: 24px;
   }
 }
+
+.fieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.curSeg {
+  display: flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--elev);
+  border: 1px solid var(--line);
+  flex: none;
+}
+
+.curSeg button {
+  height: 26px;
+  min-width: 34px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.curSeg button[aria-pressed="true"] {
+  background: var(--acc);
+  color: var(--onacc);
+}

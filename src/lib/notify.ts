@@ -61,7 +61,7 @@ export async function buildNotice(userId: string, today = todayAR()): Promise<No
   const limitOf = (id: string) => Number(budgets.find((b) => b.categoryId === id)?.amount ?? CATEGORY_BY_ID[id]?.budget ?? 0);
   const outCats = CATEGORIES.filter((c) => c.type === "out" && c.id !== "prestamo");
   const reserve = outCats.filter((c) => c.kind === "var").reduce((s, c) => s + Math.max(0, limitOf(c.id) - (byCat[c.id] ?? 0)), 0);
-  const income = Math.max(inc, Number(user.salary ?? 0) + Number(user.usdIncome ?? 0) * rate);
+  const income = Math.max(inc, toArs(Number(user.salary ?? 0), user.salaryCurrency) + toArs(Number(user.usdIncome ?? 0), user.otherIncomeCurrency));
 
   const plan = computePlan({
     income,

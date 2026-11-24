@@ -90,6 +90,8 @@ export type OnboardingDraft = {
   salary: string | null;
   payday: number | null;
   usd_income: string | null;
+  salary_currency?: Currency;
+  other_income_currency?: Currency;
   strategy: UserDto["pay_strategy"];
   cards: { id?: string; name: string; balance: string; min_payment: string; due_day: number; tna: string; last4: string | null }[];
   bills: { id?: string; name: string; amount: string; currency: Currency; due_day: number; category_id: string }[];
@@ -616,13 +618,25 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       try {
         await api(`/cards/${id}`, { method: "DELETE" });
         setCards((l) => l.filter((x) => x.id !== id));
+        flash("Tarjeta eliminada", "bienvenida", {
+          label: "Deshacer",
+          fn: async () => {
+            try {
+              const r = await api<{ card: CardDto }>(`/cards/${id}/restore`, { method: "POST" });
+              setCards((l) => [...l, r.card]);
+              flash("Listo, la recuperamos");
+            } catch (e) {
+              fail(e, "No pudimos recuperarla.");
+            }
+          },
+        });
         return true;
       } catch (e) {
         fail(e, "No pudimos eliminar la tarjeta. Probá de nuevo.");
         return false;
       }
     },
-    [fail],
+    [fail, flash],
   );
 
   const saveBill = useCallback(

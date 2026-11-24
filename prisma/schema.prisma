@@ -145,30 +145,33 @@ enum ImportStatus {
 // ─── Usuarios y sesión ───────────────────────────────────
 
 model User {
-  id              String      @id @default(uuid()) @db.Uuid
-  name            String
-  email           String      @unique @db.Citext
-  passwordHash    String      @map("password_hash") // argon2id
-  theme           Theme       @default(dark)
-  displayCurrency Currency    @default(ARS) @map("display_currency")
-  rateType        RateType    @default(blue) @map("rate_type")
-  manualRate      Decimal?    @map("manual_rate") @db.Decimal(14, 2)
-  payStrategy     PayStrategy @default(intereses) @map("pay_strategy")
-  salary          Decimal?    @db.Decimal(14, 2)
-  payday          Int?
-  usdIncome       Decimal?    @map("usd_income") @db.Decimal(14, 2)
-  onboardedAt     DateTime?   @map("onboarded_at") @db.Timestamptz
-  alertDays       Int         @default(3) @map("alert_days")
-  mailAlerts      MailAlerts  @default(each) @map("mail_alerts")
-  pushEnabled     Boolean     @default(false) @map("push_enabled")
-  lastMonthOpened String?     @map("last_month_opened") @db.Char(7)
-  tourDoneAt      DateTime?   @map("tour_done_at") @db.Timestamptz
-  invitedById     String?     @map("invited_by") @db.Uuid
-  invitesQuota    Int         @default(5) @map("invites_quota")
-  androidWaitlist Boolean     @default(false) @map("android_waitlist")
-  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt       DateTime?   @map("deleted_at") @db.Timestamptz
+  id                  String      @id @default(uuid()) @db.Uuid
+  name                String
+  email               String      @unique @db.Citext
+  passwordHash        String      @map("password_hash") // argon2id
+  theme               Theme       @default(dark)
+  displayCurrency     Currency    @default(ARS) @map("display_currency")
+  rateType            RateType    @default(blue) @map("rate_type")
+  manualRate          Decimal?    @map("manual_rate") @db.Decimal(14, 2)
+  payStrategy         PayStrategy @default(intereses) @map("pay_strategy")
+  salary              Decimal?    @db.Decimal(14, 2)
+  payday              Int?
+  usdIncome           Decimal?    @map("usd_income") @db.Decimal(14, 2)
+  /// Moneda del sueldo y de los otros ingresos mensuales (usd_income = monto de otros ingresos)
+  salaryCurrency      Currency    @default(ARS) @map("salary_currency")
+  otherIncomeCurrency Currency    @default(USD) @map("other_income_currency")
+  onboardedAt         DateTime?   @map("onboarded_at") @db.Timestamptz
+  alertDays           Int         @default(3) @map("alert_days")
+  mailAlerts          MailAlerts  @default(each) @map("mail_alerts")
+  pushEnabled         Boolean     @default(false) @map("push_enabled")
+  lastMonthOpened     String?     @map("last_month_opened") @db.Char(7)
+  tourDoneAt          DateTime?   @map("tour_done_at") @db.Timestamptz
+  invitedById         String?     @map("invited_by") @db.Uuid
+  invitesQuota        Int         @default(5) @map("invites_quota")
+  androidWaitlist     Boolean     @default(false) @map("android_waitlist")
+  createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt           DateTime?   @map("deleted_at") @db.Timestamptz
 
   refreshTokens     RefreshToken[]
   passwordResets    PasswordReset[]

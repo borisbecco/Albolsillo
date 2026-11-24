@@ -780,3 +780,10 @@ button.face {
 .cardBox {
   cursor: default;
 }
+
+.netRow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+

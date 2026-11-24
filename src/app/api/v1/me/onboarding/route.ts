@@ -35,6 +35,8 @@ const Body = z.union([
     salary: money.nullable(),
     payday: day.nullable(),
     usd_income: money.nullable(),
+    salary_currency: z.enum(["ARS", "USD"]).default("ARS"),
+    other_income_currency: z.enum(["ARS", "USD"]).default("USD"),
     cards: z.array(CardIn).max(20),
     bills: z.array(BillIn).max(50),
     strategy: z.enum(["intereses", "avalancha", "bola"]),
@@ -58,7 +60,7 @@ export const POST = handle(async (req: Request) => {
     const now = new Date();
     const user = await db.user.update({
       where: { id: userId },
-      data: { salary: b.salary, payday: b.payday, usdIncome: b.usd_income, payStrategy: b.strategy, onboardedAt: now },
+      data: { salary: b.salary, payday: b.payday, usdIncome: b.usd_income, salaryCurrency: b.salary_currency, otherIncomeCurrency: b.other_income_currency, payStrategy: b.strategy, onboardedAt: now },
     });
 
     // Tarjetas
