@@ -1,0 +1,239 @@
+.form {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.logoSlogan {
+  height: 52px;
+  width: auto;
+  align-self: flex-start;
+  margin-bottom: 18px;
+}
+
+.logo {
+  height: 36px;
+  width: auto;
+  align-self: flex-start;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  color: var(--mut);
+  margin-top: -6px;
+  margin-bottom: 8px;
+  text-wrap: pretty;
+}
+
+.lead strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.fieldHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.input {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  font-size: 14px;
+  color: var(--fg);
+}
+
+.input::placeholder {
+  color: var(--dim);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--acc);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--mut);
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  accent-color: var(--acc);
+  flex: none;
+}
+
+.error {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: -4px;
+}
+
+.ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--pos) 14%, transparent);
+  color: var(--pos);
+  font-size: 13px;
+}
+
+.primary {
+  height: 42px;
+  border-radius: 8px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--acc);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.switch {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--mut);
+}
+
+.switch .link {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.back {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--mut);
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+
+.back:hover,
+.muted:hover {
+  color: var(--fg);
+}
+
+.muted {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--mut);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.row .link {
+  font-size: 13px;
+}
+
+.mailIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklch, var(--acc) 16%, transparent);
+  color: var(--acc);
+  font-size: 30px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 40px -10px var(--acc);
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: -6px;
+}
+
+.bars {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line2);
+  transition: background 0.2s;
+}
+
+.meterLabel {
+  font-size: 11px;
+  min-width: 44px;
+  text-align: right;
+}
+
+.icon {
+  font-size: 18px;
+}
