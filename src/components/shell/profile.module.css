@@ -232,3 +232,132 @@
     padding: 16px 14px;
   }
 }
+
+.select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--r-select);
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rowBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rowBtn span:first-child {
+  font-size: 19px;
+  color: var(--mut);
+}
+
+.rowBtn span:nth-child(2) {
+  flex: 1;
+}
+
+.rowBtn span:last-child {
+  color: var(--dim);
+}
+
+.pwBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--elev);
+}
+
+.pwBox .input {
+  background: var(--panel);
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.meter > div {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.meter > div span {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line2);
+}
+
+.meter small {
+  font-size: 11px;
+  min-width: 44px;
+  text-align: right;
+}
+
+.err {
+  color: var(--red);
+  font-size: 12px;
+}
+
+.primary {
+  height: 40px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.danger {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.danger span {
+  color: var(--dim);
+  font-size: 12px;
+  text-wrap: pretty;
+}
+
+.deleteBtn {
+  align-self: flex-start;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in oklch, var(--red) 45%, transparent);
+  background: transparent;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.deleteBtn[data-confirm="true"] {
+  background: var(--red);
+  color: #fff;
+}

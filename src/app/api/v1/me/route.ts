@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { ApiError, handle, readBody } from "@/lib/http";
-import { requireUserId, toUserDto } from "@/lib/auth/session";
+import { clearRefreshCookie, requireUserId, toUserDto } from "@/lib/auth/session";
 
 export const GET = handle(async (req: Request) => {
   const userId = await requireUserId(req);
@@ -43,4 +43,16 @@ export const PATCH = handle(async (req: Request) => {
     },
   });
   return Response.json({ user: toUserDto(user) });
+});
+
+// DELETE /me { confirm: true }: borra la cuenta y todos sus datos (en cascada) y cierra la sesión.
+export const DELETE = handle(async (req: Request) => {
+  const userId = await requireUserId(req);
+  await readBody(req, z.object({ confirm: z.literal(true, { message: "Confirmá que querés eliminar tu cuenta." }) }));
+  await prisma.$transaction([
+    // Los contactos de otros usuarios que apuntaban a esta cuenta vuelven a ser contactos sueltos.
+    prisma.person.updateMany({ where: { linkedUserId: userId }, data: { linkedUserId: null, status: "contact" } }),
+    prisma.user.delete({ where: { id: userId } }),
+  ]);
+  return new Response(null, { status: 204, headers: { "Set-Cookie": clearRefreshCookie() } });
 });

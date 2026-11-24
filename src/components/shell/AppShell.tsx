@@ -9,6 +9,12 @@ import { NewTxModal } from "@/components/tx/NewTxModal";
 import { SaveErrorBar, TxDetail } from "@/components/tx/TxDetail";
 import { BillSheet } from "@/components/debts/BillSheet";
 import { CardSheet } from "@/components/debts/CardSheet";
+import { AlertsPanel } from "@/components/alerts/AlertsPanel";
+import { useAlerts } from "@/components/alerts/useAlerts";
+import { NewMonthModal, laterToday } from "@/components/month/NewMonthModal";
+import { NetBanner, SessionExpiredModal } from "@/components/month/SystemStatus";
+import { currentMonth } from "@/lib/month";
+import { SESSION_EXPIRED_EVENT } from "@/lib/api-client";
 import { ProfilePanel } from "./ProfilePanel";
 import { initials, useShell } from "./ShellContext";
 import s from "./shell.module.css";
@@ -28,11 +34,32 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const shell = useShell();
-  const { user, months, month, setMonth, isPastMonth, toast, setProfileOpen, openNewTx, closeNewTx, newTxOpen, detailId, setDetailId, profileOpen, updatePrefs, debtSheet, setDebtSheet } =
+  const { user, months, month, setMonth, isPastMonth, toast, setProfileOpen, openNewTx, closeNewTx, newTxOpen, detailId, setDetailId, profileOpen, updatePrefs, debtSheet, setDebtSheet, setAlertsOpen, alertsOpen } =
     shell;
 
   const view = viewFromPath(pathname);
   const closeDebtSheet = useCallback(() => setDebtSheet(null), [setDebtSheet]);
+  const alerts = useAlerts();
+  const { setSessionExpired } = shell;
+  useEffect(() => {
+    const onExpired = () => setSessionExpired(true);
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [setSessionExpired]);
+
+  // "Nuevo mes": la primera vez que se entra en un mes nuevo (no para cuentas recién creadas).
+  const [newMonthOpen, setNewMonthOpen] = useState(false);
+  const thisMonth = currentMonth();
+  useEffect(() => {
+    if (!user.onboarded_at) return;
+    if (!user.last_month_opened) {
+      updatePrefs({ last_month_opened: thisMonth });
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user.last_month_opened < thisMonth && !laterToday()) setNewMonthOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.onboarded_at, user.last_month_opened, thisMonth]);
   const group = groupOf(view);
   // Última vista visitada de cada sección, para volver ahí al cambiar de sección.
   const [lastIn, setLastIn] = useState<Partial<Record<GroupId, ViewId>>>({});
@@ -51,12 +78,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const keyRef = useRef<(e: KeyboardEvent) => void>(undefined);
   const onShortcut = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
+      setAlertsOpen(false);
       closeNewTx();
       setDetailId(null);
       return setProfileOpen(false);
     }
     // Con un panel abierto o durante el onboarding no hay atajos.
-    if (pathname === "/bienvenida" || newTxOpen || detailId || profileOpen || document.querySelector('[aria-modal="true"]')) return;
+    if (pathname === "/bienvenida" || newTxOpen || detailId || profileOpen || alertsOpen || newMonthOpen || document.querySelector('[aria-modal="true"]')) return;
     const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase() ?? "";
     if (["input", "textarea", "select"].includes(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
@@ -187,8 +215,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </div>
 
-          <button className={`${s.roundBtn} ${s.icon}`} title="Alertas" onClick={() => shell.flash("Nada urgente en estos días. Bolsi te banca.")}>
+          <button className={`${s.roundBtn} ${s.icon}`} title="Alertas" aria-label={`Alertas (${alerts.length})`} onClick={() => setAlertsOpen(true)}>
             notifications
+            {alerts.length > 0 && <span className={s.badge}>{alerts.length}</span>}
           </button>
 
           <button className={`${s.avatarBtn} ${s.mobAvatar}`} title="Perfil y configuración" onClick={() => setProfileOpen(true)}>
@@ -196,6 +225,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </header>
 
+        <NetBanner />
         <div className={s.scroll}>
           <div className={s.content}>
             {group.views.length > 1 && (
@@ -235,6 +265,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       {toast$}
 
       <ProfilePanel />
+      <AlertsPanel />
+      {newMonthOpen && <NewMonthModal onClose={() => setNewMonthOpen(false)} />}
+      <SessionExpiredModal />
       <NewTxModal />
       <TxDetail />
       <SaveErrorBar />

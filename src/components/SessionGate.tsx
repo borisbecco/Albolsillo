@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SESSION_EXPIRED_EVENT, api, hasAccessToken, refreshSession } from "@/lib/api-client";
 import { currentMonth } from "@/lib/month";
 import { AppShell } from "@/components/shell/AppShell";
@@ -20,6 +20,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   const [data, setData] = useState<Bootstrap | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const loaded = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -30,13 +31,17 @@ export function SessionGate({ children }: { children: ReactNode }) {
         const boot = await api<Bootstrap>(`/me/bootstrap?month=${currentMonth()}`);
         applyTheme(boot.user.theme);
         await new Promise((r) => setTimeout(r, Math.max(0, MIN_LOADING_MS - (Date.now() - started))));
-        if (alive) setData(boot);
+        if (alive) {
+          loaded.current = true;
+          setData(boot);
+        }
       } catch (e) {
         // La sesión vencida ya redirige por el evento; el resto es "Error al cargar".
         if (alive && !(e instanceof Error && "code" in e && e.code === "session_expired")) setLoadError(true);
       }
     })();
-    const onExpired = () => router.replace("/entrar");
+    // Con la app ya cargada, el aviso lo muestra el armazón (modal "Tu sesión venció").
+    const onExpired = () => !loaded.current && router.replace("/entrar");
     window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
     return () => {
       alive = false;

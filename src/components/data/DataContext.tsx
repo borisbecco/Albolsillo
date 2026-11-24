@@ -131,6 +131,11 @@ type Data = {
   addShared: (d: SharedDraft) => Promise<boolean>;
   deleteShared: (id: string) => Promise<boolean>;
   settle: (personId: string, amount: string) => Promise<boolean>;
+  /** Altas que todavía no llegaron al servidor (pendientes o con error). */
+  pendingCount: number;
+  /** Reintenta todas las altas pendientes (al volver la conexión). */
+  retryPending: () => Promise<number>;
+  startMonth: (d: { month: string; budget_mode: "keep" | "infl" | "spent"; budgets: { category_id: string; amount: number }[]; drop_bills: string[] }) => Promise<boolean>;
   /** Cotizaciones del día (null mientras carga). */
   fx: FxResponse | null;
   /** Pesos por dólar según la cotización elegida (null mientras carga). */
@@ -250,7 +255,8 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         }
         const failedTx: Tx = { ...t, status: "failed" };
         patchTx(t.id, () => failedTx);
-        setFailedId(t.id);
+        // Sin conexión lo explica la banda de arriba; el aviso de error es para fallas del servidor.
+        if (navigator.onLine) setFailedId(t.id);
         return failedTx;
       }
     },
@@ -740,6 +746,31 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail],
   );
 
+  const pendingCount = transactions.filter((t) => t.status !== "synced").length;
+
+  const retryPending = useCallback(async () => {
+    const list = txRef.current.filter((t) => t.status === "failed");
+    setFailedId(null);
+    const results = await Promise.all(list.map((t) => send({ ...t, status: "pending" })));
+    return results.filter((r) => r?.status === "synced").length;
+  }, [send]);
+
+  const startMonth = useCallback(
+    async (d: { month: string; budget_mode: "keep" | "infl" | "spent"; budgets: { category_id: string; amount: number }[]; drop_bills: string[] }) => {
+      try {
+        const res = await api<{ user: UserDto; budgets: BudgetRow[]; bills: BillDto[] }>("/me/month/start", { method: "POST", body: JSON.stringify(d) });
+        setUser(res.user);
+        setBudgets((l) => [...l.filter((b) => b.month !== d.month), ...res.budgets]);
+        setBills(res.bills);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos arrancar el mes. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, setUser],
+  );
+
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
@@ -775,6 +806,9 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     addShared,
     deleteShared,
     settle,
+    pendingCount,
+    retryPending,
+    startMonth,
     fx,
     rate,
     toDisplay,

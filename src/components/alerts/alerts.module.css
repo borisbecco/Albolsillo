@@ -1,0 +1,191 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 76px 28px 16px;
+}
+
+.panel {
+  animation: popIn 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  width: 100%;
+  max-width: 390px;
+  max-height: 80vh;
+  background: color-mix(in oklch, var(--bg) 96%, var(--fg) 4%);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.head {
+  padding: 16px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titleRow strong {
+  font-weight: 700;
+  font-size: 16px;
+  flex: 1;
+}
+
+.titleRow span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.days {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.seg {
+  display: flex;
+  padding: 2px;
+  border-radius: var(--r-pill);
+  background: var(--elev);
+  border: 1px solid var(--line);
+}
+
+.seg button {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.seg button[aria-pressed="true"] {
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.list {
+  overflow: auto;
+  flex: 1;
+}
+
+.item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.item > div,
+.channel > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item strong,
+.channel strong {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.item span:not(.icon),
+.channel span:not(.icon) {
+  color: var(--mut);
+  font-size: 12px;
+  text-wrap: pretty;
+}
+
+.icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  flex: none;
+}
+
+.empty {
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--mut);
+  text-align: center;
+}
+
+.foot {
+  border-top: 1px solid var(--line);
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.channel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.channel > div span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.switch {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  border: 0;
+  padding: 3px;
+  background: var(--line2);
+  cursor: pointer;
+  flex: none;
+  display: flex;
+  justify-content: flex-start;
+  transition: background 0.2s;
+}
+
+.switch[aria-checked="true"] {
+  background: var(--acc);
+  justify-content: flex-end;
+}
+
+.switch span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 759px) {
+  .backdrop {
+    padding: 64px 10px 10px;
+    background: rgba(0, 0, 0, 0.4);
+  }
+}

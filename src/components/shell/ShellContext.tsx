@@ -8,7 +8,7 @@ import { currentMonth, navigableMonths } from "@/lib/month";
 export type BolsiPose = "bienvenida" | "ingreso" | "gasto" | "meta" | "alerta" | "errorguardar";
 export type Toast = { id: number; message: string; pose: BolsiPose };
 
-type Prefs = Partial<Pick<UserDto, "theme" | "display_currency" | "rate_type" | "pay_strategy" | "alert_days" | "mail_alerts" | "name">>;
+type Prefs = Partial<Pick<UserDto, "theme" | "display_currency" | "rate_type" | "manual_rate" | "pay_strategy" | "alert_days" | "mail_alerts" | "name" | "last_month_opened">>;
 
 type Shell = {
   user: UserDto;
@@ -34,6 +34,11 @@ type Shell = {
   /** Formulario "Nueva cuenta" abierto (se puede abrir desde otras pantallas). */
   accountFormOpen: boolean;
   setAccountFormOpen: (v: boolean) => void;
+  alertsOpen: boolean;
+  setAlertsOpen: (v: boolean) => void;
+  /** La sesión venció con la app abierta: se muestra el modal bloqueante. */
+  sessionExpired: boolean;
+  setSessionExpired: (v: boolean) => void;
   /** Panel de tarjeta o gasto fijo abierto (id null = nuevo). */
   debtSheet: DebtSheet;
   setDebtSheet: (s: DebtSheet) => void;
@@ -100,6 +105,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [debtSheet, setDebtSheet] = useState<DebtSheet>(null);
   const [forced, setForced] = useState<Shell["forced"]>({});
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const force = useCallback((v: "goals" | "inv" | "shared") => setForced((f) => ({ ...f, [v]: true })), []);
   const isPastMonth = month !== months[months.length - 1];
   const openNewTx = useCallback(() => {
@@ -137,6 +144,10 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     setDebtSheet,
     forced,
     force,
+    alertsOpen,
+    setAlertsOpen,
+    sessionExpired,
+    setSessionExpired,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
