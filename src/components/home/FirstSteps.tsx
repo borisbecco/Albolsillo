@@ -11,8 +11,8 @@ type Step = { done: boolean; icon: string; title: string; sub: string; go: () =>
 /** Los 5 primeros pasos y cuántos están hechos. */
 export function useFirstSteps() {
   const router = useRouter();
-  const { month, openNewTx, setAccountFormOpen, setOnboardingStep } = useShell();
-  const { transactions, accounts, cards, bills, budgets } = useData();
+  const { month, openNewTx, setAccountFormOpen, setOnboardingStep, force } = useShell();
+  const { transactions, accounts, cards, bills, budgets, goals } = useData();
 
   const steps: Step[] = [
     {
@@ -42,9 +42,11 @@ export function useFirstSteps() {
         router.push("/bienvenida");
       },
     },
-    // Metas se marca cuando esté su pantalla.
     { done: budgets.some((b) => b.month === month), icon: "donut_large", title: "Poné un límite por categoría", sub: "Te avisamos al llegar al 80%.", go: () => router.push(VIEWS.budget.href) },
-    { done: false, icon: "flag", title: "Creá una meta de ahorro", sub: "Te decimos cuánto apartar por mes.", go: () => router.push(VIEWS.goals.href) },
+    { done: goals.length > 0, icon: "flag", title: "Creá una meta de ahorro", sub: "Te decimos cuánto apartar por mes.", go: () => {
+        force("goals");
+        router.push(VIEWS.goals.href);
+      } },
   ];
   return { steps, done: steps.filter((s) => s.done).length };
 }

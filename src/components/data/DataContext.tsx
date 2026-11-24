@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { ApiClientError, api } from "@/lib/api-client";
 import type { UserDto } from "@/lib/auth/session";
 import type { AccountDto, BillDto, CardDto, PersonDto, TxDto } from "@/lib/dto";
+import type { GoalDto, InvestmentDto } from "@/lib/savings";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
 import { CATEGORY_BY_ID } from "@/lib/categories";
@@ -22,6 +23,21 @@ export type Bootstrap = {
   bills: BillDto[];
   bill_payments: BillPayment[];
   budgets: BudgetRow[];
+  goals: GoalDto[];
+  investments: InvestmentDto[];
+};
+
+export type IpcRow = { month: string; value: number };
+export type GoalDraft = { name: string; icon: string; target: string; currency: Currency; due_month: string | null };
+export type InvestmentDraft = {
+  kind: InvestmentDto["kind"];
+  name: string;
+  amount: string;
+  currency: Currency;
+  tna: string | null;
+  start_date: string;
+  days: number | null;
+  account_id: string;
 };
 
 export type BudgetRow = { month: string; category_id: string; amount: string };
@@ -85,6 +101,15 @@ type Data = {
   /** Límite de la categoría en el mes: el guardado o el predeterminado. */
   budgetFor: (month: string, categoryId: string) => { amount: number; custom: boolean };
   saveBudget: (month: string, categoryId: string, amount: string | null) => Promise<boolean>;
+  goals: GoalDto[];
+  saveGoal: (id: string | null, g: GoalDraft) => Promise<boolean>;
+  deleteGoal: (id: string) => Promise<boolean>;
+  contribute: (goalId: string, amount: string) => Promise<GoalDto | null>;
+  investments: InvestmentDto[];
+  createInvestment: (i: InvestmentDraft) => Promise<boolean>;
+  closeInvestment: (id: string, amount: string) => Promise<AccountDto | null | false>;
+  /** Inflación mensual (%) por mes, de la API de IPC. */
+  ipc: IpcRow[];
   /** Cotizaciones del día (null mientras carga). */
   fx: FxResponse | null;
   /** Pesos por dólar según la cotización elegida (null mientras carga). */
@@ -139,6 +164,9 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [bills, setBills] = useState(initial.bills);
   const [billPayments, setBillPayments] = useState(initial.bill_payments);
   const [budgets, setBudgets] = useState(initial.budgets);
+  const [goals, setGoals] = useState(initial.goals);
+  const [investments, setInvestments] = useState(initial.investments);
+  const [ipc, setIpc] = useState<IpcRow[]>([]);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -235,6 +263,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
 
   useEffect(() => {
     api<FxResponse>("/rates/fx").then(setFx).catch(() => {});
+    api<{ ipc: IpcRow[] }>("/rates/ipc?from=2020-01").then((r) => setIpc(r.ipc)).catch(() => {});
   }, []);
 
   const rate = useMemo(() => {
@@ -522,6 +551,81 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail],
   );
 
+  // ─── Metas e inversiones ───
+
+  const saveGoal = useCallback(
+    async (id: string | null, g: GoalDraft) => {
+      try {
+        const res = await api<{ goal: GoalDto }>(id ? `/goals/${id}` : "/goals", { method: id ? "PATCH" : "POST", body: JSON.stringify(g) });
+        setGoals((l) => (id ? l.map((x) => (x.id === id ? res.goal : x)) : [...l, res.goal]));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar la meta. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const deleteGoal = useCallback(
+    async (id: string) => {
+      try {
+        await api(`/goals/${id}`, { method: "DELETE" });
+        setGoals((l) => l.filter((x) => x.id !== id));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos eliminar la meta. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const contribute = useCallback(
+    async (goalId: string, amount: string) => {
+      try {
+        const res = await api<{ goal: GoalDto; account: AccountDto | null }>(`/goals/${goalId}/contributions`, { method: "POST", body: JSON.stringify({ amount }) });
+        setGoals((l) => l.map((x) => (x.id === goalId ? res.goal : x)));
+        replaceAccount(res.account);
+        return res.goal;
+      } catch (e) {
+        fail(e, "No pudimos sumar el aporte. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
+  const createInvestment = useCallback(
+    async (i: InvestmentDraft) => {
+      try {
+        const res = await api<{ investment: InvestmentDto; account: AccountDto }>("/investments", { method: "POST", body: JSON.stringify(i) });
+        setInvestments((l) => [...l, res.investment]);
+        replaceAccount(res.account);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos registrar la inversión. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
+  const closeInvestment = useCallback(
+    async (id: string, amount: string) => {
+      try {
+        const res = await api<{ account: AccountDto | null }>(`/investments/${id}/close`, { method: "POST", body: JSON.stringify({ amount }) });
+        setInvestments((l) => l.filter((x) => x.id !== id));
+        replaceAccount(res.account);
+        return res.account;
+      } catch (e) {
+        fail(e, "No pudimos cerrar la inversión. Probá de nuevo.");
+        return false as const;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
@@ -542,6 +646,14 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     budgets,
     budgetFor,
     saveBudget,
+    goals,
+    saveGoal,
+    deleteGoal,
+    contribute,
+    investments,
+    createInvestment,
+    closeInvestment,
+    ipc,
     fx,
     rate,
     toDisplay,
