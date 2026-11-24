@@ -157,12 +157,14 @@ export function OnboardingView() {
     setBusy(false);
     if (ok) {
       flash("Tu plan del mes está listo. Bolsi te banca.", "meta");
+      startTourAfter(redo);
       router.replace("/");
     }
   };
 
   const skip = async () => {
     if (!redo && !(await saveOnboarding({ skipped: true }))) return;
+    startTourAfter(redo);
     router.replace("/");
   };
 
@@ -392,4 +394,12 @@ function CurSeg({ value, onChange }: { value: Currency; onChange: (c: Currency) 
       ))}
     </span>
   );
+}
+
+/** Al terminar la configuración inicial (no al rehacerla), Inicio arranca el recorrido guiado. */
+function startTourAfter(redo: boolean) {
+  if (redo) return;
+  try {
+    sessionStorage.setItem("ab-start-tour", "1");
+  } catch {}
 }

@@ -1,0 +1,289 @@
+.sheet {
+  max-width: 560px;
+  gap: 14px;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  color: var(--mut);
+}
+
+.search span {
+  font-size: 20px;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 14px;
+  outline: none;
+}
+
+.tourCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in oklch, var(--acc) 45%, var(--line2));
+  background: color-mix(in oklch, var(--acc) 10%, var(--panel));
+}
+
+.tourCard img {
+  flex: none;
+}
+
+.tourText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tourText strong {
+  font-size: 15px;
+}
+
+.tourText span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.tourBtn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  flex: none;
+}
+
+.topic {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.topicHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.topicHead > span:first-child {
+  font-size: 18px;
+  color: var(--acc);
+}
+
+.here {
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--sel);
+  color: var(--mut);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+}
+
+.items {
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.item + .item {
+  border-top: 1px solid var(--line);
+}
+
+.q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.q:hover {
+  background: var(--hover);
+}
+
+.q > span:last-child {
+  font-size: 20px;
+  color: var(--mut);
+  transition: transform 0.2s;
+}
+
+.a {
+  margin: 0;
+  padding: 0 14px 14px;
+  color: var(--mut);
+  font-size: 13px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.empty {
+  padding: 8px 4px;
+  color: var(--mut);
+  font-size: 14px;
+}
+
+/* ─── Recorrido guiado ─── */
+.tourLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+
+.tourDim {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.66);
+}
+
+.tourSpot {
+  position: fixed;
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 2px var(--acc),
+    0 0 0 200vmax rgba(5, 7, 12, 0.66);
+  transition:
+    top 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+
+.tourBox {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px;
+  background: color-mix(in oklch, var(--bg) 88%, var(--fg) 5%);
+  border: 1px solid var(--line2);
+  box-shadow: var(--shadow);
+  animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.tourTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tourTop img {
+  flex: none;
+}
+
+.tourCopy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tourStep {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--acc);
+  letter-spacing: 0.04em;
+}
+
+.tourCopy strong {
+  font-size: 16px;
+}
+
+.tourCopy p {
+  margin: 0;
+  color: var(--mut);
+  font-size: 14px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.tourFoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dots {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.dots span {
+  height: 6px;
+  border-radius: 3px;
+  transition: width 0.2s;
+}
+
+.skip {
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.prev {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.next {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}

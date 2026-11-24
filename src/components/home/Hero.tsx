@@ -65,7 +65,7 @@ export function Hero() {
   const better = P ? projectedOut <= P.out : null;
 
   return (
-    <section className={h.hero}>
+    <section className={h.hero} data-tour="hero">
       <div className={h.heroRow}>
         <button className={`${h.heroArrow} material-symbols-rounded`} title="Mes anterior" disabled={mIdx <= 0} onClick={() => setMonth(months[mIdx - 1])}>
           chevron_left

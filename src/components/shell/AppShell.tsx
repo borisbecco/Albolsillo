@@ -10,6 +10,8 @@ import { SaveErrorBar, TxDetail } from "@/components/tx/TxDetail";
 import { BillSheet } from "@/components/debts/BillSheet";
 import { CardSheet } from "@/components/debts/CardSheet";
 import { LoanSheet } from "@/components/debts/LoanSheet";
+import { HelpSheet } from "@/components/help/HelpSheet";
+import { Tour } from "@/components/help/Tour";
 import { LoanPaySheet } from "@/components/debts/LoanPaySheet";
 import { CardPaySheet } from "@/components/debts/CardPaySheet";
 import { StatementSheet } from "@/components/debts/StatementSheet";
@@ -43,6 +45,20 @@ export function AppShell({ children }: { children: ReactNode }) {
     shell;
 
   const view = viewFromPath(pathname);
+  const { setHelpOpen, setTourStep } = shell;
+
+  // Recién terminada la configuración inicial: arranca el recorrido guiado en Inicio.
+  useEffect(() => {
+    if (pathname !== "/" || user.tour_done_at || !user.onboarded_at) return;
+    let start = false;
+    try {
+      start = sessionStorage.getItem("ab-start-tour") === "1";
+      sessionStorage.removeItem("ab-start-tour");
+    } catch {}
+    if (!start) return;
+    const t = setTimeout(() => setTourStep(0), 900);
+    return () => clearTimeout(t);
+  }, [pathname, user.tour_done_at, user.onboarded_at, setTourStep]);
   const closeDebtSheet = useCallback(() => setDebtSheet(null), [setDebtSheet]);
   const alerts = useAlerts();
   const { setSessionExpired } = shell;
@@ -232,7 +248,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </div>
 
-          <button className={`${s.roundBtn} ${s.icon}`} title="Alertas" aria-label={`Alertas (${alerts.length})`} onClick={() => setAlertsOpen(true)}>
+          <button className={`${s.roundBtn} ${s.icon}`} data-tour="help" title="Ayuda" aria-label="Ayuda" onClick={() => setHelpOpen(true)}>
+            help
+          </button>
+
+          <button className={`${s.roundBtn} ${s.icon}`} data-tour="alerts" title="Alertas" aria-label={`Alertas (${alerts.length})`} onClick={() => setAlertsOpen(true)}>
             notifications
             {alerts.length > 0 && <span className={s.badge}>{alerts.length}</span>}
           </button>
@@ -260,7 +280,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </main>
 
-      <button className={`${s.fab} ${s.icon}`} title={newTxTitle} aria-label="Nuevo movimiento" disabled={isPastMonth} onClick={openNewTx}>
+      <button className={`${s.fab} ${s.icon}`} data-tour="add" title={newTxTitle} aria-label="Nuevo movimiento" disabled={isPastMonth} onClick={openNewTx}>
         add
       </button>
 
@@ -272,7 +292,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span>{g.short}</span>
             </Link>
           ) : (
-            <button key="add" className={s.addBtn} aria-label="Nuevo movimiento" title={newTxTitle} disabled={isPastMonth} onClick={openNewTx}>
+            <button key="add" className={s.addBtn} data-tour="add" aria-label="Nuevo movimiento" title={newTxTitle} disabled={isPastMonth} onClick={openNewTx}>
               <Icon name="add" className={s.addIcon} />
             </button>
           ),
@@ -291,6 +311,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SaveErrorBar />
       {debtSheet?.kind === "card" && <CardSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "bill" && <BillSheet id={debtSheet.id} onClose={closeDebtSheet} />}
+      {shell.helpOpen && <HelpSheet />}
+      <Tour />
       {debtSheet?.kind === "loan" && <LoanSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "loanpay" && debtSheet.id && <LoanPaySheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "cardpay" && debtSheet.id && <CardPaySheet id={debtSheet.id} onClose={closeDebtSheet} />}

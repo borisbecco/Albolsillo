@@ -5,11 +5,11 @@ import { api } from "@/lib/api-client";
 import type { UserDto } from "@/lib/auth/session";
 import { currentMonth, navigableMonths } from "@/lib/month";
 
-export type BolsiPose = "bienvenida" | "ingreso" | "gasto" | "meta" | "alerta" | "errorguardar";
+export type BolsiPose = "bienvenida" | "ingreso" | "gasto" | "meta" | "alerta" | "errorguardar" | "cargando";
 export type ToastAction = { label: string; fn: () => void };
 export type Toast = { id: number; message: string; pose: BolsiPose; action?: ToastAction };
 
-type Prefs = Partial<Pick<UserDto, "theme" | "display_currency" | "rate_type" | "manual_rate" | "pay_strategy" | "alert_days" | "mail_alerts" | "name" | "last_month_opened">>;
+type Prefs = Partial<Pick<UserDto, "theme" | "display_currency" | "rate_type" | "manual_rate" | "pay_strategy" | "alert_days" | "mail_alerts" | "name" | "last_month_opened">> & { tour_done?: boolean };
 
 type Shell = {
   user: UserDto;
@@ -41,6 +41,11 @@ type Shell = {
   setImportFor: (v: { cardId: string | null } | null) => void;
   alertsOpen: boolean;
   setAlertsOpen: (v: boolean) => void;
+  helpOpen: boolean;
+  setHelpOpen: (v: boolean) => void;
+  /** Paso del recorrido guiado (null = cerrado). */
+  tourStep: number | null;
+  setTourStep: (i: number | null) => void;
   /** La sesión venció con la app abierta: se muestra el modal bloqueante. */
   sessionExpired: boolean;
   setSessionExpired: (v: boolean) => void;
@@ -90,7 +95,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const updatePrefs = useCallback(
     async (p: Prefs) => {
       const prev = user;
-      setUser((u) => ({ ...u, ...p }));
+      const { tour_done, ...shown } = p;
+      setUser((u) => ({ ...u, ...shown, ...(tour_done !== undefined && { tour_done_at: tour_done ? new Date().toISOString() : null }) }));
       if (p.theme) applyTheme(p.theme);
       try {
         const res = await api<{ user: UserDto }>("/me", { method: "PATCH", body: JSON.stringify(p) });
@@ -116,6 +122,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const [debtSheet, setDebtSheet] = useState<DebtSheet>(null);
   const [forced, setForced] = useState<Shell["forced"]>({});
   const [alertsOpen, setAlertsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [tourStep, setTourStep] = useState<number | null>(null);
   const [importFor, setImportFor] = useState<{ cardId: string | null } | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const force = useCallback((v: "goals" | "inv" | "shared") => setForced((f) => ({ ...f, [v]: true })), []);
@@ -158,6 +166,10 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     force,
     alertsOpen,
     setAlertsOpen,
+    helpOpen,
+    setHelpOpen,
+    tourStep,
+    setTourStep,
     importFor,
     setImportFor,
     sessionExpired,

@@ -136,6 +136,7 @@ export function toUserDto(u: User) {
     other_income_currency: u.otherIncomeCurrency,
     onboarded_at: u.onboardedAt?.toISOString() ?? null,
     last_month_opened: u.lastMonthOpened,
+    tour_done_at: u.tourDoneAt?.toISOString() ?? null,
   };
 }
 

@@ -22,6 +22,8 @@ const Patch = z
     alert_days: z.union([z.literal(1), z.literal(3), z.literal(7)]),
     mail_alerts: z.enum(["off", "each", "daily"]),
     last_month_opened: z.string().regex(/^\d{4}-\d{2}$/),
+    /** Recorrido guiado visto (true) o para volver a mostrarlo (false). */
+    tour_done: z.boolean(),
   })
   .partial();
 
@@ -40,6 +42,7 @@ export const PATCH = handle(async (req: Request) => {
       alertDays: b.alert_days,
       mailAlerts: b.mail_alerts,
       lastMonthOpened: b.last_month_opened,
+      tourDoneAt: b.tour_done === undefined ? undefined : b.tour_done ? new Date() : null,
     },
   });
   return Response.json({ user: toUserDto(user) });
