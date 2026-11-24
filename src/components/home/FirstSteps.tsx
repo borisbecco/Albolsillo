@@ -12,7 +12,7 @@ type Step = { done: boolean; icon: string; title: string; sub: string; go: () =>
 export function useFirstSteps() {
   const router = useRouter();
   const { month, openNewTx, setAccountFormOpen, setOnboardingStep } = useShell();
-  const { transactions, accounts, cards, bills } = useData();
+  const { transactions, accounts, cards, bills, budgets } = useData();
 
   const steps: Step[] = [
     {
@@ -42,8 +42,8 @@ export function useFirstSteps() {
         router.push("/bienvenida");
       },
     },
-    // Presupuesto y metas se marcan cuando estén sus pantallas.
-    { done: false, icon: "donut_large", title: "Poné un límite por categoría", sub: "Te avisamos al llegar al 80%.", go: () => router.push(VIEWS.budget.href) },
+    // Metas se marca cuando esté su pantalla.
+    { done: budgets.some((b) => b.month === month), icon: "donut_large", title: "Poné un límite por categoría", sub: "Te avisamos al llegar al 80%.", go: () => router.push(VIEWS.budget.href) },
     { done: false, icon: "flag", title: "Creá una meta de ahorro", sub: "Te decimos cuánto apartar por mes.", go: () => router.push(VIEWS.goals.href) },
   ];
   return { steps, done: steps.filter((s) => s.done).length };

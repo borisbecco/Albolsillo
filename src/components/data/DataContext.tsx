@@ -6,6 +6,7 @@ import type { UserDto } from "@/lib/auth/session";
 import type { AccountDto, BillDto, CardDto, PersonDto, TxDto } from "@/lib/dto";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
+import { CATEGORY_BY_ID } from "@/lib/categories";
 
 // Datos de la app (bootstrap) y operaciones sobre movimientos.
 // Regla: nunca se pierde lo cargado. Un alta que no llega al servidor queda en el dispositivo
@@ -20,7 +21,10 @@ export type Bootstrap = {
   transactions: TxDto[];
   bills: BillDto[];
   bill_payments: BillPayment[];
+  budgets: BudgetRow[];
 };
+
+export type BudgetRow = { month: string; category_id: string; amount: string };
 
 export type BillPayment = { bill_id: string; month: string; transaction_id: string | null };
 export type CardDraft = { name: string; balance: string; min_payment: string; due_day: number; close_day: number; tna: string; last4: string | null };
@@ -77,6 +81,10 @@ type Data = {
   deleteBill: (id: string) => Promise<boolean>;
   payBill: (billId: string, month: string) => Promise<boolean>;
   unpayBill: (billId: string, month: string) => Promise<boolean>;
+  budgets: BudgetRow[];
+  /** Límite de la categoría en el mes: el guardado o el predeterminado. */
+  budgetFor: (month: string, categoryId: string) => { amount: number; custom: boolean };
+  saveBudget: (month: string, categoryId: string, amount: string | null) => Promise<boolean>;
   /** Cotizaciones del día (null mientras carga). */
   fx: FxResponse | null;
   /** Pesos por dólar según la cotización elegida (null mientras carga). */
@@ -130,6 +138,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [cards, setCards] = useState(initial.cards);
   const [bills, setBills] = useState(initial.bills);
   const [billPayments, setBillPayments] = useState(initial.bill_payments);
+  const [budgets, setBudgets] = useState(initial.budgets);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -491,6 +500,28 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
 
   const isBillPaid = useCallback((billId: string, month: string) => billPayments.some((p) => p.bill_id === billId && p.month === month), [billPayments]);
 
+  const budgetFor = useCallback(
+    (month: string, categoryId: string) => {
+      const row = budgets.find((b) => b.month === month && b.category_id === categoryId);
+      return row ? { amount: Number(row.amount), custom: true } : { amount: CATEGORY_BY_ID[categoryId]?.budget ?? 0, custom: false };
+    },
+    [budgets],
+  );
+
+  const saveBudget = useCallback(
+    async (month: string, categoryId: string, amount: string | null) => {
+      try {
+        const res = await api<{ budget: BudgetRow | null }>("/budgets", { method: "PUT", body: JSON.stringify({ month, category_id: categoryId, amount }) });
+        setBudgets((l) => [...l.filter((b) => !(b.month === month && b.category_id === categoryId)), ...(res.budget ? [res.budget] : [])]);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar el límite. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
@@ -508,6 +539,9 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     deleteBill,
     payBill,
     unpayBill,
+    budgets,
+    budgetFor,
+    saveBudget,
     fx,
     rate,
     toDisplay,

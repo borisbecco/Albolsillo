@@ -14,7 +14,7 @@ export const GET = handle(async (req: Request) => {
 
   const live = { userId, deletedAt: null };
   const months = Array.from({ length: 6 }, (_, i) => addMonths(month, i - 5));
-  const [user, accounts, cards, people, transactions, bills, billPayments] = await Promise.all([
+  const [user, accounts, cards, people, transactions, bills, billPayments, budgets] = await Promise.all([
     prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
     prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
@@ -25,6 +25,7 @@ export const GET = handle(async (req: Request) => {
     }),
     prisma.bill.findMany({ where: live, orderBy: [{ dueDay: "asc" }, { createdAt: "asc" }] }),
     prisma.billPayment.findMany({ where: { ...live, month: { in: months } } }),
+    prisma.budget.findMany({ where: { ...live, month: { in: months } } }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
 
@@ -39,7 +40,7 @@ export const GET = handle(async (req: Request) => {
     bills: bills.map(billDto),
     bill_payments: billPayments.map((p) => ({ bill_id: p.billId, month: p.month, transaction_id: p.transactionId })),
     loans: [],
-    budgets: [],
+    budgets: budgets.map((b) => ({ month: b.month, category_id: b.categoryId, amount: b.amount.toFixed(2) })),
     goals: [],
     investments: [],
     shared: [],

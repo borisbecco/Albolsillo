@@ -57,7 +57,7 @@ export type PlanRow = PlanCard & {
 };
 
 export type Plan = {
-  /** Plata libre: ingresos − gastos hechos − fijos pendientes. */
+  /** Plata libre: ingresos − gastos hechos − fijos pendientes − reserva variable. */
   available: number;
   mins: number;
   rows: PlanRow[];
@@ -74,8 +74,18 @@ export type Plan = {
  * - avalancha: mayor tasa primero.
  * - bola: saldo más chico primero.
  */
-export function computePlan(input: { income: number; spent: number; pendingFixed: number; cards: PlanCard[]; strategy: Strategy }): Plan {
-  const available = input.income - input.spent - input.pendingFixed;
+export type PlanInput = {
+  income: number;
+  spent: number;
+  pendingFixed: number;
+  /** Lo que queda por gastar del presupuesto de las categorías variables. */
+  reserve?: number;
+  cards: PlanCard[];
+  strategy: Strategy;
+};
+
+export function computePlan(input: PlanInput): Plan {
+  const available = input.income - input.spent - input.pendingFixed - (input.reserve ?? 0);
   const cards = input.cards.filter((c) => c.balance > 0);
   const mins = cards.reduce((s, c) => s + Math.min(c.min, c.balance), 0);
   const order = [...cards].sort((a, b) =>
@@ -117,4 +127,10 @@ export function pctChange(a: number, b: number) {
   if (!b) return "—";
   const p = (a / b - 1) * 100;
   return `${p >= 0 ? "+" : "−"}${Math.abs(p).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
+/** Interés estimado del mes que viene con cada estrategia (para compararlas). */
+export function interestByStrategy(input: Omit<PlanInput, "strategy">): Record<Strategy, number> {
+  const sim = (strategy: Strategy) => computePlan({ ...input, strategy }).rows.reduce((s, r) => s + r.nextInterest, 0);
+  return { intereses: sim("intereses"), avalancha: sim("avalancha"), bola: sim("bola") };
 }
