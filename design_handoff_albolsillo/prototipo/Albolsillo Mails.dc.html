@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#E9EDF5;font-family:Inter,system-ui,sans-serif;color:#0A0B0F}a{color:#1954B4}a:hover{color:#447BF6}*{box-sizing:border-box}</style>
+</helmet>
+<div style="padding:32px clamp(16px,4vw,48px) 64px;display:flex;flex-direction:column;gap:24px;max-width:1500px;margin:0 auto">
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <span style="font-size:26px;font-weight:700;letter-spacing:-0.02em">Albolsillo · Mails</span>
+    <span style="color:#525A6B;font-size:14px">Cuatro mails transaccionales, listos para enviar. Abrí cada uno para ver el HTML.</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,640px),1fr));gap:24px">
+    <sc-for list="{{ mails }}" as="m" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:16px">{{ m.name }}</span><span style="color:#525A6B;font-size:13px">Asunto: {{ m.subject }}</span></div>
+          <a href="{{ m.file }}" target="_blank" style="font-size:13px">Abrir</a>
+        </div>
+        <span style="color:#7C8597;font-size:12px">{{ m.when }}</span>
+        <iframe src="{{ m.file }}" title="{{ m.name }}" style="width:100%;height:860px;border:1px solid #D6DCE8;border-radius:16px;background:#F3F5FA"></iframe>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return { mails: [
+      {name:'Invitación a Albolsillo',subject:'Lucía te invitó a dividir gastos en Albolsillo',file:'emails/invitacion.html',when:'Al invitar a un contacto desde Gastos compartidos.'},
+      {name:'Recuperar contraseña',subject:'Cambiá tu contraseña de Albolsillo',file:'emails/recuperar-contrasena.html',when:'Al pedir el link en “¿Te la olvidaste?”. Vence en 30 minutos.'},
+      {name:'Aviso de vencimiento',subject:'Tu Visa Galicia vence en 3 días',file:'emails/aviso-vencimiento.html',when:'Con avisos por mail en “Cada aviso”, según la anticipación elegida.'},
+      {name:'Resumen diario',subject:'Tu resumen de hoy · 20 nov',file:'emails/resumen-diario.html',when:'Con avisos por mail en “Resumen diario”, a las 8.'}
+    ]};
+  }
+}
+</script>
+</body>
+</html>

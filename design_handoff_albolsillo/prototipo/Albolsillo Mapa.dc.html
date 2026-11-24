@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0&display=block" rel="stylesheet">
+<style>
+html,body{margin:0;background:#0b0c0f;color:#eef0f5;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#7ea2ff;text-decoration:none}a:hover{color:#a9c1ff;text-decoration:underline}
+*{box-sizing:border-box}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:32px clamp(16px,4vw,48px) 64px;display:flex;flex-direction:column;gap:28px;max-width:1500px;margin:0 auto">
+  <header style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <img src="assets/brand/isotipo.svg" alt="Albolsillo" style="width:40px;height:42px;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(68,123,246,.45))">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:26px;font-weight:700;letter-spacing:-0.02em">Albolsillo · Mapa del producto</span>
+        <span style="color:#8b90a0;font-size:14px">{{ countLabel }} · desktop y mobile · versión 7</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;padding:4px;border-radius:999px;background:#15171d;border:1px solid rgba(255,255,255,.08)">
+        <sc-for list="{{ modeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.go }}" style="height:34px;padding:0 16px;border-radius:999px;border:0;background:{{ o.bg }};color:{{ o.fg }};font:600 13px Inter,sans-serif;cursor:pointer">{{ o.label }}</button></sc-for>
+      </div>
+      <div style="display:flex;padding:4px;border-radius:999px;background:#15171d;border:1px solid rgba(255,255,255,.08)">
+        <sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.go }}" style="height:34px;padding:0 16px;border-radius:999px;border:0;background:{{ o.bg }};color:{{ o.fg }};font:600 13px Inter,sans-serif;cursor:pointer">{{ o.label }}</button></sc-for>
+      </div>
+    </div>
+  </header>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px">
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+      <div style="border:1px solid rgba(255,255,255,.08);border-radius:22px;background:#121419;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:{{ g.tint }};color:{{ g.col }};font:600 12px 'Geist Mono',monospace">{{ g.n }}</span>
+          <span style="font-weight:600;font-size:15px;flex:1">{{ g.name }}</span>
+          <span style="color:#6c7182;font-size:12px">{{ g.count }}</span>
+        </div>
+        <span style="color:#8b90a0;font-size:12px;line-height:1.45;text-wrap:pretty">{{ g.desc }}</span>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="5">
+            <button onClick="{{ s.go }}" style="display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border-radius:12px;border:1px solid {{ s.border }};background:{{ s.bg }};color:#eef0f5;cursor:pointer;text-align:left;font:13px Inter,sans-serif" style-hover="background:rgba(255,255,255,.05)">
+              <span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:18px;color:{{ g.col }}">{{ s.icon }}</span>
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.name }}</span>
+              <span style="color:#6c7182;font:11px 'Geist Mono',monospace">{{ s.code }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+
+  <sc-if value="{{ isSingle }}" hint-placeholder-val="{{ true }}">
+    <section style="border:1px solid rgba(255,255,255,.08);border-radius:28px;background:#101216;padding:clamp(16px,2.4vw,28px);display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:6px;max-width:720px">
+          <span style="color:{{ cur.col }};font:500 12px 'Geist Mono',monospace;letter-spacing:.04em">{{ cur.code }} · {{ cur.group }}</span>
+          <span style="font-size:24px;font-weight:700;letter-spacing:-0.02em">{{ cur.name }}</span>
+          <span style="color:#b4b8c5;font-size:14px;line-height:1.55;text-wrap:pretty">{{ cur.desc }}</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onClick="{{ prev }}" title="Anterior (←)" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:#15171d;color:#eef0f5;cursor:pointer;font-family:'Material Symbols Rounded';font-size:20px;line-height:1">arrow_back</button>
+          <button onClick="{{ next }}" title="Siguiente (→)" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:#15171d;color:#eef0f5;cursor:pointer;font-family:'Material Symbols Rounded';font-size:20px;line-height:1">arrow_forward</button>
+          <a href="{{ cur.openUrl }}" target="_blank" style="height:40px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:#15171d;color:#eef0f5;display:flex;align-items:center;gap:6px;font-size:13px;text-decoration:none"><span style="font-family:'Material Symbols Rounded';font-size:18px;line-height:1">open_in_new</span>Abrir</a>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px">
+        <div style="padding:14px 16px;border-radius:16px;background:#15171d;display:flex;flex-direction:column;gap:8px">
+          <span style="color:#6c7182;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">Contenido</span>
+          <sc-for list="{{ cur.parts }}" as="p" hint-placeholder-count="4"><span style="display:flex;gap:8px;font-size:13px;color:#d3d6df;line-height:1.45"><span style="color:{{ cur.col }}">•</span>{{ p.t }}</span></sc-for>
+        </div>
+        <div style="padding:14px 16px;border-radius:16px;background:#15171d;display:flex;flex-direction:column;gap:8px">
+          <span style="color:#6c7182;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">Cómo se llega</span>
+          <sc-for list="{{ cur.from }}" as="p" hint-placeholder-count="2"><span style="display:flex;gap:8px;font-size:13px;color:#d3d6df;line-height:1.45"><span style="color:{{ cur.col }}">→</span>{{ p.t }}</span></sc-for>
+        </div>
+        <div style="padding:14px 16px;border-radius:16px;background:#15171d;display:flex;flex-direction:column;gap:8px">
+          <span style="color:#6c7182;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">Diferencias en mobile</span>
+          <span style="font-size:13px;color:#d3d6df;line-height:1.5;text-wrap:pretty">{{ cur.mobile }}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+        <div style="flex:1 1 560px;min-width:0;display:flex;flex-direction:column;gap:10px">
+          <span style="color:#8b90a0;font-size:12px;display:flex;align-items:center;gap:6px"><span style="font-family:'Material Symbols Rounded';font-size:16px;line-height:1">desktop_windows</span>Desktop · 1280 × 820</span>
+          <div data-desk="1" style="width:100%;height:{{ deskH }};border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:#0e0f10;position:relative;box-shadow:0 30px 80px -30px rgba(0,0,0,.8)">
+            <sc-if value="{{ mapReady }}" hint-placeholder-val="{{ false }}"><iframe src="{{ cur.deskUrl }}" title="Desktop" style="position:absolute;left:0;top:0;width:1280px;height:820px;border:0;transform-origin:0 0;transform:scale({{ deskScale }})"></iframe></sc-if>
+          </div>
+        </div>
+        <div style="flex:none;display:flex;flex-direction:column;gap:10px">
+          <span style="color:#8b90a0;font-size:12px;display:flex;align-items:center;gap:6px"><span style="font-family:'Material Symbols Rounded';font-size:16px;line-height:1">smartphone</span>Mobile · 390 × 844</span>
+          <div style="width:304px;height:648px;padding:8px;border-radius:44px;background:#1b1d23;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px -30px rgba(0,0,0,.8)">
+            <div style="width:288px;height:632px;border-radius:36px;overflow:hidden;position:relative;background:#0e0f10">
+              <sc-if value="{{ mapReady }}" hint-placeholder-val="{{ false }}"><iframe src="{{ cur.mobUrl }}" title="Mobile" style="position:absolute;left:0;top:0;width:390px;height:856px;border:0;transform-origin:0 0;transform:scale(0.7385)"></iframe></sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{ isAll }}" hint-placeholder-val="{{ false }}">
+    <section style="display:flex;flex-direction:column;gap:28px">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:{{ g.tint }};color:{{ g.col }};font:600 12px 'Geist Mono',monospace">{{ g.n }}</span><span style="font-weight:600;font-size:18px">{{ g.name }}</span></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px">
+            <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+                <div onClick="{{ s.go }}" style="width:220px;height:468px;padding:6px;border-radius:34px;background:#1b1d23;border:1px solid rgba(255,255,255,.14);cursor:pointer" style-hover="border-color:#447bf6">
+                  <div style="width:208px;height:456px;border-radius:28px;overflow:hidden;position:relative;background:#0e0f10">
+                    <sc-if value="{{ mapReady }}" hint-placeholder-val="{{ false }}"><iframe src="{{ s.mobUrl }}" loading="lazy" title="{{ s.name }}" style="position:absolute;left:0;top:0;width:390px;height:856px;border:0;transform-origin:0 0;transform:scale(0.5333);pointer-events:none"></iframe></sc-if>
+                  </div>
+                </div>
+                <span style="font-size:13px;font-weight:500;text-align:center">{{ s.name }}</span>
+                <span style="color:#6c7182;font:11px 'Geist Mono',monospace;margin-top:-6px">{{ s.code }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const APP = 'Albolsillo.dc.html';
+const APP_SRC = [
+  {id:'dash',name:'Inicio',icon:'space_dashboard',q:'view=dash',desc:'Resumen del mes: saldo, tarjetas, números clave y próximos pagos.',parts:['Saludo, mes y cotización del dólar','Saldo animado con curva de gasto diario vs mes anterior','Carrusel de tarjetas','Mis números y distribución del gasto','Recientes / Próximos'],from:['Menú → Inicio (1)','Al terminar el onboarding'],mobile:'Accesible desde la barra inferior. Curva y carrusel a ancho completo; números en 2 columnas.'},
+  {id:'mov',name:'Movimientos',icon:'receipt_long',q:'view=mov',desc:'Lista del mes agrupada por día, con búsqueda, filtros y exportación.',parts:['Buscador y filtro Gastos/Ingresos','Exportar CSV o PDF','Chips de categoría y filtro por cuenta','Totales del filtro','Lista por día con logo, categoría y cuenta'],from:['Menú → Movimientos (2)','Inicio → Ver todos','Cuentas → tocar una cuenta','Reportes → tocar una categoría'],mobile:'Accesible desde la barra inferior. Buscador y filtros en dos filas, chips con scroll horizontal.'},
+  {id:'acc',name:'Cuentas',icon:'account_balance',q:'view=acc',desc:'Saldos de bancos, billeteras y efectivo en pesos y dólares.',parts:['Total en cuentas, en pesos y en dólares','Tarjeta por cuenta con entradas y salidas del mes','Agregar cuenta','Transferir entre cuentas'],from:['Menú → Cuentas (3)'],mobile:'En “Más”. Cuentas en una columna; transferencia con campos apilados.'},
+  {id:'budget',name:'Presupuesto',icon:'donut_large',q:'view=budget',desc:'Límite mensual por categoría y avance del gasto.',parts:['Presupuestado, gastado y restante','Anillo por categoría','Límite editable','Color según avance: normal, 80%, excedido'],from:['Menú → Presupuesto (4)'],mobile:'En “Más”. Una columna.'},
+  {id:'plan',name:'Plan de pagos',icon:'task_alt',q:'view=plan',desc:'Cuánto pagar de cada tarjeta según ingresos, fijos y estrategia.',parts:['Disponible para tarjetas y flujo del dinero','Comparación de las 3 estrategias','Orden de pago y cobertura por tarjeta','Obligaciones fijas pendientes','Sobrante y sugerencia de meta'],from:['Menú → Plan de pagos (5)','Inicio → A pagar en tarjetas'],mobile:'Accesible desde la barra inferior. Estrategias y tarjetas apiladas.'},
+  {id:'goals',name:'Metas de ahorro',icon:'flag',q:'view=goals',desc:'Objetivos con fecha, progreso y aporte mensual sugerido.',parts:['Ahorrado, objetivo y aporte sugerido','Anillo de progreso por meta','Sumar aporte','Nueva meta en pesos o dólares'],from:['Menú → Metas (6)','Plan → sugerencia de aporte'],mobile:'En “Más”. Una columna.'},
+  {id:'inv',name:'Inversiones',icon:'trending_up',q:'view=inv',desc:'Plazos fijos, fondos y dólares, con rendimiento frente a la inflación.',parts:['Total invertido, intereses y rendimiento mensual vs IPC','Plazo fijo con barra hasta el vencimiento','Rescatar, vender o acreditar','Simulador con TEA y rendimiento real','Constituir plazo fijo debitando una cuenta'],from:['Menú → Inversiones (7)'],mobile:'En “Más”. Simulador con plazos en pastillas que pasan a 2 filas.'},
+  {id:'shared',name:'Gastos compartidos',icon:'group',q:'view=shared',desc:'Quién debe a quién y el historial de gastos divididos.',parts:['Te deben, debés y balance','Contactos: en Albolsillo, invitación enviada o solo contacto','Invitar por email y saldar deudas','Nuevo gasto: quién pagó y entre quiénes','Historial con tu parte'],from:['Menú → Gastos compartidos (8)','Nuevo movimiento → Dividir con'],mobile:'En “Más”. Personas, formulario e historial apilados.'},
+  {id:'debts',name:'Tarjetas y deudas',icon:'credit_card',q:'view=debts',desc:'Tarjetas, préstamos y gastos fijos del mes.',parts:['Tarjeta con saldo, mínimo, cierre, TNA y cuotas','Importar resumen','Préstamos con avance de cuotas','Gastos fijos con marcar pago'],from:['Menú → Tarjetas y deudas (9)','Inicio → tocar la tarjeta del carrusel'],mobile:'En “Más”. Tarjetas a ancho completo.'},
+  {id:'cal',name:'Vencimientos',icon:'calendar_month',q:'view=cal',desc:'Calendario del mes con todos los pagos.',parts:['Calendario mensual con puntos por categoría','Detalle del día seleccionado','Pagado tachado'],from:['Menú → Vencimientos','Inicio → Próximos → Calendario'],mobile:'En “Más”. Tira horizontal de días en lugar de grilla.'},
+  {id:'rep',name:'Reportes',icon:'bar_chart',q:'view=rep',desc:'Análisis del mes y de los últimos 6 meses, nominal o ajustado por inflación.',parts:['Valores nominales / ajustados por inflación','Exportar PDF','Balance, tasa de ahorro, fijo vs variable','Últimos 6 meses y gasto por categoría','Dónde más gastás','Inflación y tu gasto con IPC del INDEC'],from:['Menú → Reportes','Inicio → Mis números'],mobile:'En “Más”. Tarjetas y tabla de IPC en una columna.'}];
+const GROUPS = [
+ {id:'auth',name:'Acceso',hue:250,desc:'Antes de iniciar sesión. Pantallas centradas, una sola columna en todos los tamaños.',items:[
+  {id:'login',name:'Login',icon:'login',q:'screen=login',desc:'Entrada a la app con email y contraseña.',parts:['Email y contraseña','Link “¿Te la olvidaste?”','Link a crear cuenta','Errores de validación debajo de los campos','Aviso verde después de cambiar la contraseña'],from:['Abrir la app sin sesión','Cerrar sesión desde Perfil'],mobile:'Igual que en desktop, con márgenes de 24px.'},
+  {id:'register',name:'Registro',icon:'person_add',q:'screen=register',desc:'Alta de cuenta. Al terminar pasa al onboarding.',parts:['Nombre, email y contraseña','Medidor de seguridad de 4 niveles','Aceptación de términos','Link para volver al login'],from:['Login → “Creá una”','Después de eliminar la cuenta'],mobile:'Igual que en desktop.'},
+  {id:'forgot',name:'Recuperar contraseña',icon:'lock_reset',q:'screen=forgot',desc:'Pide el email para mandar el link de recuperación.',parts:['Botón volver','Email de la cuenta','Enviar link'],from:['Login → “¿Te la olvidaste?”'],mobile:'Igual que en desktop.'},
+  {id:'sent',name:'Mail enviado',icon:'mark_email_read',q:'screen=sent',desc:'Confirmación del envío con opción de reenviar.',parts:['Email destino resaltado','Vencimiento del link (30 min)','Reenviar mail','Volver a entrar'],from:['Recuperar contraseña → Enviar link'],mobile:'Igual que en desktop.'},
+  {id:'reset',name:'Nueva contraseña',icon:'password',q:'screen=reset',desc:'Destino del link del mail.',parts:['Contraseña nueva con medidor','Repetir contraseña','Validación de coincidencia'],from:['Link del mail'],mobile:'Igual que en desktop.'}]},
+ {id:'ob',name:'Onboarding',hue:300,desc:'Cuatro pasos para armar el plan del mes. Se puede saltear y rehacer desde Perfil.',items:[
+  {id:'ob0',name:'1 · Ingresos',icon:'payments',q:'screen=ob0',desc:'Sueldo, día de cobro y otros ingresos en dólares.',parts:['Barra de progreso de 4 pasos','Sueldo neto','Día de cobro','Ingresos en US$'],from:['Registro','Perfil → Ingresos, tarjetas y gastos fijos'],mobile:'Campos apilados en una columna.'},
+  {id:'ob1',name:'2 · Tarjetas',icon:'credit_card',q:'screen=ob1',desc:'Datos del último resumen de cada tarjeta.',parts:['Vista previa de la tarjeta con color del banco','Saldo, mínimo, vencimiento y TNA','Agregar y quitar tarjetas'],from:['Paso 1'],mobile:'Tarjeta y campos en una columna.'},
+  {id:'ob2',name:'3 · Gastos fijos',icon:'receipt',q:'screen=ob2',desc:'Servicios, alquiler, impuestos y suscripciones con su día de vencimiento.',parts:['Lista editable con logo del comercio','Monto y día','Agregar gasto fijo'],from:['Paso 2'],mobile:'Filas compactas.'},
+  {id:'ob3',name:'4 · Estrategia',icon:'route',q:'screen=ob3',desc:'Cómo repartir el dinero libre entre tarjetas.',parts:['Evitar intereses','Avalancha','Bola de nieve','Terminar'],from:['Paso 3'],mobile:'Opciones apiladas.'}]},
+ {id:'empty',name:'Estados vacíos',hue:330,desc:'Lo que ve un usuario nuevo o una sección sin datos. Siempre: qué es la sección, por qué sirve y una acción para empezar.',items:[
+  {id:'e_dash',name:'Inicio: primeros pasos',icon:'checklist',q:'view=dash&empty=1',desc:'Reemplaza el resumen hasta completar 3 de los 5 pasos.',parts:['Saludo con Bolsi','Progreso de 5 pasos','Cada paso lleva a donde se completa','Pasos hechos tachados en verde'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_mov',name:'Movimientos',icon:'receipt_long',q:'view=mov&empty=1',desc:'Sin movimientos en el mes.',parts:['Cargar movimiento','Importar resumen','Tres consejos de uso'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_acc',name:'Cuentas',icon:'account_balance',q:'view=acc&empty=1',desc:'Sin cuentas cargadas.',parts:['Agregar cuenta'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_plan',name:'Plan de pagos',icon:'task_alt',q:'view=plan&empty=1',desc:'Sin tarjetas, préstamos ni gastos fijos.',parts:['Armar mi plan (vuelve al onboarding)'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_goals',name:'Metas',icon:'flag',q:'view=goals&empty=1',desc:'Sin metas de ahorro.',parts:['Crear meta','Consejos: fondo de emergencia, ahorro en dólares'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_inv',name:'Inversiones',icon:'trending_up',q:'view=inv&empty=1',desc:'Sin inversiones registradas.',parts:['Simular plazo fijo'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_shared',name:'Gastos compartidos',icon:'group',q:'view=shared&empty=1',desc:'Sin contactos ni gastos compartidos.',parts:['Agregar contacto'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_debts',name:'Tarjetas y deudas',icon:'credit_card',q:'view=debts&empty=1',desc:'Sin tarjetas, préstamos ni gastos fijos.',parts:['Agregar tarjeta','Agregar gasto fijo'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_cal',name:'Vencimientos',icon:'calendar_month',q:'view=cal&empty=1',desc:'Sin fechas de pago.',parts:['Ir a Tarjetas y deudas'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'},
+  {id:'e_rep',name:'Reportes',icon:'bar_chart',q:'view=rep&empty=1',desc:'Sin movimientos para analizar.',parts:['Cargar movimiento'],from:['Usuario nuevo o sección sin datos'],mobile:'Misma tarjeta centrada a ancho completo; botones apilados si no entran.'}]},
+ {id:'states',name:'Carga y errores',hue:20,desc:'Lo que se ve mientras cargan los datos o cuando algo falla. Nunca se pierde lo cargado.',items:[
+  {id:'st_load',name:'Cargando',icon:'hourglass_top',q:'view=dash&loading=1',desc:'Esqueleto animado mientras llegan los datos al abrir la app o al reintentar.',parts:['Misma estructura que la pantalla final','Brillo animado','Encabezado y menú ya activos'],from:['Abrir la app','Reintentar después de un error'],mobile:'Indicadores en 2 columnas, listas a ancho completo.'},
+  {id:'st_err',name:'Error al cargar',icon:'cloud_off',q:'view=mov&err=1',desc:'Falla la carga de datos del servidor.',parts:['Explicación sin culpar al usuario','Aviso de que los datos están a salvo','Reintentar','Mail de ayuda'],from:['La API no responde o devuelve error'],mobile:'Tarjeta centrada a ancho completo.'},
+  {id:'st_off',name:'Sin conexión',icon:'wifi_off',q:'view=dash&offline=1',desc:'Banda bajo el encabezado mientras no hay internet.',parts:['Cantidad de cambios pendientes','Se puede seguir cargando','Pasa a “Sincronizando” al volver la conexión','Mensaje final con lo sincronizado'],from:['El dispositivo pierde la conexión'],mobile:'Banda a ancho completo bajo el encabezado.'},
+  {id:'st_save',name:'Error al guardar',icon:'error',q:'view=mov&saveerr=1',desc:'Un movimiento no se pudo guardar en el servidor.',parts:['Qué no se guardó','Queda guardado en el dispositivo','Reintentar y cerrar'],from:['Falla el guardado con conexión'],mobile:'Barra sobre la navegación inferior.'},
+  {id:'st_exp',name:'Sesión vencida',icon:'lock_clock',q:'view=dash&screen=expired',desc:'La sesión expiró por inactividad o por seguridad.',parts:['Motivo','Aviso de que no se pierde nada','Volver a entrar'],from:['30 días sin entrar','Cambio de contraseña en otro dispositivo'],mobile:'Igual, con márgenes de 20px.'}]},
+ {id:'layer',name:'Capas',hue:150,desc:'Modales y paneles que se abren sobre cualquier sección.',items:[
+  {id:'modal',name:'Nuevo movimiento',icon:'add_circle',q:'view=dash&screen=modal',desc:'Carga rápida de gasto o ingreso.',parts:['Gasto / Ingreso','Monto con cambio de moneda','Descripción y categoría','Cuenta o tarjeta de pago','Dividir con personas','Fecha y repetir cada mes'],from:['Botón + (o tecla N)'],mobile:'Hoja desde abajo con teclado numérico propio.'},
+  {id:'tx',name:'Detalle de movimiento',icon:'edit_note',q:'view=mov&screen=tx',desc:'Ver y editar un movimiento.',parts:['Monto, descripción, categoría y fecha','Repetir cada mes','Comprobante adjunto (foto)','Eliminar'],from:['Tocar cualquier movimiento'],mobile:'Hoja desde abajo.'},
+  {id:'import',name:'Importar resumen',icon:'upload_file',q:'view=debts&screen=import',desc:'Revisión de los movimientos del resumen antes de cargarlos.',parts:['Elegir tarjeta y archivo (CSV o PDF)','Bancos soportados: BBVA, Galicia, Santander, ICBC, Nación, Ciudad, Macro, Supervielle, Patagonia, Credicoop y Naranja X','Lista con categoría sugerida','Marcas de “Ya cargado” y “Cuota en seguimiento”','Total seleccionado e importar'],from:['Tarjetas y deudas → Importar resumen'],mobile:'Hoja desde abajo; barra de confirmación fija.'},
+  {id:'newmonth',name:'Nuevo mes',icon:'event_repeat',q:'view=dash&screen=newmonth',desc:'Se abre la primera vez que entrás en un mes nuevo. Cierra el anterior y prepara el siguiente.',parts:['Cómo cerró el mes: ingresos, gastos, ahorro y presupuesto','1 · Gastos fijos del mes nuevo como pendientes, con opción de destildar','2 · Presupuesto: mantener, ajustar por inflación o usar lo gastado','3 · Importar el resumen de cada tarjeta','Más tarde (recuerda al día siguiente) o Empezar'],from:['Primer ingreso del mes'],mobile:'Hoja desde abajo con botones fijos.'},
+  {id:'alerts',name:'Alertas',icon:'notifications',q:'view=dash&screen=alerts',desc:'Cierres, vencimientos y presupuestos excedidos.',parts:['Alertas ordenadas por urgencia','Anticipación: 1, 3 o 7 días','Avisos en la app (siempre)','Avisos por mail: cada aviso o resumen diario'],from:['Campana del encabezado'],mobile:'Panel a ancho completo.'},
+  {id:'profile',name:'Perfil y configuración',icon:'manage_accounts',q:'view=dash&screen=profile',desc:'Datos de la cuenta y preferencias.',parts:['Nombre, email y cambio de contraseña','Tema, moneda, cotización, estrategia y avisos','Rehacer onboarding','Cerrar sesión y eliminar cuenta'],from:['Avatar de la barra lateral','Mobile: avatar del encabezado'],mobile:'Pantalla completa.'}]}
+];
+const APPG = [["Día a día",200,["dash","mov","acc","budget"],"Lo que pasa con tu plata este mes."],["Planificación",265,["plan","goals","inv","shared"],"Cómo pagar, ahorrar, invertir y dividir."],["Deudas",30,["debts","cal"],"Tarjetas, préstamos y fechas de pago."],["Análisis",95,["rep"],"Cómo vienen tus números mes a mes."]];
+APP_SRC.forEach(it=>{ it.from = it.from.map(f=>f.replace(/Menú → ([^(]+?) \(\d+\)/,'Menú → $1').replace(/^Menú → /,'Menú → ')); it.mobile = it.mobile.replace(/^(Accesible desde la barra inferior\. |En “Más”\. )/,''); });
+GROUPS.splice(2,0,...APPG.map(([name,hue,ids,desc])=>({id:name,name,hue,desc:desc+' En desktop es un ítem de la barra lateral con pestañas arriba; en mobile, un botón de la barra inferior.',items:ids.map(id=>{const it=APP_SRC.find(x=>x.id===id);return {...it,from:[`Menú → ${name} → ${it.name}`,...it.from.filter(f=>!/^Menú/.test(f))],mobile:`Barra inferior → ${name}${ids.length>1?' → pestaña '+it.name:''}. `+it.mobile};})})));
+const ALL = GROUPS.flatMap((g,gi)=>g.items.map((s,i)=>({...s,gi,code:`${gi+1}.${String(i+1).padStart(2,'0')}`,group:g.name})));
+
+class Component extends DCLogic {
+  state = { sel:(()=>{ try { return localStorage.getItem('albolsillo.map.sel')||'dash'; } catch(e) { return 'dash'; } })(), mode:'single', theme:'light', dw:900 };
+  componentDidMount() {
+    this.measure = () => { const el = document.querySelector('[data-desk]'); if (el && el.clientWidth && Math.abs(el.clientWidth-this.state.dw)>1) this.setState({dw:el.clientWidth}); };
+    window.addEventListener('resize', this.measure);
+    try { this.ro = new ResizeObserver(()=>this.measure()); } catch(e) {}
+    this.watch = (n=0) => { const el = document.querySelector('[data-desk]');
+      if (el && el.clientWidth) { this.measure(); if (this.ro && this._obs!==el) { this.ro.disconnect(); this.ro.observe(el); this._obs = el; } }
+      else if (n < 120) requestAnimationFrame(()=>this.watch(n+1)); };
+    this.watch();
+    this.onKey = e => { if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return; if (e.key==='ArrowRight') this.step(1); if (e.key==='ArrowLeft') this.step(-1); };
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentDidUpdate(pp, ps) { ps = ps || {}; if (ps.mode!==this.state.mode || ps.sel!==this.state.sel) this.watch(); try { localStorage.setItem('albolsillo.map.sel', this.state.sel); } catch(e) {} }
+  componentWillUnmount() { this.ro && this.ro.disconnect(); window.removeEventListener('keydown', this.onKey); window.removeEventListener('resize', this.measure); }
+  step(d) { const i = ALL.findIndex(s=>s.id===this.state.sel); this.setState({sel:ALL[(i+d+ALL.length)%ALL.length].id}); }
+  renderVals() {
+    const s = this.state, url = (q,w) => `${APP}?demo=1&theme=${s.theme}&${q}`;
+    const pick = id => () => { this.setState({sel:id,mode:'single'}); window.scrollTo({top:0,behavior:'smooth'}); };
+    const cur = ALL.find(x=>x.id===s.sel) || ALL[0], G = GROUPS[cur.gi], col = h => `oklch(0.78 0.13 ${h})`;
+    const seg = (v,opts,set) => opts.map(([k,l])=>({label:l,go:()=>set(k),bg:v===k?'#447bf6':'transparent',fg:v===k?'#fff':'#8b90a0'}));
+    const scale = Math.min(1, s.dw/1280);
+    return { mapReady:true,
+      countLabel:`${ALL.length} pantallas en ${GROUPS.length} grupos`,
+      modeOpts:seg(s.mode,[['single','Pantalla por pantalla'],['all','Todas en mobile']],v=>this.setState({mode:v})),
+      themeOpts:seg(s.theme,[['dark','Oscuro'],['light','Claro']],v=>this.setState({theme:v})),
+      isSingle:s.mode==='single', isAll:s.mode==='all',
+      groups:GROUPS.map((g,gi)=>({n:gi+1,name:g.name,desc:g.desc,count:`${g.items.length}`,col:col(g.hue),tint:`oklch(0.78 0.13 ${g.hue} / .16)`,
+        items:g.items.map((it,i)=>{ const on = s.mode==='single' && it.id===s.sel; return {name:it.name,icon:it.icon,code:`${gi+1}.${String(i+1).padStart(2,'0')}`,go:pick(it.id),
+          mobUrl:url(it.q),border:on?col(g.hue):'transparent',bg:on?`oklch(0.78 0.13 ${g.hue} / .12)`:'transparent'}; })})),
+      cur:{...cur,col:col(G.hue),parts:cur.parts.map(t=>({t})),from:cur.from.map(t=>({t})),deskUrl:url(cur.q),mobUrl:url(cur.q),openUrl:url(cur.q)},
+      deskScale:String(scale), deskH:Math.round(820*scale)+'px',
+      prev:()=>this.step(-1), next:()=>this.step(1)
+    };
+  }
+}
+</script>
+</body>
+</html>
