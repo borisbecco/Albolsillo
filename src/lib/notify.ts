@@ -7,7 +7,7 @@ import { monthRange } from "@/lib/transactions";
 // Avisos de vencimientos: qué avisarle a cada usuario hoy (mail y push).
 
 export type DueItem = {
-  kind: "card" | "bill";
+  kind: "card" | "bill" | "loan";
   name: string;
   day: number;
   daysLeft: number;
@@ -36,7 +36,7 @@ export async function buildNotice(userId: string, today = todayAR()): Promise<No
   const yesterday = todayAR(new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000));
   const live = { userId, deletedAt: null };
 
-  const [user, cards, bills, payments, txs, budgets, fx] = await Promise.all([
+  const [user, cards, bills, payments, txs, budgets, fx, loans] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: userId } }),
     prisma.card.findMany({ where: live }),
     prisma.bill.findMany({ where: live }),
@@ -44,6 +44,7 @@ export async function buildNotice(userId: string, today = todayAR()): Promise<No
     prisma.transaction.findMany({ where: { ...live, date: monthRange(month) } }),
     prisma.budget.findMany({ where: { ...live, month } }),
     prisma.fxRate.findMany(),
+    prisma.loan.findMany({ where: live }),
   ]);
   const rate = user.rateType === "manual" ? Number(user.manualRate ?? 0) : Number(fx.find((f) => f.type === user.rateType)?.sell ?? 0);
   const toArs = (n: number, c: string) => (c === "USD" ? n * rate : n);
@@ -54,7 +55,9 @@ export async function buildNotice(userId: string, today = todayAR()): Promise<No
   for (const t of txs) if (t.type === "out") byCat[t.categoryId] = (byCat[t.categoryId] ?? 0) + toArs(Number(t.amount), t.currency);
   const paid = new Set(payments.map((p) => p.billId));
   const pending = bills.filter((b) => !paid.has(b.id));
-  const pendingFixed = pending.reduce((s, b) => s + toArs(Number(b.amount), b.currency), 0);
+  const pendingLoans = loans.filter((l) => l.n < l.of && l.lastPaidMonth !== month);
+  const pendingFixed =
+    pending.reduce((s, b) => s + toArs(Number(b.amount), b.currency), 0) + pendingLoans.reduce((s, l) => s + Number(l.installment), 0);
   const limitOf = (id: string) => Number(budgets.find((b) => b.categoryId === id)?.amount ?? CATEGORY_BY_ID[id]?.budget ?? 0);
   const outCats = CATEGORIES.filter((c) => c.type === "out" && c.id !== "prestamo");
   const reserve = outCats.filter((c) => c.kind === "var").reduce((s, c) => s + Math.max(0, limitOf(c.id) - (byCat[c.id] ?? 0)), 0);
@@ -83,6 +86,12 @@ export async function buildNotice(userId: string, today = todayAR()): Promise<No
     const left = d - day;
     if (left < 0 || left > user.alertDays || b.autoDebit) continue;
     due.push({ kind: "bill", name: b.name, day: d, daysLeft: left, amount: Number(b.amount), currency: b.currency });
+  }
+  for (const l of pendingLoans) {
+    const d = Math.min(l.dueDay, lastDay);
+    const left = d - day;
+    if (left < 0 || left > user.alertDays) continue;
+    due.push({ kind: "loan", name: `Cuota ${l.n + 1}/${l.of} · ${l.name}`, day: d, daysLeft: left, amount: Number(l.installment), currency: "ARS" });
   }
   due.sort((a, b) => a.daysLeft - b.daysLeft);
 

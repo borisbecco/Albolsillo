@@ -73,6 +73,14 @@ export const DELETE = handle(async (req: Request, { params }: Ctx) => {
   await prisma.$transaction(async (db) => {
     await db.transaction.update({ where: { id }, data: { deletedAt: new Date() } });
     await applyToBalance(db, prev, -1);
+    // Si era la última cuota pagada de un préstamo, el préstamo vuelve atrás.
+    const loan = await db.loan.findFirst({ where: { lastPaymentTxId: id, deletedAt: null } });
+    if (loan) {
+      await db.loan.update({
+        where: { id: loan.id },
+        data: { n: Math.max(0, loan.n - 1), balance: { increment: loan.installment }, lastPaidMonth: null, lastPaymentTxId: null, paidThisMonth: false },
+      });
+    }
     // Si era el pago de un gasto fijo, el gasto vuelve a quedar pendiente.
     if (prev.billId) {
       await db.billPayment.updateMany({ where: { transactionId: id, deletedAt: null }, data: { deletedAt: new Date(), transactionId: null } });

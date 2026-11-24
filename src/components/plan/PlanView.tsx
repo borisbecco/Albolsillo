@@ -41,14 +41,14 @@ const STRATS: { id: Strategy; label: string; prio: string; icon: string; how: st
 
 export function PlanView() {
   const { user, updatePrefs, flash } = useShell();
-  const { cards, bills, toDisplay, payBill } = useData();
-  const { plan, interest, income, C, pendingFixed, pendingBills, reserve } = useSummary();
+  const { cards, bills, loans, toDisplay, payBill, payLoan } = useData();
+  const { plan, interest, income, C, pendingFixed, pendingBills, pendingLoans, reserve } = useSummary();
   const cur = user.display_currency;
   const fmt = (n: number) => formatMoney(toDisplay(n, "ARS"), cur);
   const month = currentMonth();
   const mShort = MONTH_SHORT[Number(month.slice(5)) - 1];
 
-  if (!cards.length && !bills.length) return <EmptyState copy={EMPTY.plan!} />;
+  if (!cards.length && !bills.length && !loans.length) return <EmptyState copy={EMPTY.plan!} />;
 
   const avoided = plan.rows.reduce((s, r) => s + r.avoidedInterest, 0);
   const paying = plan.rows.reduce((s, r) => s + r.nextInterest, 0);
@@ -224,7 +224,7 @@ export function PlanView() {
           <span>Pagos fijos pendientes</span>
           <span className={p.mut}>{fmt(pendingFixed)}</span>
         </div>
-        {pendingBills.length ? (
+        {pendingBills.length || pendingLoans.length ? (
           <div className={p.fixed}>
             {pendingBills.map((b) => {
               const due = dueInfo(month, b.due_day, false);
@@ -243,6 +243,30 @@ export function PlanView() {
                   <span className={p.fixedName}>{b.name}</span>
                   <div className={p.fixedBottom}>
                     <strong>{formatMoney(Number(b.amount), b.currency)}</strong>
+                    <span style={{ color: due.color }}>{due.label}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {pendingLoans.map((l) => {
+              const due = dueInfo(month, l.due_day, false);
+              return (
+                <div key={l.id} className={p.fixedItem}>
+                  <div className={p.fixedTop}>
+                    <CatIcon id="prestamo" />
+                    <button
+                      className={`${p.check} material-symbols-rounded`}
+                      title="Marcar la cuota como pagada"
+                      onClick={async () => (await payLoan(l.id, month)) && flash(`Cuota de ${l.name} pagada`, "gasto")}
+                    >
+                      check
+                    </button>
+                  </div>
+                  <span className={p.fixedName}>
+                    {l.name} · {l.n + 1}/{l.of}
+                  </span>
+                  <div className={p.fixedBottom}>
+                    <strong>{formatMoney(Number(l.installment), "ARS")}</strong>
                     <span style={{ color: due.color }}>{due.label}</span>
                   </div>
                 </div>

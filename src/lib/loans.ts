@@ -1,0 +1,31 @@
+import type { Loan } from "@prisma/client";
+import { z } from "zod";
+
+const money = z.string().regex(/^\d{1,12}(\.\d{1,2})?$/, "Revisá los montos");
+
+export const LoanFields = z.object({
+  name: z.string().trim().min(1, "Poné un nombre al préstamo").max(60),
+  installment: money.refine((v) => Number(v) > 0, "Poné el valor de la cuota"),
+  due_day: z.number().int().min(1, "El día va de 1 a 31").max(31, "El día va de 1 a 31"),
+  /** Cuotas ya pagadas */
+  n: z.number().int().min(0).max(600),
+  of: z.number().int().min(1, "Poné la cantidad de cuotas").max(600),
+  tna: z.string().regex(/^\d{1,3}(\.\d{1,2})?$/, "Revisá la TNA"),
+  balance: money,
+});
+
+export function loanDto(l: Loan) {
+  return {
+    id: l.id,
+    name: l.name,
+    installment: l.installment.toFixed(2),
+    due_day: l.dueDay,
+    n: l.n,
+    of: l.of,
+    tna: l.tna.toFixed(2),
+    balance: l.balance.toFixed(2),
+    last_paid_month: l.lastPaidMonth,
+  };
+}
+
+export type LoanDto = ReturnType<typeof loanDto>;

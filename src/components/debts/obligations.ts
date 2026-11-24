@@ -8,7 +8,7 @@ import { todayAR } from "@/components/tx/parts";
 
 export type Obligation = {
   key: string;
-  kind: "bill" | "card";
+  kind: "bill" | "card" | "loan";
   id: string;
   name: string;
   day: number;
@@ -25,9 +25,9 @@ export const daysInMonth = (ym: string) => {
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 };
 
-/** Vencimientos del mes: gastos fijos (con su pago) y tarjetas (saldo a pagar). */
+/** Vencimientos del mes: gastos fijos y préstamos (con su pago) y tarjetas (saldo a pagar). */
 export function useObligations(month: string): Obligation[] {
-  const { bills, cards, isBillPaid } = useData();
+  const { bills, cards, loans, isBillPaid } = useData();
   return useMemo(() => {
     const last = daysInMonth(month);
     const list: Obligation[] = [
@@ -57,9 +57,23 @@ export function useObligations(month: string): Obligation[] {
           bank: c.bank as BankId | null,
           paid: false,
         })),
+      ...loans
+        .filter((l) => l.n < l.of || l.last_paid_month === month)
+        .map((l) => ({
+          key: `loan:${l.id}`,
+          kind: "loan" as const,
+          id: l.id,
+          name: l.name,
+          day: Math.min(l.due_day, last),
+          amount: Number(l.installment),
+          currency: "ARS" as const,
+          categoryId: "prestamo",
+          bank: null,
+          paid: l.last_paid_month === month,
+        })),
     ];
     return list.sort((a, b) => a.day - b.day || a.name.localeCompare(b.name));
-  }, [bills, cards, isBillPaid, month]);
+  }, [bills, cards, loans, isBillPaid, month]);
 }
 
 /** Etiqueta y color del vencimiento respecto de hoy. */

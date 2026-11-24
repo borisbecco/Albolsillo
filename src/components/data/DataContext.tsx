@@ -7,6 +7,7 @@ import type { AccountDto, BillDto, CardDto, InstallmentDto, PersonDto, TxDto } f
 import type { ParsedRow } from "@/lib/import/statement";
 import type { GoalDto, InvestmentDto } from "@/lib/savings";
 import type { SharedDto } from "@/lib/shared";
+import type { LoanDto } from "@/lib/loans";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
 import { CATEGORY_BY_ID } from "@/lib/categories";
@@ -29,7 +30,10 @@ export type Bootstrap = {
   investments: InvestmentDto[];
   shared: SharedDto[];
   installments: InstallmentDto[];
+  loans: LoanDto[];
 };
+
+export type LoanDraft = { name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string };
 
 export type ImportPreview = {
   import_id: string;
@@ -148,6 +152,11 @@ type Data = {
   /** Reintenta todas las altas pendientes (al volver la conexión). */
   retryPending: () => Promise<number>;
   installments: InstallmentDto[];
+  loans: LoanDto[];
+  saveLoan: (id: string | null, l: LoanDraft) => Promise<boolean>;
+  deleteLoan: (id: string) => Promise<boolean>;
+  payLoan: (id: string, month: string) => Promise<boolean>;
+  unpayLoan: (id: string) => Promise<boolean>;
   importStatement: (cardId: string, file: File) => Promise<ImportPreview | null>;
   confirmImport: (importId: string, rowIds: string[], categories: Record<string, string>) => Promise<number | null>;
   startMonth: (d: { month: string; budget_mode: "keep" | "infl" | "spent"; budgets: { category_id: string; amount: number }[]; drop_bills: string[] }) => Promise<boolean>;
@@ -211,6 +220,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [people, setPeople] = useState(initial.people);
   const [shared, setShared] = useState(initial.shared);
   const [installments, setInstallments] = useState(initial.installments);
+  const [loans, setLoans] = useState(initial.loans);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -382,6 +392,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         moveBalances(delta(prev, -1));
         // Si era el pago de un gasto fijo, vuelve a quedar pendiente.
         if (prev.bill_id) setBillPayments((l) => l.filter((p) => p.transaction_id !== id));
+        if (prev.category_id === "prestamo") api<{ loans: LoanDto[] }>("/loans").then((r) => setLoans(r.loans)).catch(() => {});
         return true;
       } catch {
         setTransactions((list) => sortTx([...list, prev]));
@@ -787,6 +798,71 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail, setUser],
   );
 
+  // ─── Préstamos ───
+
+  const saveLoan = useCallback(
+    async (id: string | null, l: LoanDraft) => {
+      try {
+        const res = await api<{ loan: LoanDto }>(id ? `/loans/${id}` : "/loans", { method: id ? "PATCH" : "POST", body: JSON.stringify(l) });
+        setLoans((list) => (id ? list.map((x) => (x.id === id ? res.loan : x)) : [...list, res.loan]));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar el préstamo. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const deleteLoan = useCallback(
+    async (id: string) => {
+      try {
+        await api(`/loans/${id}`, { method: "DELETE" });
+        setLoans((list) => list.filter((x) => x.id !== id));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos eliminar el préstamo. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const payLoan = useCallback(
+    async (id: string, month: string) => {
+      try {
+        const res = await api<{ loan: LoanDto; transaction: TxDto; account: AccountDto | null }>(`/loans/${id}/pay`, {
+          method: "POST",
+          body: JSON.stringify({ month, today: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()) }),
+        });
+        setLoans((list) => list.map((x) => (x.id === id ? res.loan : x)));
+        setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
+        replaceAccount(res.account);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos registrar la cuota. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
+  const unpayLoan = useCallback(
+    async (id: string) => {
+      try {
+        const res = await api<{ loan: LoanDto; removed_transaction_id: string | null; account: AccountDto | null }>(`/loans/${id}/pay`, { method: "DELETE" });
+        setLoans((list) => list.map((x) => (x.id === id ? res.loan : x)));
+        if (res.removed_transaction_id) setTransactions((l) => l.filter((t) => t.id !== res.removed_transaction_id));
+        replaceAccount(res.account);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos deshacer el pago. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
   // ─── Importar resumen ───
 
   const importStatement = useCallback(
@@ -862,6 +938,11 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     retryPending,
     startMonth,
     installments,
+    loans,
+    saveLoan,
+    deleteLoan,
+    payLoan,
+    unpayLoan,
     importStatement,
     confirmImport,
     fx,

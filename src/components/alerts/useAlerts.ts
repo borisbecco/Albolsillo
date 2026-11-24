@@ -33,8 +33,8 @@ export function useAlerts(): Alert[] {
       if (d > user.alert_days) continue;
       list.push({
         key: o.key,
-        icon: o.kind === "card" ? "credit_card" : "receipt_long",
-        title: o.kind === "card" ? `Vence ${o.name}` : o.name,
+        icon: o.kind === "card" ? "credit_card" : o.kind === "loan" ? "account_balance" : "receipt_long",
+        title: o.kind === "card" ? `Vence ${o.name}` : o.kind === "loan" ? `Cuota de ${o.name}` : o.name,
         sub: `${when(d)} · ${formatMoney(o.amount, o.currency)}`,
         color: d <= 1 ? "var(--red)" : "var(--amb)",
         order: d,

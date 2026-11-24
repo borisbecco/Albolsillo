@@ -9,6 +9,7 @@ import { NewTxModal } from "@/components/tx/NewTxModal";
 import { SaveErrorBar, TxDetail } from "@/components/tx/TxDetail";
 import { BillSheet } from "@/components/debts/BillSheet";
 import { CardSheet } from "@/components/debts/CardSheet";
+import { LoanSheet } from "@/components/debts/LoanSheet";
 import { AlertsPanel } from "@/components/alerts/AlertsPanel";
 import { useAlerts } from "@/components/alerts/useAlerts";
 import { NewMonthModal, laterToday } from "@/components/month/NewMonthModal";
@@ -275,6 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SaveErrorBar />
       {debtSheet?.kind === "card" && <CardSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "bill" && <BillSheet id={debtSheet.id} onClose={closeDebtSheet} />}
+      {debtSheet?.kind === "loan" && <LoanSheet id={debtSheet.id} onClose={closeDebtSheet} />}
     </div>
   );
 }

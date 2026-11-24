@@ -53,7 +53,7 @@ type Shell = {
   setMovAccount: (id: string | null) => void;
 };
 
-export type DebtSheet = { kind: "card" | "bill"; id: string | null } | null;
+export type DebtSheet = { kind: "card" | "bill" | "loan"; id: string | null } | null;
 
 const Ctx = createContext<Shell | null>(null);
 

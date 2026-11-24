@@ -16,11 +16,11 @@ import d from "./debts.module.css";
 
 export function DebtsView() {
   const { month, isPastMonth, flash, setDebtSheet, setImportFor } = useShell();
-  const { cards, bills, installments, isBillPaid, payBill, unpayBill, toDisplay, user } = useDebtsData();
+  const { cards, bills, loans, installments, isBillPaid, payBill, unpayBill, payLoan, unpayLoan, toDisplay, user } = useDebtsData();
   const [busyBill, setBusyBill] = useState<string | null>(null);
   const mShort = MONTH_SHORT[Number(month.slice(5)) - 1];
 
-  if (!cards.length && !bills.length) {
+  if (!cards.length && !bills.length && !loans.length) {
     return <EmptyState copy={EMPTY.debts!} />;
   }
 
@@ -30,6 +30,14 @@ export function DebtsView() {
     const ok = paid ? await unpayBill(id, month) : await payBill(id, month);
     setBusyBill(null);
     if (ok && !paid) flash(`${name} marcado como pagado`, "gasto");
+  };
+
+  const toggleLoan = async (id: string, name: string, paid: boolean) => {
+    if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
+    setBusyBill(id);
+    const ok = paid ? await unpayLoan(id) : await payLoan(id, month);
+    setBusyBill(null);
+    if (ok && !paid) flash(`Cuota de ${name} pagada`, "gasto");
   };
 
   const pending = bills.filter((b) => !isBillPaid(b.id, month));
@@ -151,6 +159,56 @@ export function DebtsView() {
           <button className={d.addRow} onClick={() => setDebtSheet({ kind: "bill", id: null })}>
             <span className="material-symbols-rounded">add</span>
             Agregar gasto fijo
+          </button>
+        </div>
+      </section>
+
+      <section className={d.block}>
+        <span className={d.blockTitle}>Préstamos</span>
+        <div className={d.list}>
+          {loans.map((l) => {
+            const paid = l.last_paid_month === month;
+            const done = l.n >= l.of && !paid;
+            const due = dueInfo(month, l.due_day, paid);
+            return (
+              <div key={l.id} className={d.row}>
+                <CatIcon id="prestamo" />
+                <button className={d.rowMain} onClick={() => setDebtSheet({ kind: "loan", id: l.id })}>
+                  <strong>{l.name}</strong>
+                  <span className={d.rowSub}>
+                    Cuota {formatMoney(Number(l.installment), "ARS")}
+                    {Number(l.tna) ? ` · TNA ${Number(l.tna)}%` : ""} · día {l.due_day}
+                  </span>
+                  <span className={d.cuotaBar} style={{ width: "100%" }}>
+                    <span className={d.loanTrack}>
+                      <span style={{ width: `${(l.n / l.of) * 100}%` }} />
+                    </span>
+                    <span>
+                      {l.n} de {l.of}
+                    </span>
+                  </span>
+                  <span className={d.rowSub} style={{ color: done ? "var(--pos)" : due.color, width: "100%" }}>
+                    {done ? "Préstamo terminado 🎉" : `${due.label} · resta ${formatMoney(Number(l.balance), "ARS")}`}
+                  </span>
+                </button>
+                <span className={d.amount}>{formatMoney(Number(l.installment), "ARS")}</span>
+                {!done && (
+                  <button
+                    className={d.pay}
+                    aria-pressed={paid}
+                    disabled={busyBill === l.id || isPastMonth}
+                    title={isPastMonth ? "En un mes pasado no se puede cargar nada" : paid ? "Deshacer el pago" : "Marcar la cuota como pagada"}
+                    onClick={() => toggleLoan(l.id, l.name, paid)}
+                  >
+                    {paid ? "✓ Pagado" : "Marcar pago"}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          <button className={d.addRow} onClick={() => setDebtSheet({ kind: "loan", id: null })}>
+            <span className="material-symbols-rounded">add</span>
+            Agregar préstamo
           </button>
         </div>
       </section>

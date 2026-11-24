@@ -392,3 +392,18 @@ select.input {
   font-size: 12px;
   white-space: nowrap;
 }
+
+.loanTrack {
+  flex: 1;
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--elev);
+  overflow: hidden;
+}
+
+.loanTrack > span {
+  display: block;
+  height: 100%;
+  background: var(--blue);
+}

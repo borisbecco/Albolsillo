@@ -11,7 +11,7 @@ import { useShell } from "@/components/shell/ShellContext";
 /** Resumen del mes elegido (S), el anterior (P) y el plan del mes actual. Todo en pesos. */
 export function useSummary() {
   const { month, user, months } = useShell();
-  const { transactions, bills, cards, isBillPaid, rate, budgetFor } = useData();
+  const { transactions, bills, cards, loans, isBillPaid, rate, budgetFor } = useData();
 
   return useMemo(() => {
     const toArs = (n: number, c: Currency) => (c === "USD" ? (rate ? n * rate : 0) : n);
@@ -24,9 +24,11 @@ export function useSummary() {
     const P = hasPrev ? monthTotals(transactions, prevYm, toArs) : null;
     const C = isCurrent ? S : monthTotals(transactions, cur, toArs);
 
-    // Gastos fijos todavía no pagados este mes.
+    // Gastos fijos y cuotas de préstamos todavía no pagados este mes.
     const pendingBills = bills.filter((b) => !isBillPaid(b.id, cur));
-    const pendingFixed = pendingBills.reduce((s, b) => s + toArs(Number(b.amount), b.currency), 0);
+    const pendingLoans = loans.filter((l) => l.n < l.of && l.last_paid_month !== cur);
+    const pendingFixed =
+      pendingBills.reduce((s, b) => s + toArs(Number(b.amount), b.currency), 0) + pendingLoans.reduce((s, l) => s + Number(l.installment), 0);
 
     // Presupuesto del mes actual por categoría y reserva variable (lo que falta gastar de lo presupuestado).
     const budgets = CATEGORIES.filter((c) => c.type === "out" && c.id !== "prestamo").map((c) => ({
@@ -57,6 +59,6 @@ export function useSummary() {
     const saveRate = S.inc ? (S.inc - projectedOut) / S.inc : 0;
     const prevSaveRate = P && P.inc ? (P.inc - P.out) / P.inc : 0;
 
-    return { toArs, isCurrent, prevYm, S, P, C, pendingFixed, pendingBills, reserve, income, plan, interest, projectedOut, saveRate, prevSaveRate };
-  }, [month, months, user, transactions, bills, cards, isBillPaid, rate, budgetFor]);
+    return { toArs, isCurrent, prevYm, S, P, C, pendingFixed, pendingBills, pendingLoans, reserve, income, plan, interest, projectedOut, saveRate, prevSaveRate };
+  }, [month, months, user, transactions, bills, cards, loans, isBillPaid, rate, budgetFor]);
 }

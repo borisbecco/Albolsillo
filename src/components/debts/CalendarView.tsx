@@ -21,7 +21,7 @@ const dot = (o: Obligation) => (o.kind === "card" ? CARD_COLOR : catColor(o.cate
 
 export function CalendarView() {
   const { month, isPastMonth, flash, setDebtSheet } = useShell();
-  const { cards, bills, payBill, unpayBill } = useData();
+  const { cards, bills, loans, payBill, unpayBill, payLoan, unpayLoan } = useData();
   const obligations = useObligations(month);
   const today = todayAR();
   const isCurrent = today.startsWith(month);
@@ -29,7 +29,7 @@ export function CalendarView() {
   // Al cambiar de mes en el encabezado, la selección vuelve a hoy o al 1.
   const selDay = selected.month === month ? selected.day : isCurrent ? Number(today.slice(8)) : 1;
 
-  if (!cards.length && !bills.length) return <EmptyState copy={EMPTY.cal!} />;
+  if (!cards.length && !bills.length && !loans.length) return <EmptyState copy={EMPTY.cal!} />;
 
   const [y, m] = month.split("-").map(Number);
   const last = daysInMonth(month);
@@ -47,7 +47,14 @@ export function CalendarView() {
 
   const toggle = async (o: Obligation) => {
     if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
-    const ok = o.paid ? await unpayBill(o.id, month) : await payBill(o.id, month);
+    const ok =
+      o.kind === "loan"
+        ? o.paid
+          ? await unpayLoan(o.id)
+          : await payLoan(o.id, month)
+        : o.paid
+          ? await unpayBill(o.id, month)
+          : await payBill(o.id, month);
     if (ok && !o.paid) flash(`${o.name} marcado como pagado`, "gasto");
   };
 
@@ -106,7 +113,7 @@ export function CalendarView() {
                 <span style={{ color: due.color, fontSize: 12 }}>{due.label}</span>
               </button>
               <span className={c.itemAmount}>{formatMoney(o.amount, o.currency)}</span>
-              {o.kind === "bill" && (
+              {o.kind !== "card" && (
                 <button className={c.pay} aria-pressed={o.paid} disabled={isPastMonth} onClick={() => toggle(o)} title={o.paid ? "Deshacer el pago" : "Marcar como pagado"}>
                   <span className="material-symbols-rounded">{o.paid ? "check_circle" : "radio_button_unchecked"}</span>
                 </button>

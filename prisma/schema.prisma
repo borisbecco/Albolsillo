@@ -301,6 +301,9 @@ model Loan {
   tna           Decimal   @default(0) @db.Decimal(7, 2)
   balance       Decimal   @default(0) @db.Decimal(14, 2)
   paidThisMonth Boolean   @default(false) @map("paid_this_month")
+  /// Mes (YYYY-MM) de la última cuota pagada y el movimiento que la registró (para deshacer)
+  lastPaidMonth   String?  @map("last_paid_month") @db.Char(7)
+  lastPaymentTxId String?  @map("last_payment_tx_id") @db.Uuid
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt     DateTime? @map("deleted_at") @db.Timestamptz

@@ -136,7 +136,7 @@ function fillRows(html: string, marker: string, rows: { title: string; sub: stri
 export async function sendDueNotice(
   to: string,
   today: string,
-  item: { kind: "card" | "bill"; name: string; day: number; daysLeft: number; amount: number; min?: number; suggested?: number; suggestedTag?: string },
+  item: { kind: "card" | "bill" | "loan"; name: string; day: number; daysLeft: number; amount: number; min?: number; suggested?: number; suggestedTag?: string },
   strategyLabel: string,
   alertDays: number,
 ) {
@@ -159,14 +159,16 @@ export async function sendDueNotice(
         ? full
           ? "Según tu plan de pagos, te conviene cancelar el total para no pagar intereses este mes."
           : `Según tu plan de pagos, este mes te conviene pagar ${money(item.suggested ?? item.min ?? 0)} (${(item.suggestedTag ?? "mínimo").toLowerCase()}).`
-        : "Es un gasto fijo del mes. Cuando lo pagues, marcalo en la app.",
+        : item.kind === "loan"
+          ? "Es la cuota de tu préstamo. Cuando la pagues, marcala en la app."
+          : "Es un gasto fijo del mes. Cuando lo pagues, marcalo en la app.",
     )
     .replace("Saldo total", isCard ? "Saldo total" : "Monto")
     .replace("$ 486.200", money(item.amount))
     .replace("Pago mínimo", isCard ? "Pago mínimo" : "Vence")
     .replace("$ 98.400", isCard ? money(item.min ?? 0) : `el ${when}`)
     .replace("Sugerido por tu plan", isCard ? "Sugerido por tu plan" : "A pagar")
-    .replace("Estrategia: evitar intereses", isCard ? `Estrategia: ${esc(strategyLabel.toLowerCase())}` : "Gasto fijo")
+    .replace("Estrategia: evitar intereses", isCard ? `Estrategia: ${esc(strategyLabel.toLowerCase())}` : item.kind === "loan" ? "Cuota del préstamo" : "Gasto fijo")
     .replace("$ 486.200", money(isCard ? (item.suggested ?? item.min ?? item.amount) : item.amount))
     .replaceAll("Te avisamos 3 días antes", `Te avisamos ${alertDays} ${alertDays === 1 ? "día" : "días"} antes`)
     .replaceAll("https://albolsillo.app/plan", `${appUrl()}/plan`)
@@ -182,7 +184,7 @@ export async function sendDailySummary(opts: {
   today: string;
   spentYesterday: number;
   available: number;
-  due: { name: string; day: number; daysLeft: number; amount: number; min?: number; kind: "card" | "bill" }[];
+  due: { name: string; day: number; daysLeft: number; amount: number; min?: number; kind: "card" | "bill" | "loan" }[];
   budgetAlerts: { name: string; spent: number; limit: number }[];
   unsubscribeUrl: string;
 }) {

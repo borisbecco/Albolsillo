@@ -6,6 +6,7 @@ import { addMonths, currentMonth } from "@/lib/month";
 import { monthRange } from "@/lib/transactions";
 import { goalDto, investmentDto } from "@/lib/savings";
 import { sharedDto } from "@/lib/shared";
+import { loanDto } from "@/lib/loans";
 
 // GET /me/bootstrap?month=YYYY-MM: todo lo que necesita la app al abrir.
 // Incluye las transacciones de los 6 meses que terminan en `month`.
@@ -16,7 +17,7 @@ export const GET = handle(async (req: Request) => {
 
   const live = { userId, deletedAt: null };
   const months = Array.from({ length: 6 }, (_, i) => addMonths(month, i - 5));
-  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared, installments] = await Promise.all([
+  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared, installments, loans] = await Promise.all([
     prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
     prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
@@ -32,6 +33,7 @@ export const GET = handle(async (req: Request) => {
     prisma.investment.findMany({ where: { ...live, closedAt: null }, orderBy: { startDate: "asc" } }),
     prisma.sharedExpense.findMany({ where: live, orderBy: [{ date: "desc" }, { createdAt: "desc" }] }),
     prisma.cardInstallment.findMany({ where: live, orderBy: { createdAt: "asc" } }),
+    prisma.loan.findMany({ where: live, orderBy: { createdAt: "asc" } }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
 
@@ -45,7 +47,7 @@ export const GET = handle(async (req: Request) => {
     transactions: transactions.map(txDto),
     bills: bills.map(billDto),
     bill_payments: billPayments.map((p) => ({ bill_id: p.billId, month: p.month, transaction_id: p.transactionId })),
-    loans: [],
+    loans: loans.map(loanDto),
     budgets: budgets.map((b) => ({ month: b.month, category_id: b.categoryId, amount: b.amount.toFixed(2) })),
     goals: goals.map(goalDto),
     investments: investments.map(investmentDto),
