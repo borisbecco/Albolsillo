@@ -53,7 +53,14 @@ type Data = {
   failed: Tx | null;
   retryFailed: () => void;
   dismissFailed: () => void;
+  createAccount: (a: AccountDraft) => Promise<AccountDto | null>;
+  updateAccount: (id: string, a: Partial<Omit<AccountDraft, "currency">>) => Promise<boolean>;
+  deleteAccount: (id: string) => Promise<boolean>;
+  transfer: (t: TransferDraft) => Promise<boolean>;
 };
+
+export type AccountDraft = { name: string; kind: AccountDto["kind"]; currency: Currency; balance: string };
+export type TransferDraft = { from_account_id: string; to_account_id: string; amount: string; to_amount?: string };
 
 const Ctx = createContext<Data | null>(null);
 
@@ -261,7 +268,70 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [patchTx, moveBalances, flash],
   );
 
-  const failed =transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
+  // ─── Cuentas: se espera la respuesta del servidor (no son optimistas) ───
+
+  const fail = useCallback(
+    (e: unknown, fallback: string) => flash(e instanceof ApiClientError ? e.message : fallback, "errorguardar"),
+    [flash],
+  );
+
+  const createAccount = useCallback(
+    async (a: AccountDraft) => {
+      try {
+        const res = await api<{ account: AccountDto }>("/accounts", { method: "POST", body: JSON.stringify(a) });
+        setAccounts((list) => [...list, res.account]);
+        return res.account;
+      } catch (e) {
+        fail(e, "No pudimos agregar la cuenta. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail],
+  );
+
+  const updateAccount = useCallback(
+    async (id: string, a: Partial<Omit<AccountDraft, "currency">>) => {
+      try {
+        const res = await api<{ account: AccountDto }>(`/accounts/${id}`, { method: "PATCH", body: JSON.stringify(a) });
+        setAccounts((list) => list.map((x) => (x.id === id ? res.account : x)));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar la cuenta. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const deleteAccount = useCallback(
+    async (id: string) => {
+      try {
+        await api(`/accounts/${id}`, { method: "DELETE" });
+        setAccounts((list) => list.filter((x) => x.id !== id));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos eliminar la cuenta. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const transfer = useCallback(
+    async (t: TransferDraft) => {
+      try {
+        const res = await api<{ accounts: AccountDto[] }>("/transfers", { method: "POST", body: JSON.stringify(t) });
+        setAccounts((list) => list.map((x) => res.accounts.find((u) => u.id === x.id) ?? x));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos hacer la transferencia. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
     transactions,
@@ -281,6 +351,10 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       void send({ ...failed, status: "pending" }).then((r) => r?.status === "synced" && flash("Guardado", failed.type === "in" ? "ingreso" : "gasto"));
     },
     dismissFailed: () => setFailedId(null),
+    createAccount,
+    updateAccount,
+    deleteAccount,
+    transfer,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

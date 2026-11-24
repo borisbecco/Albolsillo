@@ -225,8 +225,11 @@ model Transfer {
   userId        String    @map("user_id") @db.Uuid
   fromAccountId String    @map("from_account_id") @db.Uuid
   toAccountId   String    @map("to_account_id") @db.Uuid
+  /// Lo que sale de la cuenta de origen, en su moneda
   amount        Decimal   @db.Decimal(14, 2)
   currency      Currency
+  /// Lo que entra en la cuenta destino si tiene otra moneda (p. ej. compra de dólares)
+  toAmount      Decimal?  @map("to_amount") @db.Decimal(14, 2)
   date          DateTime  @db.Date
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz

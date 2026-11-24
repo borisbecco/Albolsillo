@@ -272,6 +272,32 @@
   color: var(--acc);
 }
 
+.addSource {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--r-control);
+  border: 1px dashed var(--line2);
+  background: transparent;
+  color: var(--mut);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.addSource:hover {
+  border-color: var(--acc);
+  color: var(--fg);
+}
+
+.addSource span {
+  font-size: 18px;
+  color: var(--acc2);
+}
+
 .keypad {
   display: none;
   grid-template-columns: repeat(3, 1fr);

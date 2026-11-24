@@ -52,7 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       setDetailId(null);
       return setProfileOpen(false);
     }
-    if (newTxOpen || detailId || profileOpen) return; // con un panel abierto no hay atajos
+    // Con un panel abierto no hay atajos.
+    if (newTxOpen || detailId || profileOpen || document.querySelector('[aria-modal="true"]')) return;
     const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase() ?? "";
     if (["input", "textarea", "select"].includes(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();

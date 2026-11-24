@@ -5,9 +5,8 @@ import { EMPTY, VIEWS, type EmptyAction, type EmptyCopy, type ViewId } from "@/l
 import { useShell } from "./ShellContext";
 import e from "./empty.module.css";
 
-const LATER: Record<Exclude<EmptyAction, "newTx" | "toDebts">, string> = {
+const LATER: Record<Exclude<EmptyAction, "newTx" | "toDebts" | "newAccount">, string> = {
   import: "Importar resumen",
-  newAccount: "Agregar cuenta",
   onboarding: "El onboarding",
   newGoal: "Crear metas",
   simulate: "El simulador",
@@ -18,11 +17,16 @@ const LATER: Record<Exclude<EmptyAction, "newTx" | "toDebts">, string> = {
 
 export function EmptyState({ copy }: { copy: EmptyCopy }) {
   const router = useRouter();
-  const { openNewTx, flash, isPastMonth } = useShell();
+  const { openNewTx, setAccountFormOpen } = useShell();
+  const { flash } = useShell();
 
   const run = (a: EmptyAction) => {
-    if (a === "newTx") return isPastMonth ? flash("En un mes pasado no se puede cargar nada.") : openNewTx();
+    if (a === "newTx") return openNewTx();
     if (a === "toDebts") return router.push(VIEWS.debts.href);
+    if (a === "newAccount") {
+      setAccountFormOpen(true);
+      return router.push(VIEWS.acc.href);
+    }
     flash(`${LATER[a]} llega en un próximo paso.`);
   };
 

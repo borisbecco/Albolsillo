@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ViewEmpty } from "@/components/shell/EmptyState";
+import { AccountsView } from "@/components/accounts/AccountsView";
 import { VIEWS } from "@/lib/nav";
 
 export const metadata: Metadata = { title: `${VIEWS.acc.label} · Albolsillo` };
 
 export default function Page() {
-  return <ViewEmpty view="acc" />;
+  return <AccountsView />;
 }

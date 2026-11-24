@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { VIEWS } from "@/lib/nav";
 import { DEFAULT_CATEGORY, catColor, catTint, pickableCategories } from "@/lib/categories";
 import { guessCategory } from "@/lib/merchants";
 import { maskAmountInput, parseAmount, toDecimal, type Currency } from "@/lib/money";
@@ -19,7 +21,8 @@ export function NewTxModal() {
 }
 
 function Form() {
-  const { closeNewTx, flash } = useShell();
+  const router = useRouter();
+  const { closeNewTx, flash, setAccountFormOpen } = useShell();
   const { accounts, cards, createTx } = useData();
   const isMobile = useIsMobile();
   const amountRef = useRef<HTMLInputElement>(null);
@@ -177,6 +180,20 @@ function Form() {
             </button>
           ))}
         </div>
+
+        {options.length === 0 && (
+          <button
+            className={s.addSource}
+            onClick={() => {
+              closeNewTx();
+              setAccountFormOpen(true);
+              router.push(VIEWS.acc.href);
+            }}
+          >
+            <span className="material-symbols-rounded">add_card</span>
+            {accounts.length ? `No tenés cuentas en ${currency === "USD" ? "dólares" : "pesos"}. Agregá una` : "Agregá tus cuentas para saber de dónde sale cada gasto"}
+          </button>
+        )}
 
         {options.length > 0 && (
           <div className={s.group}>

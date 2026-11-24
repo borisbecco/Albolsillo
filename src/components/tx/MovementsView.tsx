@@ -8,6 +8,7 @@ import { EMPTY } from "@/lib/nav";
 import { useData, type Tx } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
+import { ACCOUNT_KINDS } from "@/components/accounts/kinds";
 import { CatIcon, todayAR } from "./parts";
 import m from "./movements.module.css";
 
@@ -21,8 +22,9 @@ function dayLabel(ymd: string) {
 }
 
 export function MovementsView() {
-  const { month, user, setDetailId } = useShell();
-  const { transactions, toDisplay } = useData();
+  const { month, user, setDetailId, movAccount, setMovAccount } = useShell();
+  const { transactions, accounts, toDisplay } = useData();
+  const accFilter = accounts.find((x) => x.id === movAccount) ?? null;
   const [q, setQ] = useState("");
   const [type, setType] = useState<TypeFilter>("all");
   const [cat, setCat] = useState("all");
@@ -32,11 +34,12 @@ export function MovementsView() {
     const needle = q.trim().toLowerCase();
     return inMonth.filter(
       (t) =>
+        (!accFilter || t.account_id === accFilter.id) &&
         (type === "all" || t.type === type) &&
         (cat === "all" || t.category_id === cat) &&
         (!needle || t.description.toLowerCase().includes(needle) || CATEGORY_BY_ID[t.category_id]?.name.toLowerCase().includes(needle)),
     );
-  }, [inMonth, q, type, cat]);
+  }, [inMonth, q, type, cat, accFilter]);
 
   const cur = user.display_currency;
   const sumOf = (list: Tx[], ty: "in" | "out") => list.filter((t) => t.type === ty).reduce((s, t) => s + toDisplay(Number(t.amount), t.currency), 0);
@@ -89,6 +92,16 @@ export function MovementsView() {
           ))}
         </div>
       </div>
+
+      {accFilter && (
+        <div>
+          <button className={m.accFilter} onClick={() => setMovAccount(null)} title="Quitar filtro">
+            <span className="material-symbols-rounded">{ACCOUNT_KINDS[accFilter.kind].icon}</span>
+            {accFilter.name}
+            <span className="material-symbols-rounded">close</span>
+          </button>
+        </div>
+      )}
 
       <div className={m.cats} role="group" aria-label="Categoría">
         {[{ id: "all", name: "Todas", icon: "apps" }, ...CATEGORIES].map((c) => (

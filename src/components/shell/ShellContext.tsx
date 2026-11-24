@@ -27,6 +27,12 @@ type Shell = {
   closeNewTx: () => void;
   detailId: string | null;
   setDetailId: (id: string | null) => void;
+  /** Formulario "Nueva cuenta" abierto (se puede abrir desde otras pantallas). */
+  accountFormOpen: boolean;
+  setAccountFormOpen: (v: boolean) => void;
+  /** Filtro de Movimientos por cuenta (al tocar una cuenta). */
+  movAccount: string | null;
+  setMovAccount: (id: string | null) => void;
 };
 
 const Ctx = createContext<Shell | null>(null);
@@ -77,6 +83,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
 
   const [newTxOpen, setNewTxOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [accountFormOpen, setAccountFormOpen] = useState(false);
+  const [movAccount, setMovAccount] = useState<string | null>(null);
   const isPastMonth = month !== months[months.length - 1];
   const openNewTx = useCallback(() => {
     if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
@@ -102,6 +110,10 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     closeNewTx,
     detailId,
     setDetailId,
+    accountFormOpen,
+    setAccountFormOpen,
+    movAccount,
+    setMovAccount,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
