@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { maskAmountInput, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
@@ -23,7 +23,10 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
   const [due, setDue] = useState(loan ? String(loan.due_day) : "10");
   const [tna, setTna] = useState(loan ? String(Number(loan.tna)) : "");
   const [balance, setBalance] = useState(loan && Number(loan.balance) ? toInput(loan.balance) : "");
-  const [balanceTouched, setBalanceTouched] = useState(!!loan);
+  // El saldo se calcula solo (cuotas que faltan × cuota) hasta que lo escribís a mano.
+  // Al editar se muestra el guardado, pero si cambiás cuota o cuotas se vuelve a calcular.
+  const [balanceTouched, setBalanceTouched] = useState(false);
+  const [termsChanged, setTermsChanged] = useState(!loan);
   const [confirmDel, setConfirmDel] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -36,7 +39,15 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
 
   // Saldo sugerido: cuotas que faltan × valor de la cuota (se puede corregir).
   const suggested = Math.max(0, Number(of) - Number(n)) * parseAmount(installment);
-  const balanceShown = balanceTouched ? balance : suggested ? toInput(Math.round(suggested)) : "";
+  const balanceShown = balanceTouched || !termsChanged ? balance : suggested ? toInput(Math.round(suggested)) : "";
+  const left = Math.max(0, Number(of) - Number(n));
+  const terms =
+    <T,>(fn: (v: T) => void) =>
+    (v: T) => {
+      setErr("");
+      setTermsChanged(true);
+      fn(v);
+    };
 
   const save = async () => {
     if (!name.trim()) return setErr("Poné un nombre al préstamo");
@@ -95,7 +106,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
           </label>
           <label className={d.field}>
             Cuota
-            <input className={d.input} value={installment} onChange={(e) => edit(setInstallment)(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+            <input className={d.input} value={installment} onChange={(e) => terms(setInstallment)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
           </label>
           <label className={d.field}>
             Vence (día)
@@ -103,15 +114,15 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
           </label>
           <label className={d.field}>
             Cuotas pagadas
-            <input className={d.input} value={n} onChange={(e) => edit(setN)(digits(e.target.value, 3))} inputMode="numeric" />
+            <input className={d.input} value={n} onChange={(e) => terms(setN)(digits(e.target.value, 3))} inputMode="numeric" />
           </label>
           <label className={d.field}>
             Total de cuotas
-            <input className={d.input} value={of} onChange={(e) => edit(setOf)(digits(e.target.value, 3))} inputMode="numeric" />
+            <input className={d.input} value={of} onChange={(e) => terms(setOf)(digits(e.target.value, 3))} inputMode="numeric" />
           </label>
           <label className={d.field}>
             TNA %
-            <input className={d.input} value={tna} onChange={(e) => edit(setTna)(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+            <input className={d.input} value={tna} onChange={(e) => edit(setTna)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
           </label>
           <label className={d.field}>
             Saldo restante
@@ -120,7 +131,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
               value={balanceShown}
               onChange={(e) => {
                 setErr("");
-                setBalance(maskAmountInput(e.target.value));
+                setBalance(maskAmountEvent(e));
                 setBalanceTouched(true);
               }}
               inputMode="decimal"
@@ -128,6 +139,13 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
             />
           </label>
         </div>
+        {parseAmount(installment) > 0 && Number(of) > 0 && (
+          <p className={d.hint}>
+            {left
+              ? `Faltan ${left} ${left === 1 ? "cuota" : "cuotas"} de ${formatMoney(parseAmount(installment), "ARS")} · ${formatMoney(left * parseAmount(installment), "ARS")} en total`
+              : "Ya están todas las cuotas pagadas"}
+          </p>
+        )}
         {err && (
           <div className={t.error} role="alert">
             {err}

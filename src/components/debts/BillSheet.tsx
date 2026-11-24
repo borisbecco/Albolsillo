@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CATEGORY_BY_ID, pickableCategories } from "@/lib/categories";
 import { guessCategory } from "@/lib/merchants";
-import { maskAmountInput, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
+import { maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { CatIcon, sourceKey, sourceOptions, splitSource } from "@/components/tx/parts";
@@ -102,7 +102,7 @@ export function BillSheet({ id, onClose }: { id: string | null; onClose: () => v
             aria-label="Monto"
             onChange={(e) => {
               setErr("");
-              setAmount(maskAmountInput(e.target.value));
+              setAmount(maskAmountEvent(e));
             }}
           />
         </div>

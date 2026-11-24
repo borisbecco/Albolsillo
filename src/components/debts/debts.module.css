@@ -407,3 +407,9 @@ select.input {
   height: 100%;
   background: var(--blue);
 }
+
+.hint {
+  margin: 4px 0 0;
+  color: var(--mut);
+  font-size: 13px;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatMoney, maskAmountInput, parseAmount, toDecimal } from "@/lib/money";
+import { formatMoney, maskAmountEvent, parseAmount, toDecimal } from "@/lib/money";
 import { MONTH_FULL } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import type { InvestmentDto } from "@/lib/savings";
@@ -194,11 +194,11 @@ function Simulator({ ipcAvg, hasAccounts }: { ipcAvg: number; hasAccounts: boole
       <div className={s.row}>
         <label className={s.field} style={{ flex: "1 1 160px" }}>
           Monto en pesos
-          <input className={s.input} value={amount} onChange={(e) => setAmount(maskAmountInput(e.target.value))} inputMode="decimal" />
+          <input className={s.input} value={amount} onChange={(e) => setAmount(maskAmountEvent(e))} inputMode="decimal" />
         </label>
         <label className={s.field} style={{ flex: "0 1 110px" }}>
           TNA %
-          <input className={s.input} value={tna} onChange={(e) => setTna(maskAmountInput(e.target.value))} inputMode="decimal" />
+          <input className={s.input} value={tna} onChange={(e) => setTna(maskAmountEvent(e))} inputMode="decimal" />
         </label>
         <div className={s.field}>
           Plazo
@@ -317,12 +317,12 @@ function OtherInvestment() {
         </label>
         <label className={s.field} style={{ flex: "1 1 130px" }}>
           Monto ({kind === "usd" ? "US$" : "$"})
-          <input className={s.input} value={amount} onChange={(e) => setAmount(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+          <input className={s.input} value={amount} onChange={(e) => setAmount(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
         </label>
         {kind === "fci" && (
           <label className={s.field} style={{ flex: "0 1 100px" }}>
             TNA %
-            <input className={s.input} value={tna} onChange={(e) => setTna(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+            <input className={s.input} value={tna} onChange={(e) => setTna(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
           </label>
         )}
         <label className={s.field} style={{ flex: "1 1 160px" }}>

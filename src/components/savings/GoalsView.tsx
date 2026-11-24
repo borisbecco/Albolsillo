@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { formatMoney, maskAmountInput, parseAmount, toDecimal, type Currency } from "@/lib/money";
+import { formatMoney, maskAmountEvent, parseAmount, toDecimal, type Currency } from "@/lib/money";
 import { MONTH_FULL, addMonths, currentMonth } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import type { GoalDto } from "@/lib/savings";
@@ -127,7 +127,7 @@ function GoalCard({ goal, hue, monthsLeft: ml, need, left }: { goal: GoalDto; hu
           {goal.currency === "USD" ? "US$" : "$"}
           <input
             value={amount}
-            onChange={(e) => setAmount(maskAmountInput(e.target.value))}
+            onChange={(e) => setAmount(maskAmountEvent(e))}
             onKeyDown={(e) => e.key === "Enter" && add()}
             inputMode="decimal"
             placeholder="Monto"
@@ -181,7 +181,7 @@ function NewGoal({ count }: { count: number }) {
         <button type="button" className={s.curBtn} onClick={() => setCurrency((c) => (c === "ARS" ? "USD" : "ARS"))} title="Cambiar moneda">
           {currency === "USD" ? "US$" : "$"}
         </button>
-        <input className={s.input} value={target} onChange={(e) => setTarget(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="Monto objetivo" aria-label="Monto objetivo" />
+        <input className={s.input} value={target} onChange={(e) => setTarget(maskAmountEvent(e))} inputMode="decimal" placeholder="Monto objetivo" aria-label="Monto objetivo" />
       </div>
       <label className={s.field}>
         Fecha objetivo

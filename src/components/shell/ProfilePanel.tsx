@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ApiClientError, api, logout, setAccessToken } from "@/lib/api-client";
 import { MIN_PASSWORD, PASSWORD_LABELS, passwordLevel } from "@/lib/auth/validate";
-import { maskAmountInput, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import type { UserDto } from "@/lib/auth/session";
 import { initials, useShell } from "./ShellContext";
 import p from "./profile.module.css";
@@ -191,7 +191,7 @@ export function ProfilePanel() {
                 className={p.input}
                 style={{ width: 120, textAlign: "right" }}
                 value={manual}
-                onChange={(e) => setManual(maskAmountInput(e.target.value))}
+                onChange={(e) => setManual(maskAmountEvent(e))}
                 onBlur={saveManual}
                 onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
                 inputMode="decimal"

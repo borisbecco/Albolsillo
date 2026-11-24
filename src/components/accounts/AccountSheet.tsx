@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { maskAmountInput, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import type { AccountDto } from "@/lib/dto";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
@@ -76,7 +76,7 @@ export function AccountSheet({ account, onClose }: { account: AccountDto; onClos
             value={balance}
             inputMode="decimal"
             aria-label="Saldo actual"
-            onChange={(e) => setBalance(maskAmountInput(e.target.value))}
+            onChange={(e) => setBalance(maskAmountEvent(e))}
           />
         </div>
         <div className={t.meta}>Cambiar el saldo a mano lo ajusta sin crear un movimiento.</div>

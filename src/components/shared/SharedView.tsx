@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { isValidEmail } from "@/lib/auth/validate";
 import { pickableCategories } from "@/lib/categories";
-import { formatMoney, maskAmountInput, parseAmount, toDecimal } from "@/lib/money";
+import { formatMoney, maskAmountEvent, parseAmount, toDecimal } from "@/lib/money";
 import { MONTH_SHORT } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import { balances } from "@/lib/shared";
@@ -278,7 +278,7 @@ function NewShared({ nameOf }: { nameOf: (id: string) => string }) {
         </label>
         <label className={s.field}>
           Total ($)
-          <input className={s.input} value={total} onChange={(e) => setTotal(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+          <input className={s.input} value={total} onChange={(e) => setTotal(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
         </label>
         <label className={s.field}>
           Pagó

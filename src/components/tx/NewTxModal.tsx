@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { VIEWS } from "@/lib/nav";
 import { DEFAULT_CATEGORY, catColor, catTint, pickableCategories } from "@/lib/categories";
 import { guessCategory } from "@/lib/merchants";
-import { formatMoney, maskAmountInput, parseAmount, toDecimal, type Currency } from "@/lib/money";
+import { formatMoney, maskAmountEvent, maskAmountInput, parseAmount, toDecimal, type Currency } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { sourceOptions, splitSource, todayAR } from "./parts";
@@ -160,7 +160,7 @@ function Form() {
             placeholder="0"
             aria-label="Monto"
             onChange={(e) => {
-              setAmount(maskAmountInput(e.target.value));
+              setAmount(maskAmountEvent(e));
               setErr("");
             }}
           />

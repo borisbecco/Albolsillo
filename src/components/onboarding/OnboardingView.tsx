@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { detectBank, detectNetwork } from "@/lib/banks";
 import { CATEGORY_BY_ID, catColor, catTint } from "@/lib/categories";
 import { guessCategory } from "@/lib/merchants";
-import { maskAmountInput, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import { currentMonth } from "@/lib/month";
 import type { UserDto } from "@/lib/auth/session";
 import { CardFace } from "@/components/cards/CardFace";
@@ -194,7 +194,7 @@ export function OnboardingView() {
             <div className={o.incomeGrid}>
               <label className={o.field}>
                 Sueldo mensual neto (ARS)
-                <input className={o.big} value={salary} onChange={(e) => edit(setSalary)(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="2.400.000" autoFocus />
+                <input className={o.big} value={salary} onChange={(e) => edit(setSalary)(maskAmountEvent(e))} inputMode="decimal" placeholder="2.400.000" autoFocus />
               </label>
               <label className={o.field}>
                 Día de cobro
@@ -202,7 +202,7 @@ export function OnboardingView() {
               </label>
               <label className={o.field}>
                 Otros ingresos mensuales (US$)
-                <input className={o.big} value={usd} onChange={(e) => edit(setUsd)(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+                <input className={o.big} value={usd} onChange={(e) => edit(setUsd)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
               </label>
             </div>
           )}
@@ -233,11 +233,11 @@ export function OnboardingView() {
                     <div className={o.pair}>
                       <label className={o.field}>
                         Saldo a pagar
-                        <input className={o.small} value={c.balance} onChange={(e) => setCard([c.key, { balance: maskAmountInput(e.target.value) }])} inputMode="decimal" placeholder="0" />
+                        <input className={o.small} value={c.balance} onChange={(e) => setCard([c.key, { balance: maskAmountEvent(e) }])} inputMode="decimal" placeholder="0" />
                       </label>
                       <label className={o.field}>
                         Pago mínimo
-                        <input className={o.small} value={c.min} onChange={(e) => setCard([c.key, { min: maskAmountInput(e.target.value) }])} inputMode="decimal" placeholder="0" />
+                        <input className={o.small} value={c.min} onChange={(e) => setCard([c.key, { min: maskAmountEvent(e) }])} inputMode="decimal" placeholder="0" />
                       </label>
                       <label className={o.field}>
                         Vence (día)
@@ -245,7 +245,7 @@ export function OnboardingView() {
                       </label>
                       <label className={o.field}>
                         TNA %
-                        <input className={o.small} value={c.tna} onChange={(e) => setCard([c.key, { tna: maskAmountInput(e.target.value) }])} inputMode="decimal" />
+                        <input className={o.small} value={c.tna} onChange={(e) => setCard([c.key, { tna: maskAmountEvent(e) }])} inputMode="decimal" />
                       </label>
                       <label className={o.field}>
                         Últimos 4
@@ -290,7 +290,7 @@ export function OnboardingView() {
                       className={o.billInput}
                       style={{ width: 96 }}
                       value={b.amount}
-                      onChange={(e) => setBill([b.key, { amount: maskAmountInput(e.target.value) }])}
+                      onChange={(e) => setBill([b.key, { amount: maskAmountEvent(e) }])}
                       inputMode="decimal"
                       placeholder="0"
                       aria-label={`Monto de ${b.name || "gasto fijo"}`}

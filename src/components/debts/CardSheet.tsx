@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { detectBank, detectNetwork, estimateCloseDay } from "@/lib/banks";
-import { maskAmountInput, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import { CardFace } from "@/components/cards/CardFace";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
@@ -103,11 +103,11 @@ export function CardSheet({ id, onClose }: { id: string | null; onClose: () => v
           </label>
           <label className={d.field}>
             Saldo a pagar
-            <input className={d.input} value={balance} onChange={(e) => edit(setBalance)(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+            <input className={d.input} value={balance} onChange={(e) => edit(setBalance)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
           </label>
           <label className={d.field}>
             Pago mínimo
-            <input className={d.input} value={min} onChange={(e) => edit(setMin)(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+            <input className={d.input} value={min} onChange={(e) => edit(setMin)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
           </label>
           <label className={d.field}>
             Cierre (día)
@@ -125,7 +125,7 @@ export function CardSheet({ id, onClose }: { id: string | null; onClose: () => v
           </label>
           <label className={d.field}>
             TNA %
-            <input className={d.input} value={tna} onChange={(e) => edit(setTna)(maskAmountInput(e.target.value))} inputMode="decimal" />
+            <input className={d.input} value={tna} onChange={(e) => edit(setTna)(maskAmountEvent(e))} inputMode="decimal" />
           </label>
           <label className={d.field}>
             Últimos 4

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CATEGORIES, CATEGORY_BY_ID } from "@/lib/categories";
-import { maskAmountInput, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
+import { maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
 import { useData, type Tx } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { CatIcon, sourceKey, sourceOptions, splitSource, todayAR } from "./parts";
@@ -91,7 +91,7 @@ function Detail({ tx }: { tx: Tx }) {
             inputMode="decimal"
             aria-label="Monto"
             onChange={(e) => {
-              setAmount(maskAmountInput(e.target.value));
+              setAmount(maskAmountEvent(e));
               setErr("");
             }}
           />

@@ -41,3 +41,25 @@ export function maskAmountInput(raw: string): string {
   const grouped = intClean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return dec !== undefined ? `${grouped || "0"},${dec}` : grouped;
 }
+
+/**
+ * Igual que maskAmountInput, pero desde el evento del input: después de reacomodar
+ * los puntos de miles deja el cursor donde estaba (si no, salta al final y corregir
+ * un dígito del medio rompe el número).
+ */
+export function maskAmountEvent(e: { target: HTMLInputElement }): string {
+  const el = e.target;
+  const raw = el.value;
+  const masked = maskAmountInput(raw);
+  const caret = el.selectionStart ?? raw.length;
+  // Cuántos dígitos/comas había antes del cursor: el cursor va después del mismo carácter en el valor formateado.
+  const keep = raw.slice(0, caret).replace(/[^\d,]/g, "").replace(/^0+(?=\d)/, "").length;
+  let pos = 0;
+  for (let seen = 0; pos < masked.length && seen < keep; pos++) if (/[\d,]/.test(masked[pos])) seen++;
+  if (typeof window !== "undefined" && document.activeElement === el) {
+    requestAnimationFrame(() => {
+      if (document.activeElement === el) el.setSelectionRange(pos, pos);
+    });
+  }
+  return masked;
+}

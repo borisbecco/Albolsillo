@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { formatMoney, maskAmountInput, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
+import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
 import { MONTH_FULL } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import type { AccountDto } from "@/lib/dto";
@@ -176,7 +176,7 @@ function NewAccountForm({ onDone }: { onDone: () => void }) {
         </label>
         <label className={a.field}>
           Saldo actual
-          <input className={a.input} value={balance} onChange={(e) => setBalance(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+          <input className={a.input} value={balance} onChange={(e) => setBalance(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
         </label>
       </div>
       {err && <span className={a.error}>{err}</span>}
@@ -259,7 +259,7 @@ function TransferForm({ accounts }: { accounts: AccountDto[] }) {
         </label>
         <label className={`${a.field} ${a.amount}`}>
           Monto ({A.currency === "USD" ? "US$" : "$"})
-          <input className={a.input} value={amount} onChange={(e) => setAmount(maskAmountInput(e.target.value))} inputMode="decimal" placeholder="0" />
+          <input className={a.input} value={amount} onChange={(e) => setAmount(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
         </label>
         {cross && (
           <label className={`${a.field} ${a.amount}`}>
@@ -268,7 +268,7 @@ function TransferForm({ accounts }: { accounts: AccountDto[] }) {
               className={a.input}
               value={receivedShown}
               onChange={(e) => {
-                setReceived(maskAmountInput(e.target.value));
+                setReceived(maskAmountEvent(e));
                 setReceivedTouched(true);
               }}
               inputMode="decimal"

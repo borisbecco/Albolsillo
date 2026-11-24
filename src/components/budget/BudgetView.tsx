@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CATEGORIES, catColor } from "@/lib/categories";
-import { formatMoney, maskAmountInput, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import { MONTH_FULL } from "@/lib/month";
 import { monthTotals } from "@/lib/plan";
 import { useData } from "@/components/data/DataContext";
@@ -110,7 +110,7 @@ function LimitInput({ value, custom, disabled, label, onSave }: { value: number;
       Límite $
       <input
         value={text}
-        onChange={(e) => setText(maskAmountInput(e.target.value))}
+        onChange={(e) => setText(maskAmountEvent(e))}
         onBlur={commit}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         inputMode="numeric"
