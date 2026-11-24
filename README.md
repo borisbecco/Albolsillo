@@ -47,6 +47,7 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
 
 ## Desarrollo
 - Sin `RESEND_API_KEY`, los mails se escriben en la consola. Con `MAIL_DUMP_DIR=/una/carpeta` también se guardan como HTML.
+- El registro es **solo por invitación** (código `XXXX-XXXX`). Cada usuario tiene 5 desde Perfil › Invitaciones. Para desarrollo o pruebas, `REGISTRATION_OPEN=1` permite registrarse sin código (no lo pongas en Railway).
 - El importador de resúmenes usa un parser general (fecha, descripción, cuotas, columnas de pesos y dólares).
   Falta afinarlo con resúmenes reales de cada banco (API.md pide un parser y tests por banco).
 

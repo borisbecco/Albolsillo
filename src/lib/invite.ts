@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ApiError } from "@/lib/http";
 import { sendInvite } from "@/lib/mail";
+import { activeInviteFor, createInvite } from "@/lib/invites";
 import { randomToken } from "@/lib/auth/session";
 import { MONTH_SHORT } from "@/lib/month";
 import { balances, sharedDto } from "@/lib/shared";
@@ -20,6 +21,9 @@ export async function invitePerson(userId: string, personId: string, email: stri
     where: { id: personId },
     data: { email, inviteToken: token, invitedAt: new Date(), status: linked ? "user" : "invited", linkedUserId: linked?.id ?? null },
   });
+
+  // Registro por invitación: si todavía no usa la app, se le genera un código (no gasta el cupo del usuario).
+  if (!linked && !(await activeInviteFor(prisma, email))) await createInvite(prisma, null, email);
 
   const expenses = await prisma.sharedExpense.findMany({ where: { userId, deletedAt: null }, orderBy: { date: "desc" } });
   const list = expenses.map(sharedDto);

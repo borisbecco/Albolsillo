@@ -361,3 +361,157 @@
   background: var(--red);
   color: #fff;
 }
+
+/* ─── Invitaciones ─── */
+.invHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.invLeft {
+  font-size: 12px;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.invNote {
+  color: var(--mut);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.invForm {
+  display: flex;
+  gap: 8px;
+}
+
+.invForm input {
+  flex: 1;
+  min-width: 0;
+}
+
+.invSend {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.invSend span {
+  font-size: 17px;
+}
+
+.invSend:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.invList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.invRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.invAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--sel);
+  font-size: 13px;
+  font-weight: 600;
+  flex: none;
+}
+
+.invText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.invText > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invText small {
+  color: var(--dim);
+  font-size: 11px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.invStatus {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.invIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  font-size: 17px;
+  cursor: pointer;
+  flex: none;
+}
+
+.invIcon:hover {
+  background: var(--sel);
+  color: var(--fg);
+}
+
+.invCancel:hover {
+  color: var(--red);
+}
+
+.legalLinks {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.legalLinks button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--mut);
+  font: inherit;
+  cursor: pointer;
+}
+
+.legalLinks button:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}

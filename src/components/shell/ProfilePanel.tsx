@@ -8,6 +8,8 @@ import { maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import type { UserDto } from "@/lib/auth/session";
 import { initials, useShell } from "./ShellContext";
 import p from "./profile.module.css";
+import { InvitesSection } from "./InvitesSection";
+import { LegalSheet, type LegalTab } from "@/components/legal/LegalSheet";
 
 const RATES: [UserDto["rate_type"], string][] = [
   ["oficial", "Oficial"],
@@ -28,6 +30,7 @@ export function ProfilePanel() {
   const router = useRouter();
   const { user, profileOpen, setProfileOpen, updatePrefs, flash } = useShell();
   const [name, setName] = useState(user.name);
+  const [legal, setLegal] = useState<LegalTab | null>(null);
   const [manual, setManual] = useState(user.manual_rate ? toInput(user.manual_rate) : "");
   const [pwOpen, setPwOpen] = useState(false);
   const [pwCur, setPwCur] = useState("");
@@ -147,6 +150,8 @@ export function ProfilePanel() {
           )}
         </section>
 
+        <InvitesSection />
+
         <section className={p.section}>
           <span className={p.sectionTitle}>Preferencias</span>
           <div className={p.row}>
@@ -225,6 +230,13 @@ export function ProfilePanel() {
           </span>
           <span className="material-symbols-rounded">chevron_right</span>
         </button>
+
+        <div className={p.legalLinks}>
+          <button onClick={() => setLegal("terms")}>Términos</button>
+          <span>·</span>
+          <button onClick={() => setLegal("privacy")}>Privacidad</button>
+        </div>
+        {legal && <LegalSheet tab={legal} onTab={setLegal} onClose={() => setLegal(null)} />}
 
         <button
           className={p.logout}

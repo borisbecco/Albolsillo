@@ -257,3 +257,27 @@ export async function sendPasswordReset(to: string, token: string, userAgent: st
 
   await send(to, "Cambiá tu contraseña de Albolsillo", html, `Link: ${link}`);
 }
+
+/** Invitación para crear la cuenta (registro por código). Usa la plantilla de invitación sin la tabla de gastos. */
+export async function sendInviteCode(opts: { to: string; inviterName: string; code: string; link: string }) {
+  const first = esc(opts.inviterName.split(" ")[0] || opts.inviterName);
+  const full = esc(opts.inviterName);
+  let html = await readFile(path.join(TEMPLATES, "invitacion.html"), "utf8");
+  const tStart = html.indexOf('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0">');
+  const tEnd = tStart > 0 ? html.indexOf("</table>", tStart) + "</table>".length : -1;
+  if (tStart > 0 && tEnd > tStart) {
+    const codeBox = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0"><tr><td align="center" style="padding:16px;border-radius:14px;background:#F2F5FB;font-family:'Courier New',Courier,monospace;font-size:26px;font-weight:bold;letter-spacing:3px;color:#0A0B0F" class="ink">${esc(opts.code)}</td></tr><tr><td align="center" style="padding:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#7C8597" class="mut">Tu código de invitación. Sirve una sola vez y vence en 14 días.</td></tr></table>`;
+    html = html.slice(0, tStart) + codeBox + html.slice(tEnd);
+  }
+  html = html
+    .replaceAll("Lucía te invitó a dividir gastos en Albolsillo", `${first} te invitó a Albolsillo`)
+    .replace(
+      /Lucía Fernández usa Albolsillo para llevar sus finanzas y te agregó como contacto para compartir gastos\.[^<]*/,
+      `${full} te invitó a Albolsillo, una app para ordenar tu plata del mes: gastos, tarjetas, préstamos y ahorro, con un plan para pagar menos interés. Por ahora se entra solo con invitación.`,
+    )
+    .replaceAll("Aceptar invitación", "Crear mi cuenta")
+    .replaceAll("https://albolsillo.app/invitacion/ABC123", opts.link)
+    .replaceAll("Lucía Fernández", full)
+    .replaceAll("Lucía", first);
+  await send(opts.to, `${opts.inviterName.split(" ")[0]} te invitó a Albolsillo`, html, `Código: ${opts.code} · ${opts.link}`);
+}
