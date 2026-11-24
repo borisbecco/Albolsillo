@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Albolsillo",
   description: "Tus finanzas en pesos y dólares, con IPC y dólar al día.",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/brand/favicon-64.png", apple: "/brand/icon-180.png" },
+  appleWebApp: { capable: true, title: "Albolsillo", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

@@ -47,6 +47,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const view = viewFromPath(pathname);
   const { setHelpOpen, setTourStep } = shell;
 
+  // App instalable: el service worker se registra siempre en producción (en desarrollo no, por la caché).
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+
+  // Atajos del ícono instalado: /?nuevo=gasto abre el alta.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("nuevo") === "gasto") {
+      openNewTx();
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [openNewTx]);
+
   // Recién terminada la configuración inicial: arranca el recorrido guiado en Inicio.
   useEffect(() => {
     if (pathname !== "/" || user.tour_done_at || !user.onboarded_at) return;
