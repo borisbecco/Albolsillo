@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { GROUPS, VIEWS, groupOf, viewFromPath, type GroupId, type ViewId } from "@/lib/nav";
 import { monthLabel } from "@/lib/month";
 import { NewTxModal } from "@/components/tx/NewTxModal";
 import { SaveErrorBar, TxDetail } from "@/components/tx/TxDetail";
+import { BillSheet } from "@/components/debts/BillSheet";
+import { CardSheet } from "@/components/debts/CardSheet";
 import { ProfilePanel } from "./ProfilePanel";
 import { initials, useShell } from "./ShellContext";
 import s from "./shell.module.css";
@@ -26,10 +28,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const shell = useShell();
-  const { user, months, month, setMonth, isPastMonth, toast, setProfileOpen, openNewTx, closeNewTx, newTxOpen, detailId, setDetailId, profileOpen, updatePrefs } =
+  const { user, months, month, setMonth, isPastMonth, toast, setProfileOpen, openNewTx, closeNewTx, newTxOpen, detailId, setDetailId, profileOpen, updatePrefs, debtSheet, setDebtSheet } =
     shell;
 
   const view = viewFromPath(pathname);
+  const closeDebtSheet = useCallback(() => setDebtSheet(null), [setDebtSheet]);
   const group = groupOf(view);
   // Última vista visitada de cada sección, para volver ahí al cambiar de sección.
   const [lastIn, setLastIn] = useState<Partial<Record<GroupId, ViewId>>>({});
@@ -235,6 +238,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <NewTxModal />
       <TxDetail />
       <SaveErrorBar />
+      {debtSheet?.kind === "card" && <CardSheet id={debtSheet.id} onClose={closeDebtSheet} />}
+      {debtSheet?.kind === "bill" && <BillSheet id={debtSheet.id} onClose={closeDebtSheet} />}
     </div>
   );
 }

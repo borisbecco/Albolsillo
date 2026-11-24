@@ -34,10 +34,15 @@ type Shell = {
   /** Formulario "Nueva cuenta" abierto (se puede abrir desde otras pantallas). */
   accountFormOpen: boolean;
   setAccountFormOpen: (v: boolean) => void;
+  /** Panel de tarjeta o gasto fijo abierto (id null = nuevo). */
+  debtSheet: DebtSheet;
+  setDebtSheet: (s: DebtSheet) => void;
   /** Filtro de Movimientos por cuenta (al tocar una cuenta). */
   movAccount: string | null;
   setMovAccount: (id: string | null) => void;
 };
+
+export type DebtSheet = { kind: "card" | "bill"; id: string | null } | null;
 
 const Ctx = createContext<Shell | null>(null);
 
@@ -90,6 +95,7 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const [accountFormOpen, setAccountFormOpen] = useState(false);
   const [movAccount, setMovAccount] = useState<string | null>(null);
   const [onboardingStep, setOnboardingStep] = useState(0);
+  const [debtSheet, setDebtSheet] = useState<DebtSheet>(null);
   const isPastMonth = month !== months[months.length - 1];
   const openNewTx = useCallback(() => {
     if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
@@ -122,6 +128,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     setAccountFormOpen,
     movAccount,
     setMovAccount,
+    debtSheet,
+    setDebtSheet,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

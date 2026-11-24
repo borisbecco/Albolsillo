@@ -13,7 +13,8 @@ export const GET = handle(async (req: Request) => {
   const month = param && /^\d{4}-\d{2}$/.test(param) ? param : currentMonth();
 
   const live = { userId, deletedAt: null };
-  const [user, accounts, cards, people, transactions, bills] = await Promise.all([
+  const months = Array.from({ length: 6 }, (_, i) => addMonths(month, i - 5));
+  const [user, accounts, cards, people, transactions, bills, billPayments] = await Promise.all([
     prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
     prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
@@ -23,6 +24,7 @@ export const GET = handle(async (req: Request) => {
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     }),
     prisma.bill.findMany({ where: live, orderBy: [{ dueDay: "asc" }, { createdAt: "asc" }] }),
+    prisma.billPayment.findMany({ where: { ...live, month: { in: months } } }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
 
@@ -35,6 +37,7 @@ export const GET = handle(async (req: Request) => {
     transactions: transactions.map(txDto),
     // Se completan a medida que estén sus pantallas.
     bills: bills.map(billDto),
+    bill_payments: billPayments.map((p) => ({ bill_id: p.billId, month: p.month, transaction_id: p.transactionId })),
     loans: [],
     budgets: [],
     goals: [],

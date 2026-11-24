@@ -73,6 +73,10 @@ export const DELETE = handle(async (req: Request, { params }: Ctx) => {
   await prisma.$transaction(async (db) => {
     await db.transaction.update({ where: { id }, data: { deletedAt: new Date() } });
     await applyToBalance(db, prev, -1);
+    // Si era el pago de un gasto fijo, el gasto vuelve a quedar pendiente.
+    if (prev.billId) {
+      await db.billPayment.updateMany({ where: { transactionId: id, deletedAt: null }, data: { deletedAt: new Date(), transactionId: null } });
+    }
   });
   return new Response(null, { status: 204 });
 });

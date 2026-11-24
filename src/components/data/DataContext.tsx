@@ -19,6 +19,20 @@ export type Bootstrap = {
   people: PersonDto[];
   transactions: TxDto[];
   bills: BillDto[];
+  bill_payments: BillPayment[];
+};
+
+export type BillPayment = { bill_id: string; month: string; transaction_id: string | null };
+export type CardDraft = { name: string; balance: string; min_payment: string; due_day: number; close_day: number; tna: string; last4: string | null };
+export type BillDraft = {
+  name: string;
+  amount: string;
+  currency: Currency;
+  due_day: number;
+  category_id: string;
+  auto_debit: boolean;
+  account_id: string | null;
+  card_id: string | null;
 };
 
 export type OnboardingDraft = {
@@ -55,6 +69,14 @@ type Data = {
   bills: BillDto[];
   people: PersonDto[];
   saveOnboarding: (d: OnboardingDraft | { skipped: true }) => Promise<boolean>;
+  billPayments: BillPayment[];
+  isBillPaid: (billId: string, month: string) => boolean;
+  saveCard: (id: string | null, c: CardDraft) => Promise<boolean>;
+  deleteCard: (id: string) => Promise<boolean>;
+  saveBill: (id: string | null, b: BillDraft) => Promise<boolean>;
+  deleteBill: (id: string) => Promise<boolean>;
+  payBill: (billId: string, month: string) => Promise<boolean>;
+  unpayBill: (billId: string, month: string) => Promise<boolean>;
   /** Pesos por dólar según la cotización elegida (null mientras carga). */
   rate: number | null;
   /** Convierte un monto a la moneda en que el usuario eligió ver los montos. */
@@ -105,6 +127,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const { user, flash, setUser } = useShell();
   const [cards, setCards] = useState(initial.cards);
   const [bills, setBills] = useState(initial.bills);
+  const [billPayments, setBillPayments] = useState(initial.bill_payments);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -272,6 +295,8 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       try {
         await api(`/transactions/${id}`, { method: "DELETE" });
         moveBalances(delta(prev, -1));
+        // Si era el pago de un gasto fijo, vuelve a quedar pendiente.
+        if (prev.bill_id) setBillPayments((l) => l.filter((p) => p.transaction_id !== id));
         return true;
       } catch {
         setTransactions((list) => sortTx([...list, prev]));
@@ -364,6 +389,106 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail, setUser],
   );
 
+  // ─── Tarjetas y gastos fijos (se espera al servidor) ───
+
+  const saveCard = useCallback(
+    async (id: string | null, c: CardDraft) => {
+      try {
+        const res = await api<{ card: CardDto }>(id ? `/cards/${id}` : "/cards", { method: id ? "PATCH" : "POST", body: JSON.stringify(c) });
+        setCards((l) => (id ? l.map((x) => (x.id === id ? res.card : x)) : [...l, res.card]));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar la tarjeta. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const deleteCard = useCallback(
+    async (id: string) => {
+      try {
+        await api(`/cards/${id}`, { method: "DELETE" });
+        setCards((l) => l.filter((x) => x.id !== id));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos eliminar la tarjeta. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const saveBill = useCallback(
+    async (id: string | null, b: BillDraft) => {
+      try {
+        const res = await api<{ bill: BillDto }>(id ? `/bills/${id}` : "/bills", { method: id ? "PATCH" : "POST", body: JSON.stringify(b) });
+        setBills((l) => (id ? l.map((x) => (x.id === id ? res.bill : x)) : [...l, res.bill]).sort((a, z) => a.due_day - z.due_day));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar el gasto fijo. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const deleteBill = useCallback(
+    async (id: string) => {
+      try {
+        await api(`/bills/${id}`, { method: "DELETE" });
+        setBills((l) => l.filter((x) => x.id !== id));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos eliminar el gasto fijo. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const replaceAccount = useCallback((a: AccountDto | null) => {
+    if (a) setAccounts((l) => l.map((x) => (x.id === a.id ? a : x)));
+  }, []);
+
+  const payBill = useCallback(
+    async (billId: string, month: string) => {
+      try {
+        const res = await api<{ transaction: TxDto; account: AccountDto | null }>(`/bills/${billId}/pay`, {
+          method: "POST",
+          body: JSON.stringify({ month, today: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()) }),
+        });
+        setBillPayments((l) => [...l.filter((p) => !(p.bill_id === billId && p.month === month)), { bill_id: billId, month, transaction_id: res.transaction.id }]);
+        setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
+        replaceAccount(res.account);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos marcarlo como pagado. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
+  const unpayBill = useCallback(
+    async (billId: string, month: string) => {
+      const p = billPayments.find((x) => x.bill_id === billId && x.month === month);
+      try {
+        const res = await api<{ account: AccountDto | null }>(`/bills/${billId}/pay?month=${month}`, { method: "DELETE" });
+        setBillPayments((l) => l.filter((x) => !(x.bill_id === billId && x.month === month)));
+        if (p?.transaction_id) setTransactions((l) => l.filter((t) => t.id !== p.transaction_id));
+        replaceAccount(res.account);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos deshacer el pago. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, billPayments, replaceAccount],
+  );
+
+  const isBillPaid = useCallback((billId: string, month: string) => billPayments.some((p) => p.bill_id === billId && p.month === month), [billPayments]);
+
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
@@ -373,6 +498,14 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     bills,
     people: initial.people,
     saveOnboarding,
+    billPayments,
+    isBillPaid,
+    saveCard,
+    deleteCard,
+    saveBill,
+    deleteBill,
+    payBill,
+    unpayBill,
     rate,
     toDisplay,
     createTx,
