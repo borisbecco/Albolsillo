@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation";
 import type { z } from "zod";
 
 /** Error de API con el formato { error: { code, message } }. */
@@ -21,6 +22,8 @@ export function handle<Args extends unknown[]>(fn: (...args: Args) => Promise<Re
     try {
       return await fn(...args);
     } catch (e) {
+      // Deja pasar los errores internos de Next (p. ej. el que marca una ruta como dinámica).
+      unstable_rethrow(e);
       if (e instanceof ApiError) return errorResponse(e.status, e.code, e.message);
       console.error(e);
       return errorResponse(500, "internal", "Algo salió mal. Probá de nuevo en un rato.");

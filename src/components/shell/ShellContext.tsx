@@ -22,7 +22,11 @@ type Shell = {
   flash: (message: string, pose?: BolsiPose) => void;
   profileOpen: boolean;
   setProfileOpen: (v: boolean) => void;
+  newTxOpen: boolean;
   openNewTx: () => void;
+  closeNewTx: () => void;
+  detailId: string | null;
+  setDetailId: (id: string | null) => void;
 };
 
 const Ctx = createContext<Shell | null>(null);
@@ -71,8 +75,16 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     if (months.includes(ym)) setMonthState(ym);
   }, [months]);
 
-  // TODO: abrir el modal "Nuevo movimiento" cuando exista.
-  const openNewTx = useCallback(() => flash("Nuevo movimiento llega en el próximo paso."), [flash]);
+  const [newTxOpen, setNewTxOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const isPastMonth = month !== months[months.length - 1];
+  const openNewTx = useCallback(() => {
+    if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
+    setDetailId(null);
+    setProfileOpen(false);
+    setNewTxOpen(true);
+  }, [isPastMonth, flash]);
+  const closeNewTx = useCallback(() => setNewTxOpen(false), []);
 
   const value: Shell = {
     user,
@@ -80,12 +92,16 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     months,
     month,
     setMonth,
-    isPastMonth: month !== months[months.length - 1],
+    isPastMonth,
     toast,
     flash,
     profileOpen,
     setProfileOpen,
+    newTxOpen,
     openNewTx,
+    closeNewTx,
+    detailId,
+    setDetailId,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

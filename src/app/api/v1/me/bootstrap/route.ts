@@ -1,0 +1,43 @@
+import { prisma } from "@/lib/db";
+import { ApiError, handle } from "@/lib/http";
+import { requireUserId, toUserDto } from "@/lib/auth/session";
+import { accountDto, cardDto, personDto, txDto } from "@/lib/dto";
+import { addMonths, currentMonth } from "@/lib/month";
+import { monthRange } from "@/lib/transactions";
+
+// GET /me/bootstrap?month=YYYY-MM: todo lo que necesita la app al abrir.
+// Incluye las transacciones de los 6 meses que terminan en `month`.
+export const GET = handle(async (req: Request) => {
+  const userId = await requireUserId(req);
+  const param = new URL(req.url).searchParams.get("month");
+  const month = param && /^\d{4}-\d{2}$/.test(param) ? param : currentMonth();
+
+  const live = { userId, deletedAt: null };
+  const [user, accounts, cards, people, transactions] = await Promise.all([
+    prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
+    prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
+    prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
+    prisma.person.findMany({ where: live, orderBy: { createdAt: "asc" } }),
+    prisma.transaction.findMany({
+      where: { ...live, date: { gte: monthRange(addMonths(month, -5)).gte, lt: monthRange(month).lt } },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    }),
+  ]);
+  if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
+
+  return Response.json({
+    user: toUserDto(user),
+    month,
+    accounts: accounts.map(accountDto),
+    cards: cards.map(cardDto),
+    people: people.map(personDto),
+    transactions: transactions.map(txDto),
+    // Se completan a medida que estén sus pantallas.
+    loans: [],
+    bills: [],
+    budgets: [],
+    goals: [],
+    investments: [],
+    shared: [],
+  });
+});

@@ -1,0 +1,567 @@
+/* Modales de movimientos: Nuevo movimiento y Detalle. En mobile son hojas que suben desde abajo. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  z-index: 30;
+}
+
+.sheet {
+  position: relative;
+  overflow: hidden auto;
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  background: color-mix(in oklch, var(--bg) 82%, var(--fg) 4%);
+  border: 1px solid var(--line2);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.detail {
+  max-width: 440px;
+  padding: 26px 22px 22px;
+  justify-items: center;
+  gap: 14px;
+}
+
+.glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 200px;
+  pointer-events: none;
+  background: radial-gradient(70% 100% at 50% 0%, color-mix(in oklch, var(--acc) 24%, transparent), transparent 70%);
+}
+
+.sheet[data-type="in"] .glow {
+  background: radial-gradient(70% 100% at 50% 0%, color-mix(in oklch, var(--pos) 22%, transparent), transparent 70%);
+}
+
+.top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.typeSeg {
+  display: flex;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: var(--elev);
+  border: 1px solid var(--line);
+  flex: none;
+}
+
+.typeSeg button {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+
+.typeSeg button[aria-pressed="true"] {
+  color: #0a0b0f;
+}
+
+.typeSeg button[data-v="out"][aria-pressed="true"] {
+  background: var(--red);
+  box-shadow: 0 6px 18px -6px var(--red);
+}
+
+.typeSeg button[data-v="in"][aria-pressed="true"] {
+  background: var(--pos);
+  box-shadow: 0 6px 18px -6px var(--pos);
+}
+
+.close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--sel);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 19px;
+}
+
+.detail .close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+}
+
+.amountRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.curBtn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--mut);
+  flex: none;
+}
+
+.amount {
+  field-sizing: content;
+  min-width: 1.2ch;
+  max-width: calc(100% - 60px);
+  height: 56px;
+  border: 0;
+  background: transparent;
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.amount:focus,
+.descInline:focus {
+  outline: none;
+}
+
+.amount::placeholder {
+  color: var(--dim);
+}
+
+.sheet[data-type="in"] .amount {
+  color: var(--pos);
+}
+
+.desc {
+  position: relative;
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  font-size: 14px;
+  color: var(--fg);
+  text-align: center;
+}
+
+.desc:focus {
+  outline: none;
+  border-color: var(--acc);
+}
+
+.desc::placeholder {
+  color: var(--dim);
+}
+
+.cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 8px;
+}
+
+.cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--elev);
+  cursor: pointer;
+  color: var(--fg);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cat[aria-pressed="true"] {
+  border-color: var(--acc);
+  background: color-mix(in oklch, var(--acc) 16%, transparent);
+}
+
+.catIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.catName {
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groupLabel {
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line2);
+  background: transparent;
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip .ic {
+  font-size: 17px;
+  color: var(--mut);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--acc);
+  background: color-mix(in oklch, var(--acc) 16%, transparent);
+}
+
+.chip[aria-pressed="true"] .ic {
+  color: var(--acc);
+}
+
+.keypad {
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.keypad button {
+  height: 54px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--elev);
+  font-size: 22px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--fg);
+}
+
+.keypad button:active {
+  background: var(--sel);
+}
+
+.extras {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pillInput,
+.pillBtn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  color: var(--fg);
+  font-size: 12px;
+}
+
+.pillBtn {
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+}
+
+.pillBtn[aria-pressed="true"] {
+  border-color: var(--acc);
+  background: var(--sel);
+  color: var(--acc);
+}
+
+.detail .pillInput,
+.detail .pillBtn {
+  height: 34px;
+  padding: 0 12px;
+}
+
+.error {
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+  margin-top: -6px;
+}
+
+.save {
+  height: 52px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 12px 30px -10px var(--acc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.save:hover {
+  filter: brightness(1.08);
+}
+
+.save[data-empty="true"] {
+  opacity: 0.5;
+}
+
+.kbd {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ─── Detalle ─── */
+
+.bigIcon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 38px;
+}
+
+.descInline {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.detailAmount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.detailAmount .amount {
+  font-size: 38px;
+  height: 48px;
+  max-width: 220px;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--dim);
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.delete {
+  height: 46px;
+  padding: 0 18px;
+  border-radius: var(--r-control);
+  border: 1px solid color-mix(in oklch, var(--red) 45%, transparent);
+  background: transparent;
+  color: var(--red);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.delete[data-confirm="true"] {
+  background: var(--red);
+  color: #fff;
+}
+
+.primary {
+  flex: 1;
+  height: 46px;
+  border-radius: var(--r-control);
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 10px 28px -10px var(--acc);
+}
+
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* ─── Aviso "Error al guardar" ─── */
+
+.saveErr {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 28px;
+  z-index: 41;
+  width: min(520px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border-radius: 18px;
+  background: color-mix(in oklch, var(--bg) 88%, var(--red) 6%);
+  backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in oklch, var(--red) 40%, var(--line2));
+  box-shadow: var(--shadow);
+  animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.saveErr img {
+  width: 48px;
+  height: 53px;
+  flex: none;
+  margin: -6px 0;
+}
+
+.saveErrText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.saveErrText strong {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saveErrText span {
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.retry {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  flex: none;
+}
+
+.dismiss {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 18px;
+  flex: none;
+}
+
+@media (max-width: 759px) {
+  .backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .sheet {
+    border-radius: 26px 26px 0 0;
+    max-height: 94dvh;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .keypad {
+    display: grid;
+  }
+  /* Con el teclado numérico abajo, el monto queda siempre visible. */
+  .sheet:not(.detail) .amountRow {
+    position: sticky;
+    top: -18px;
+    z-index: 2;
+    margin: 0 -20px;
+    padding: 6px 20px;
+    /* Opaco (suma 100 %), para que no se vea lo que pasa por debajo. */
+    background: color-mix(in oklch, var(--bg) 95%, var(--fg) 5%);
+    border-bottom: 1px solid var(--line);
+  }
+  .kbd {
+    display: none;
+  }
+  .saveErr {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}

@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GROUPS, VIEWS, groupOf, viewFromPath, type GroupId, type ViewId } from "@/lib/nav";
 import { monthLabel } from "@/lib/month";
+import { NewTxModal } from "@/components/tx/NewTxModal";
+import { SaveErrorBar, TxDetail } from "@/components/tx/TxDetail";
 import { ProfilePanel } from "./ProfilePanel";
 import { initials, useShell } from "./ShellContext";
 import s from "./shell.module.css";
@@ -24,7 +26,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const shell = useShell();
-  const { user, months, month, setMonth, isPastMonth, toast, setProfileOpen, openNewTx, updatePrefs } = shell;
+  const { user, months, month, setMonth, isPastMonth, toast, setProfileOpen, openNewTx, closeNewTx, newTxOpen, detailId, setDetailId, profileOpen, updatePrefs } =
+    shell;
 
   const view = viewFromPath(pathname);
   const group = groupOf(view);
@@ -44,7 +47,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Atajos: 1 a 4 cambian de sección, N abre Nuevo movimiento, T cambia el tema, Esc cierra paneles.
   const keyRef = useRef<(e: KeyboardEvent) => void>(undefined);
   const onShortcut = (e: KeyboardEvent) => {
-    if (e.key === "Escape") return setProfileOpen(false);
+    if (e.key === "Escape") {
+      closeNewTx();
+      setDetailId(null);
+      return setProfileOpen(false);
+    }
+    if (newTxOpen || detailId || profileOpen) return; // con un panel abierto no hay atajos
     const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase() ?? "";
     if (["input", "textarea", "select"].includes(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
@@ -204,6 +212,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <ProfilePanel />
+      <NewTxModal />
+      <TxDetail />
+      <SaveErrorBar />
     </div>
   );
 }
