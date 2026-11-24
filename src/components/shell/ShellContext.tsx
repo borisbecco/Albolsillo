@@ -12,6 +12,10 @@ type Prefs = Partial<Pick<UserDto, "theme" | "display_currency" | "rate_type" | 
 
 type Shell = {
   user: UserDto;
+  setUser: (u: UserDto) => void;
+  /** Paso en el que se abre el onboarding (0 Ingresos, 1 Tarjetas, 2 Gastos fijos, 3 Estrategia). */
+  onboardingStep: number;
+  setOnboardingStep: (n: number) => void;
   updatePrefs: (p: Prefs) => Promise<void>;
   months: string[];
   month: string;
@@ -85,6 +89,7 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const [detailId, setDetailId] = useState<string | null>(null);
   const [accountFormOpen, setAccountFormOpen] = useState(false);
   const [movAccount, setMovAccount] = useState<string | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const isPastMonth = month !== months[months.length - 1];
   const openNewTx = useCallback(() => {
     if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
@@ -96,6 +101,9 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
 
   const value: Shell = {
     user,
+    setUser,
+    onboardingStep,
+    setOnboardingStep,
     updatePrefs,
     months,
     month,

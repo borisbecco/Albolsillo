@@ -89,6 +89,21 @@ export function ProfilePanel() {
         </section>
 
         <button
+          className={p.linkRow}
+          onClick={() => {
+            setProfileOpen(false);
+            router.push("/bienvenida");
+          }}
+        >
+          <span className="material-symbols-rounded">tune</span>
+          <span className={p.linkText}>
+            Ingresos, tarjetas y gastos fijos
+            <small>Rehacé el onboarding cuando quieras</small>
+          </span>
+          <span className="material-symbols-rounded">chevron_right</span>
+        </button>
+
+        <button
           className={p.logout}
           disabled={leaving}
           onClick={async () => {

@@ -33,7 +33,7 @@ export function RegisterForm() {
         accept_terms: true,
       });
       setAccessToken(res.access_token);
-      router.replace("/");
+      router.replace("/bienvenida");
     } catch (e) {
       setErr(e instanceof ApiClientError ? e.message : "No pudimos conectarnos. Revisá tu conexión.");
       setBusy(false);

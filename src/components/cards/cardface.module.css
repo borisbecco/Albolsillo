@@ -1,0 +1,113 @@
+.card {
+  position: relative;
+  aspect-ratio: 1.586;
+  border-radius: 20px;
+  overflow: hidden;
+  color: #fff;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  animation: bFloat 7s ease-in-out infinite;
+}
+
+.shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 90% -10%, rgba(255, 255, 255, 0.32), transparent 55%),
+    linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.1) 52%, transparent 66%);
+}
+
+.top {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.bank {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visa {
+  font-weight: 800;
+  font-style: italic;
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+
+.amex {
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.master {
+  display: flex;
+}
+
+.master span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eb001b;
+  opacity: 0.92;
+}
+
+.master span + span {
+  background: #f79e1b;
+  opacity: 0.85;
+  margin-left: -11px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.label {
+  position: relative;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.balance {
+  position: relative;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bottom {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.bottom .mono,
+.bottom span:first-child {
+  letter-spacing: 0.1em;
+}
+
+@keyframes bFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}

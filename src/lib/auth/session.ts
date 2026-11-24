@@ -129,6 +129,9 @@ export function toUserDto(u: User) {
     alert_days: u.alertDays,
     mail_alerts: u.mailAlerts,
     push_enabled: u.pushEnabled,
+    salary: u.salary?.toFixed(2) ?? null,
+    payday: u.payday,
+    usd_income: u.usdIncome?.toFixed(2) ?? null,
     onboarded_at: u.onboardedAt?.toISOString() ?? null,
     last_month_opened: u.lastMonthOpened,
   };

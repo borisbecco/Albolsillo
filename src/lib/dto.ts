@@ -1,4 +1,4 @@
-import type { Account, Card, Person, Transaction } from "@prisma/client";
+import type { Account, Bill, Card, Person, Transaction } from "@prisma/client";
 
 // Formas que devuelve la API (snake_case, montos como string decimal, fechas YYYY-MM-DD).
 
@@ -44,6 +44,21 @@ export function cardDto(c: Card) {
   };
 }
 
+export function billDto(b: Bill) {
+  return {
+    id: b.id,
+    name: b.name,
+    category_id: b.categoryId,
+    amount: b.amount.toFixed(2),
+    currency: b.currency,
+    due_day: b.dueDay,
+    auto_debit: b.autoDebit,
+    recurring: b.recurring,
+    card_id: b.cardId,
+    account_id: b.accountId,
+  };
+}
+
 export function personDto(p: Person) {
   return { id: p.id, name: p.name, email: p.email, status: p.status };
 }
@@ -52,3 +67,4 @@ export type TxDto = ReturnType<typeof txDto>;
 export type AccountDto = ReturnType<typeof accountDto>;
 export type CardDto = ReturnType<typeof cardDto>;
 export type PersonDto = ReturnType<typeof personDto>;
+export type BillDto = ReturnType<typeof billDto>;

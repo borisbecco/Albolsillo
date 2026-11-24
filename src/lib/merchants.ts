@@ -2,6 +2,9 @@
 // Reglas tomadas del prototipo; se usan al cargar a mano y al importar resúmenes.
 
 const CATEGORY_RULES: [RegExp, string][] = [
+  [/alquiler|expensas|consorcio|inmobiliaria/i, "alquiler"],
+  [/\babl\b|agip|arba|patente|inmobiliario|monotributo|ganancias|bienes personales/i, "impuestos"],
+  [/gimnasio|\bgym\b|prepaga|obra social/i, "salud"],
   [/coto|\bd[ií]a\b|carrefour|jumbo|disco|vea\b|chino/i, "super"],
   [/rappi|pedidosya|starbucks|caf[eé]|mostaza|mc ?donald|restaurant/i, "resto"],
   [/uber|cabify|shell|ypf|axion|nafta|sube|peaje|didi/i, "transp"],

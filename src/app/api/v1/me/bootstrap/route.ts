@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ApiError, handle } from "@/lib/http";
 import { requireUserId, toUserDto } from "@/lib/auth/session";
-import { accountDto, cardDto, personDto, txDto } from "@/lib/dto";
+import { accountDto, billDto, cardDto, personDto, txDto } from "@/lib/dto";
 import { addMonths, currentMonth } from "@/lib/month";
 import { monthRange } from "@/lib/transactions";
 
@@ -13,7 +13,7 @@ export const GET = handle(async (req: Request) => {
   const month = param && /^\d{4}-\d{2}$/.test(param) ? param : currentMonth();
 
   const live = { userId, deletedAt: null };
-  const [user, accounts, cards, people, transactions] = await Promise.all([
+  const [user, accounts, cards, people, transactions, bills] = await Promise.all([
     prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
     prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
@@ -22,6 +22,7 @@ export const GET = handle(async (req: Request) => {
       where: { ...live, date: { gte: monthRange(addMonths(month, -5)).gte, lt: monthRange(month).lt } },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     }),
+    prisma.bill.findMany({ where: live, orderBy: [{ dueDay: "asc" }, { createdAt: "asc" }] }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
 
@@ -33,8 +34,8 @@ export const GET = handle(async (req: Request) => {
     people: people.map(personDto),
     transactions: transactions.map(txDto),
     // Se completan a medida que estén sus pantallas.
+    bills: bills.map(billDto),
     loans: [],
-    bills: [],
     budgets: [],
     goals: [],
     investments: [],

@@ -52,8 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       setDetailId(null);
       return setProfileOpen(false);
     }
-    // Con un panel abierto no hay atajos.
-    if (newTxOpen || detailId || profileOpen || document.querySelector('[aria-modal="true"]')) return;
+    // Con un panel abierto o durante el onboarding no hay atajos.
+    if (pathname === "/bienvenida" || newTxOpen || detailId || profileOpen || document.querySelector('[aria-modal="true"]')) return;
     const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase() ?? "";
     if (["input", "textarea", "select"].includes(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
@@ -74,6 +74,31 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Sin onboarding (ni salteado), la app arranca por ahí.
+  const isOnboarding = pathname === "/bienvenida";
+  useEffect(() => {
+    if (!user.onboarded_at && !isOnboarding) router.replace("/bienvenida");
+  }, [user.onboarded_at, isOnboarding, router]);
+
+  const toast$ = toast && (
+    <div key={toast.id} className={s.toast} role="status">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/bolsi/bolsi-${toast.pose}.svg`} alt="" />
+      {toast.message}
+    </div>
+  );
+
+  // El onboarding va a pantalla completa, sin barra lateral ni encabezado.
+  if (isOnboarding) {
+    return (
+      <>
+        {children}
+        {toast$}
+      </>
+    );
+  }
+  if (!user.onboarded_at) return null;
 
   const firstName = user.name.split(" ")[0] || "hola";
   const ini = initials(user);
@@ -99,9 +124,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className={s.spacer} />
-        <button className={`${s.sideTool} ${s.icon}`} title="Configurar ingresos y deudas" onClick={() => shell.flash("El onboarding llega en un próximo paso.")}>
+        <Link href="/bienvenida" className={`${s.sideTool} ${s.icon}`} title="Configurar ingresos y deudas" style={{ display: "grid", placeItems: "center" }}>
           tune
-        </button>
+        </Link>
         <button className={`${s.sideTool} ${s.icon}`} title={`${user.theme === "dark" ? "Tema claro" : "Tema oscuro"} (T)`} onClick={toggleTheme}>
           {user.theme === "dark" ? "light_mode" : "dark_mode"}
         </button>
@@ -204,13 +229,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </nav>
 
-      {toast && (
-        <div key={toast.id} className={s.toast} role="status">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/bolsi/bolsi-${toast.pose}.svg`} alt="" />
-          {toast.message}
-        </div>
-      )}
+      {toast$}
 
       <ProfilePanel />
       <NewTxModal />

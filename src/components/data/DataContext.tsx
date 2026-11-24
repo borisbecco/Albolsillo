@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiClientError, api } from "@/lib/api-client";
 import type { UserDto } from "@/lib/auth/session";
-import type { AccountDto, CardDto, PersonDto, TxDto } from "@/lib/dto";
+import type { AccountDto, BillDto, CardDto, PersonDto, TxDto } from "@/lib/dto";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
 
@@ -18,6 +18,16 @@ export type Bootstrap = {
   cards: CardDto[];
   people: PersonDto[];
   transactions: TxDto[];
+  bills: BillDto[];
+};
+
+export type OnboardingDraft = {
+  salary: string | null;
+  payday: number | null;
+  usd_income: string | null;
+  strategy: UserDto["pay_strategy"];
+  cards: { id?: string; name: string; balance: string; min_payment: string; due_day: number; tna: string; last4: string | null }[];
+  bills: { id?: string; name: string; amount: string; currency: Currency; due_day: number; category_id: string }[];
 };
 
 export type TxStatus = "synced" | "pending" | "failed";
@@ -42,7 +52,9 @@ type Data = {
   transactions: Tx[];
   accounts: AccountDto[];
   cards: CardDto[];
+  bills: BillDto[];
   people: PersonDto[];
+  saveOnboarding: (d: OnboardingDraft | { skipped: true }) => Promise<boolean>;
   /** Pesos por dólar según la cotización elegida (null mientras carga). */
   rate: number | null;
   /** Convierte un monto a la moneda en que el usuario eligió ver los montos. */
@@ -90,7 +102,9 @@ function delta(t: Pick<TxDto, "type" | "gross_amount" | "account_id">, dir: 1 | 
 }
 
 export function DataProvider({ initial, children }: { initial: Bootstrap; children: ReactNode }) {
-  const { user, flash } = useShell();
+  const { user, flash, setUser } = useShell();
+  const [cards, setCards] = useState(initial.cards);
+  const [bills, setBills] = useState(initial.bills);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -331,13 +345,34 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail],
   );
 
+  const saveOnboarding = useCallback(
+    async (d: OnboardingDraft | { skipped: true }) => {
+      try {
+        const res = await api<{ user: UserDto; cards?: CardDto[]; bills?: BillDto[] }>("/me/onboarding", {
+          method: "POST",
+          body: JSON.stringify(d),
+        });
+        setUser(res.user);
+        if (res.cards) setCards(res.cards);
+        if (res.bills) setBills(res.bills);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar tu plan. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, setUser],
+  );
+
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
     transactions,
     accounts,
-    cards: initial.cards,
+    cards,
+    bills,
     people: initial.people,
+    saveOnboarding,
     rate,
     toDisplay,
     createTx,
