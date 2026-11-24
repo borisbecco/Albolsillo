@@ -59,8 +59,8 @@ export type TxDraft = {
   recurring: boolean;
 };
 
-type FxQuote = { buy: string; sell: string; updated_at: string };
-type FxResponse = Partial<Record<"oficial" | "blue" | "bolsa" | "tarjeta", FxQuote>> & { stale: boolean };
+export type FxQuote = { buy: string; sell: string; updated_at: string };
+export type FxResponse = Partial<Record<"oficial" | "blue" | "bolsa" | "tarjeta", FxQuote>> & { stale: boolean };
 
 type Data = {
   transactions: Tx[];
@@ -77,6 +77,8 @@ type Data = {
   deleteBill: (id: string) => Promise<boolean>;
   payBill: (billId: string, month: string) => Promise<boolean>;
   unpayBill: (billId: string, month: string) => Promise<boolean>;
+  /** Cotizaciones del día (null mientras carga). */
+  fx: FxResponse | null;
   /** Pesos por dólar según la cotización elegida (null mientras carga). */
   rate: number | null;
   /** Convierte un monto a la moneda en que el usuario eligió ver los montos. */
@@ -506,6 +508,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     deleteBill,
     payBill,
     unpayBill,
+    fx,
     rate,
     toDisplay,
     createTx,

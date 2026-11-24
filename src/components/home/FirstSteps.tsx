@@ -8,10 +8,10 @@ import f from "./firststeps.module.css";
 
 type Step = { done: boolean; icon: string; title: string; sub: string; go: () => void };
 
-/** "Primeros pasos" de Inicio (se reemplaza por el resumen del mes cuando estén 3 de 5). */
-export function FirstSteps() {
+/** Los 5 primeros pasos y cuántos están hechos. */
+export function useFirstSteps() {
   const router = useRouter();
-  const { user, month, openNewTx, setAccountFormOpen, setOnboardingStep } = useShell();
+  const { month, openNewTx, setAccountFormOpen, setOnboardingStep } = useShell();
   const { transactions, accounts, cards, bills } = useData();
 
   const steps: Step[] = [
@@ -46,7 +46,13 @@ export function FirstSteps() {
     { done: false, icon: "donut_large", title: "Poné un límite por categoría", sub: "Te avisamos al llegar al 80%.", go: () => router.push(VIEWS.budget.href) },
     { done: false, icon: "flag", title: "Creá una meta de ahorro", sub: "Te decimos cuánto apartar por mes.", go: () => router.push(VIEWS.goals.href) },
   ];
-  const done = steps.filter((s) => s.done).length;
+  return { steps, done: steps.filter((s) => s.done).length };
+}
+
+/** "Primeros pasos" de Inicio (se reemplaza por el resumen del mes cuando estén 3 de 5). */
+export function FirstSteps() {
+  const { user } = useShell();
+  const { steps, done } = useFirstSteps();
   const firstName = user.name.split(" ")[0] || "hola";
 
   return (
