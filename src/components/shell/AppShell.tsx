@@ -10,6 +10,7 @@ import { SaveErrorBar, TxDetail } from "@/components/tx/TxDetail";
 import { BillSheet } from "@/components/debts/BillSheet";
 import { CardSheet } from "@/components/debts/CardSheet";
 import { LoanSheet } from "@/components/debts/LoanSheet";
+import { LoanPaySheet } from "@/components/debts/LoanPaySheet";
 import { AlertsPanel } from "@/components/alerts/AlertsPanel";
 import { useAlerts } from "@/components/alerts/useAlerts";
 import { NewMonthModal, laterToday } from "@/components/month/NewMonthModal";
@@ -36,7 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const shell = useShell();
-  const { user, months, month, setMonth, isPastMonth, toast, setProfileOpen, openNewTx, closeNewTx, newTxOpen, detailId, setDetailId, profileOpen, updatePrefs, debtSheet, setDebtSheet, setAlertsOpen, alertsOpen } =
+  const { user, months, month, setMonth, isPastMonth, toast, dismissToast, setProfileOpen, openNewTx, closeNewTx, newTxOpen, detailId, setDetailId, profileOpen, updatePrefs, debtSheet, setDebtSheet, setAlertsOpen, alertsOpen } =
     shell;
 
   const view = viewFromPath(pathname);
@@ -119,6 +120,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`/bolsi/bolsi-${toast.pose}.svg`} alt="" />
       {toast.message}
+      {toast.action && (
+        <button
+          className={s.toastAction}
+          onClick={() => {
+            const fn = toast.action!.fn;
+            dismissToast();
+            fn();
+          }}
+        >
+          {toast.action.label}
+        </button>
+      )}
     </div>
   );
 
@@ -277,6 +290,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {debtSheet?.kind === "card" && <CardSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "bill" && <BillSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "loan" && <LoanSheet id={debtSheet.id} onClose={closeDebtSheet} />}
+      {debtSheet?.kind === "loanpay" && debtSheet.id && <LoanPaySheet id={debtSheet.id} onClose={closeDebtSheet} />}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
+import { sortedEntities } from "@/lib/entities";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
@@ -16,10 +17,11 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
   const { loans, saveLoan, deleteLoan } = useData();
   const loan = id ? loans.find((l) => l.id === id) : null;
 
+  const [lender, setLender] = useState(loan?.lender ?? "");
   const [name, setName] = useState(loan?.name ?? "");
   const [installment, setInstallment] = useState(loan ? toInput(loan.installment) : "");
   const [n, setN] = useState(loan ? String(loan.n) : "0");
-  const [of, setOf] = useState(loan ? String(loan.of) : "12");
+  const [of, setOf] = useState(loan ? String(loan.of) : "");
   const [due, setDue] = useState(loan ? String(loan.due_day) : "10");
   const [tna, setTna] = useState(loan ? String(Number(loan.tna)) : "");
   const [balance, setBalance] = useState(loan && Number(loan.balance) ? toInput(loan.balance) : "");
@@ -57,6 +59,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
     if (!dayOk(due)) return setErr("El día va de 1 a 31");
     setBusy(true);
     const ok = await saveLoan(id, {
+      lender: lender && lender !== "Otra" ? lender : null,
       name: name.trim(),
       installment: toDecimal(parseAmount(installment)),
       n: Number(n),
@@ -78,10 +81,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
     setBusy(true);
     const ok = await deleteLoan(id);
     setBusy(false);
-    if (ok) {
-      flash("Préstamo eliminado");
-      onClose();
-    }
+    if (ok) onClose();
   };
 
   const edit =
@@ -101,28 +101,58 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
         <span className={d.sheetTitle}>{id ? "Editar préstamo" : "Nuevo préstamo"}</span>
         <div className={d.fields}>
           <label className={`${d.field} ${d.full}`}>
+            Entidad
+            <select
+              className={d.input}
+              value={lender}
+              onChange={(e) => {
+                const v = e.target.value;
+                setErr("");
+                setLender(v);
+                if (!name.trim() && v && v !== "Otra") setName(`Préstamo ${v}`);
+              }}
+            >
+              <option value="">Elegí banco, billetera u otra</option>
+              <optgroup label="Bancos">
+                {sortedEntities("banco").map((e) => (
+                  <option key={e.name} value={e.name}>
+                    {e.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Billeteras">
+                {sortedEntities("billetera").map((e) => (
+                  <option key={e.name} value={e.name}>
+                    {e.name}
+                  </option>
+                ))}
+              </optgroup>
+              <option value="Otra">Otra</option>
+            </select>
+          </label>
+          <label className={`${d.field} ${d.full}`}>
             Nombre
-            <input className={d.input} value={name} onChange={(e) => edit(setName)(e.target.value)} placeholder="Ej. Préstamo personal Santander" maxLength={60} autoFocus={!id} />
+            <input className={d.input} value={name} onChange={(e) => edit(setName)(e.target.value)} placeholder="Ej. Préstamo personal" maxLength={60} />
           </label>
           <label className={d.field}>
-            Cuota
+            Cuota mensual
             <input className={d.input} value={installment} onChange={(e) => terms(setInstallment)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
           </label>
           <label className={d.field}>
-            Vence (día)
+            Día de vencimiento
             <input className={d.input} value={due} onChange={(e) => edit(setDue)(digits(e.target.value, 2))} inputMode="numeric" />
           </label>
           <label className={d.field}>
-            Cuotas pagadas
+            Cuotas en total
+            <input className={d.input} value={of} onChange={(e) => terms(setOf)(digits(e.target.value, 3))} inputMode="numeric" placeholder="24" />
+          </label>
+          <label className={d.field}>
+            Cuotas ya pagadas
             <input className={d.input} value={n} onChange={(e) => terms(setN)(digits(e.target.value, 3))} inputMode="numeric" />
           </label>
           <label className={d.field}>
-            Total de cuotas
-            <input className={d.input} value={of} onChange={(e) => terms(setOf)(digits(e.target.value, 3))} inputMode="numeric" />
-          </label>
-          <label className={d.field}>
-            TNA %
-            <input className={d.input} value={tna} onChange={(e) => edit(setTna)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
+            TNA (opcional)
+            <input className={d.input} value={tna} onChange={(e) => edit(setTna)(maskAmountEvent(e))} inputMode="decimal" placeholder="%" />
           </label>
           <label className={d.field}>
             Saldo restante

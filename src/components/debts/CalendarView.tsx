@@ -21,7 +21,7 @@ const dot = (o: Obligation) => (o.kind === "card" ? CARD_COLOR : catColor(o.cate
 
 export function CalendarView() {
   const { month, isPastMonth, flash, setDebtSheet } = useShell();
-  const { cards, bills, loans, payBill, unpayBill, payLoan, unpayLoan } = useData();
+  const { cards, bills, loans, payBill, unpayBill, unpayLoan } = useData();
   const obligations = useObligations(month);
   const today = todayAR();
   const isCurrent = today.startsWith(month);
@@ -47,11 +47,10 @@ export function CalendarView() {
 
   const toggle = async (o: Obligation) => {
     if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
+    if (o.kind === "loan" && !o.paid) return setDebtSheet({ kind: "loanpay", id: o.id });
     const ok =
       o.kind === "loan"
-        ? o.paid
-          ? await unpayLoan(o.id)
-          : await payLoan(o.id, month)
+        ? await unpayLoan(o.id)
         : o.paid
           ? await unpayBill(o.id, month)
           : await payBill(o.id, month);

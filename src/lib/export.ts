@@ -29,7 +29,8 @@ export async function exportRows(userId: string, f: z.infer<typeof Query>) {
     userId,
     deletedAt: null,
     date: monthRange(f.month),
-    ...(!all && f.type && { type: f.type }),
+    // Los pagos de tarjeta no son gasto ni ingreso: no van en la exportación.
+    type: !all && f.type ? f.type : { in: ["in", "out"] },
     ...(!all && f.category && { categoryId: f.category }),
     ...(!all && f.account && { accountId: f.account }),
     ...(!all && f.q && { description: { contains: f.q, mode: "insensitive" as const } }),

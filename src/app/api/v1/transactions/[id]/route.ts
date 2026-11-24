@@ -5,6 +5,7 @@ import { txDto } from "@/lib/dto";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import { merchantDomain } from "@/lib/merchants";
 import { TxPatch, applyToBalance, checkTxRefs, toDate } from "@/lib/transactions";
+import { deleteTransactions, undoToken } from "@/lib/tx-delete";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -20,10 +21,11 @@ export const PATCH = handle(async (req: Request, { params }: Ctx) => {
   const { id } = await params;
   const prev = await findOwn(userId, id);
   const p = await readBody(req, TxPatch);
+  if (prev.type === "card_payment") throw new ApiError(422, "card_payment", "Los pagos de tarjeta no se editan: borralo y registralo de nuevo.");
 
   // Estado final completo, para validar y recalcular el saldo.
   const next = {
-    type: p.type ?? prev.type,
+    type: p.type ?? (prev.type as "in" | "out"),
     date: p.date ?? prev.date.toISOString().slice(0, 10),
     description: p.description ?? prev.description,
     category_id: p.category_id ?? prev.categoryId,
@@ -65,26 +67,11 @@ export const PATCH = handle(async (req: Request, { params }: Ctx) => {
   return Response.json({ transaction: txDto(updated) });
 });
 
-// DELETE /transactions/:id (borrado lógico, necesario para sincronizar)
+// DELETE /transactions/:id (borrado lógico con deshacer)
 export const DELETE = handle(async (req: Request, { params }: Ctx) => {
   const userId = await requireUserId(req);
   const { id } = await params;
-  const prev = await findOwn(userId, id);
-  await prisma.$transaction(async (db) => {
-    await db.transaction.update({ where: { id }, data: { deletedAt: new Date() } });
-    await applyToBalance(db, prev, -1);
-    // Si era la última cuota pagada de un préstamo, el préstamo vuelve atrás.
-    const loan = await db.loan.findFirst({ where: { lastPaymentTxId: id, deletedAt: null } });
-    if (loan) {
-      await db.loan.update({
-        where: { id: loan.id },
-        data: { n: Math.max(0, loan.n - 1), balance: { increment: loan.installment }, lastPaidMonth: null, lastPaymentTxId: null, paidThisMonth: false },
-      });
-    }
-    // Si era el pago de un gasto fijo, el gasto vuelve a quedar pendiente.
-    if (prev.billId) {
-      await db.billPayment.updateMany({ where: { transactionId: id, deletedAt: null }, data: { deletedAt: new Date(), transactionId: null } });
-    }
-  });
-  return new Response(null, { status: 204 });
+  await findOwn(userId, id);
+  await prisma.$transaction((db) => deleteTransactions(db, userId, [id]));
+  return Response.json({ undo_token: undoToken(userId, [id]) });
 });

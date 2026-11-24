@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
 import { AccountSheet } from "./AccountSheet";
 import { ACCOUNT_KINDS, kindColor, kindTint } from "./kinds";
+import { entityDomain, norm, sortedEntities } from "@/lib/entities";
+import { Logo } from "@/components/shell/Logo";
 import a from "./accounts.module.css";
 
 export function AccountsView() {
@@ -27,7 +29,7 @@ export function AccountsView() {
     for (const t of transactions) {
       if (!t.account_id || !t.date.startsWith(month)) continue;
       const f = map.get(t.account_id) ?? { in: 0, out: 0 };
-      f[t.type] += Number(t.gross_amount);
+      f[t.type === "in" ? "in" : "out"] += Number(t.gross_amount);
       map.set(t.account_id, f);
     }
     return map;
@@ -75,9 +77,14 @@ export function AccountsView() {
           return (
             <button key={acc.id} className={`${a.card} ${a.account}`} onClick={() => setOpenId(acc.id)}>
               <div className={a.accHead}>
-                <span className={`${a.accIcon} material-symbols-rounded`} style={{ background: kindTint(acc.kind), color: kindColor(acc.kind) }}>
-                  {k.icon}
-                </span>
+                <Logo
+                  domain={acc.kind === "efectivo" ? null : entityDomain(acc.name)}
+                  icon={k.icon}
+                  size={42}
+                  radius={14}
+                  iconBg={kindTint(acc.kind)}
+                  iconColor={kindColor(acc.kind)}
+                />
                 <span className={a.accName}>
                   <strong>{acc.name}</strong>
                   <span className={a.dim}>
@@ -124,6 +131,7 @@ function NewAccountForm({ onDone }: { onDone: () => void }) {
   const [kind, setKind] = useState<AccountDto["kind"]>("banco");
   const [currency, setCurrency] = useState<Currency>("ARS");
   const [balance, setBalance] = useState("");
+  const [q, setQ] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -139,9 +147,68 @@ function NewAccountForm({ onDone }: { onDone: () => void }) {
     }
   };
 
+  const pickable = kind !== "efectivo";
+  const all = pickable ? sortedEntities(kind) : [];
+  const nq = norm(q);
+  const list = all.filter((e) => !nq || norm(e.name).includes(nq) || e.match.test(q));
+
   return (
     <form className={`${a.card} ${a.section}`} onSubmit={submit} noValidate>
-      <span className={a.sectionTitle}>Nueva cuenta</span>
+      <div className={a.formHead}>
+        <span className={a.sectionTitle}>Nueva cuenta</span>
+        <div className={a.kindSeg} role="group" aria-label="Tipo">
+          {(
+            [
+              ["banco", "Banco"],
+              ["billetera", "Billetera"],
+              ["efectivo", "Efectivo"],
+            ] as const
+          ).map(([v, l]) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={kind === v}
+              onClick={() => {
+                setKind(v);
+                setQ("");
+                setName(v === "efectivo" ? "Efectivo" : "");
+                setErr("");
+              }}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+      {pickable && (
+        <div className={a.picker}>
+          <label className={a.pickSearch}>
+            <span className="material-symbols-rounded">search</span>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={kind === "banco" ? "Buscá tu banco" : "Buscá tu billetera"} aria-label="Buscar" autoFocus />
+          </label>
+          <div className={a.pickGrid}>
+            {list.map((e) => (
+              <button
+                key={e.name}
+                type="button"
+                className={a.pickItem}
+                aria-pressed={name === e.name}
+                onClick={() => {
+                  setName(e.name);
+                  setErr("");
+                }}
+              >
+                <Logo domain={e.domain} icon="account_balance" size={34} />
+                <span>{e.name}</span>
+              </button>
+            ))}
+            {!list.length && <span className={a.pickNone}>No encontramos “{q}”. Escribí el nombre abajo.</span>}
+          </div>
+          <span className={a.pickCount}>
+            {list.length} de {all.length} {kind === "banco" ? "bancos" : "billeteras"}
+          </span>
+        </div>
+      )}
       <div className={a.fields}>
         <label className={a.field}>
           Nombre
@@ -152,20 +219,9 @@ function NewAccountForm({ onDone }: { onDone: () => void }) {
               setName(e.target.value);
               setErr("");
             }}
-            placeholder="Ej. Ualá, Brubank, Caja fuerte"
+            placeholder={pickable ? "Elegilo arriba o escribilo" : "Efectivo, Caja fuerte…"}
             maxLength={60}
-            autoFocus
           />
-        </label>
-        <label className={a.field}>
-          Tipo
-          <select className={a.input} value={kind} onChange={(e) => setKind(e.target.value as AccountDto["kind"])}>
-            {Object.entries(ACCOUNT_KINDS).map(([v, k]) => (
-              <option key={v} value={v}>
-                {k.label}
-              </option>
-            ))}
-          </select>
         </label>
         <label className={a.field}>
           Moneda

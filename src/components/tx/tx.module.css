@@ -25,6 +25,10 @@
   padding: 18px 20px 20px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  /* Con mucho contenido, la hoja hace scroll en vez de aplastar las filas. */
+  grid-auto-rows: max-content;
+  align-content: start;
+  overscroll-behavior: contain;
   gap: 16px;
   animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
@@ -51,7 +55,13 @@
 }
 
 .top {
-  position: relative;
+  /* El encabezado (con el botón de cerrar) queda fijo al hacer scroll. */
+  position: sticky;
+  top: -18px;
+  z-index: 3;
+  margin: -18px -20px 0;
+  padding: 18px 20px 6px;
+  background: inherit;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -105,11 +115,16 @@
 }
 
 .detail .close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+  /* Fijo arriba a la derecha aunque la hoja haga scroll (sin empujar el contenido). */
+  position: sticky;
+  top: -14px;
+  z-index: 3;
+  justify-self: end;
+  margin: -14px -10px -48px 0;
   width: 34px;
   height: 34px;
+  background: color-mix(in oklch, var(--elev) 88%, transparent);
+  backdrop-filter: blur(6px);
 }
 
 .amountRow {

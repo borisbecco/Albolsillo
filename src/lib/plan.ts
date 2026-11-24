@@ -3,7 +3,7 @@
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import type { Currency } from "@/lib/money";
 
-type TxLike = { type: "in" | "out"; date: string; category_id: string; amount: string; currency: Currency };
+type TxLike = { type: "in" | "out" | "card_payment"; date: string; category_id: string; amount: string; currency: Currency };
 
 export type MonthTotals = {
   inc: number;
@@ -19,7 +19,7 @@ export function monthTotals(txs: TxLike[], ym: string, toArs: (n: number, c: Cur
     if (!x.date.startsWith(ym)) continue;
     const v = toArs(Number(x.amount), x.currency);
     if (x.type === "in") t.inc += v;
-    else {
+    else if (x.type === "out") {
       t.out += v;
       t.byCat[x.category_id] = (t.byCat[x.category_id] ?? 0) + v;
     }

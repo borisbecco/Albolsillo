@@ -4,6 +4,8 @@ import { z } from "zod";
 const money = z.string().regex(/^\d{1,12}(\.\d{1,2})?$/, "Revisá los montos");
 
 export const LoanFields = z.object({
+  /** Banco o billetera (de la lista o libre) */
+  lender: z.string().trim().max(60).nullable().optional(),
   name: z.string().trim().min(1, "Poné un nombre al préstamo").max(60),
   installment: money.refine((v) => Number(v) > 0, "Poné el valor de la cuota"),
   due_day: z.number().int().min(1, "El día va de 1 a 31").max(31, "El día va de 1 a 31"),
@@ -17,6 +19,7 @@ export const LoanFields = z.object({
 export function loanDto(l: Loan) {
   return {
     id: l.id,
+    lender: l.lender,
     name: l.name,
     installment: l.installment.toFixed(2),
     due_day: l.dueDay,

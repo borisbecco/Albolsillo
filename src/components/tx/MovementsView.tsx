@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
 import { ACCOUNT_KINDS } from "@/components/accounts/kinds";
 import { ExportMenu } from "./ExportMenu";
-import { CatIcon, todayAR } from "./parts";
+import { TxIcon, todayAR } from "./parts";
 import m from "./movements.module.css";
 
 const WD = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -24,13 +24,34 @@ function dayLabel(ymd: string) {
 
 export function MovementsView() {
   const { month, user, setDetailId, movAccount, setMovAccount } = useShell();
-  const { transactions, accounts, toDisplay } = useData();
+  const { transactions, accounts, toDisplay, deleteTxs } = useData();
   const accFilter = accounts.find((x) => x.id === movAccount) ?? null;
   const [q, setQ] = useState("");
   const [type, setType] = useState<TypeFilter>("all");
   const [cat, setCat] = useState("all");
+  const [selMode, setSelMode] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const toggleSel = (id: string) =>
+    setSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const exitSel = () => {
+    setSelMode(false);
+    setSel(new Set());
+  };
+  const removeSelected = async () => {
+    const ids = [...sel];
+    exitSel();
+    await deleteTxs(ids);
+  };
 
-  const inMonth = useMemo(() => transactions.filter((t) => t.date.startsWith(month)), [transactions, month]);
+  const inMonth = useMemo(
+    () => transactions.filter((t) => t.date.startsWith(month)),
+    [transactions, month],
+  );
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return inMonth.filter(
@@ -38,12 +59,17 @@ export function MovementsView() {
         (!accFilter || t.account_id === accFilter.id) &&
         (type === "all" || t.type === type) &&
         (cat === "all" || t.category_id === cat) &&
-        (!needle || t.description.toLowerCase().includes(needle) || CATEGORY_BY_ID[t.category_id]?.name.toLowerCase().includes(needle)),
+        (!needle ||
+          t.description.toLowerCase().includes(needle) ||
+          CATEGORY_BY_ID[t.category_id]?.name.toLowerCase().includes(needle)),
     );
   }, [inMonth, q, type, cat, accFilter]);
 
   const cur = user.display_currency;
-  const sumOf = (list: Tx[], ty: "in" | "out") => list.filter((t) => t.type === ty).reduce((s, t) => s + toDisplay(Number(t.amount), t.currency), 0);
+  const sumOf = (list: Tx[], ty: "in" | "out") =>
+    list
+      .filter((t) => t.type === ty)
+      .reduce((s, t) => s + toDisplay(Number(t.amount), t.currency), 0);
 
   const groups = useMemo(() => {
     const map = new Map<string, Tx[]>();
@@ -51,7 +77,13 @@ export function MovementsView() {
     return [...map.entries()].map(([date, rows]) => ({
       date,
       rows,
-      net: rows.reduce((s, t) => s + (t.type === "in" ? 1 : -1) * toDisplay(Number(t.amount), t.currency), 0),
+      net: rows.reduce(
+        (s, t) =>
+          s +
+          (t.type === "in" ? 1 : t.type === "out" ? -1 : 0) *
+            toDisplay(Number(t.amount), t.currency),
+        0,
+      ),
     }));
   }, [filtered, toDisplay]);
 
@@ -77,7 +109,12 @@ export function MovementsView() {
       <div className={m.toolbar}>
         <label className={m.search}>
           <span className="material-symbols-rounded">search</span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar movimiento o comercio" aria-label="Buscar" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar movimiento o comercio"
+            aria-label="Buscar"
+          />
         </label>
         <div className={m.typeSeg} role="group" aria-label="Tipo">
           {(
@@ -87,18 +124,55 @@ export function MovementsView() {
               ["in", "Ingresos"],
             ] as const
           ).map(([v, l]) => (
-            <button key={v} aria-pressed={type === v} onClick={() => setType(v)}>
+            <button
+              key={v}
+              aria-pressed={type === v}
+              onClick={() => setType(v)}
+            >
               {l}
             </button>
           ))}
         </div>
-        <ExportMenu query={{ type: type === "all" ? undefined : type, category: cat === "all" ? undefined : cat, q: q.trim() || undefined, account: accFilter?.id }} />
+        <button
+          className={m.exportBtn}
+          data-tour="select"
+          aria-pressed={selMode}
+          style={
+            selMode
+              ? {
+                  borderColor: "var(--acc)",
+                  background:
+                    "color-mix(in oklch, var(--acc) 12%, var(--panel))",
+                }
+              : undefined
+          }
+          onClick={() => (selMode ? exitSel() : setSelMode(true))}
+        >
+          <span className="material-symbols-rounded">
+            {selMode ? "close" : "checklist"}
+          </span>
+          {selMode ? "Cancelar" : "Seleccionar"}
+        </button>
+        <ExportMenu
+          query={{
+            type: type === "all" ? undefined : type,
+            category: cat === "all" ? undefined : cat,
+            q: q.trim() || undefined,
+            account: accFilter?.id,
+          }}
+        />
       </div>
 
       {accFilter && (
         <div>
-          <button className={m.accFilter} onClick={() => setMovAccount(null)} title="Quitar filtro">
-            <span className="material-symbols-rounded">{ACCOUNT_KINDS[accFilter.kind].icon}</span>
+          <button
+            className={m.accFilter}
+            onClick={() => setMovAccount(null)}
+            title="Quitar filtro"
+          >
+            <span className="material-symbols-rounded">
+              {ACCOUNT_KINDS[accFilter.kind].icon}
+            </span>
             {accFilter.name}
             <span className="material-symbols-rounded">close</span>
           </button>
@@ -106,14 +180,28 @@ export function MovementsView() {
       )}
 
       <div className={m.cats} role="group" aria-label="Categoría">
-        {[{ id: "all", name: "Todas", icon: "apps" }, ...CATEGORIES].map((c) => (
-          <button key={c.id} className={m.catChip} aria-pressed={cat === c.id} onClick={() => setCat(c.id)}>
-            <span className={`${m.catDot} material-symbols-rounded`} style={cat === c.id ? undefined : { color: c.id === "all" ? "var(--acc2)" : catColor(c.id) }}>
-              {c.icon}
-            </span>
-            {c.name}
-          </button>
-        ))}
+        {[{ id: "all", name: "Todas", icon: "apps" }, ...CATEGORIES].map(
+          (c) => (
+            <button
+              key={c.id}
+              className={m.catChip}
+              aria-pressed={cat === c.id}
+              onClick={() => setCat(c.id)}
+            >
+              <span
+                className={`${m.catDot} material-symbols-rounded`}
+                style={
+                  cat === c.id
+                    ? undefined
+                    : { color: c.id === "all" ? "var(--acc2)" : catColor(c.id) }
+                }
+              >
+                {c.icon}
+              </span>
+              {c.name}
+            </button>
+          ),
+        )}
       </div>
 
       <div className={m.summary}>
@@ -123,7 +211,9 @@ export function MovementsView() {
         </div>
         <div className={m.kpi}>
           <span>Ingresos</span>
-          <strong style={{ color: "var(--pos)" }}>{formatMoney(sumOf(filtered, "in"), cur)}</strong>
+          <strong style={{ color: "var(--pos)" }}>
+            {formatMoney(sumOf(filtered, "in"), cur)}
+          </strong>
         </div>
         <div className={m.kpi}>
           <span>Gastos</span>
@@ -136,44 +226,127 @@ export function MovementsView() {
           <div key={g.date}>
             <div className={m.dayHead}>
               <span>{dayLabel(g.date)}</span>
-              <span className={m.dayTotal}>{formatMoney(g.net, cur, { sign: true })}</span>
+              <span className={m.dayTotal}>
+                {formatMoney(g.net, cur, { sign: true })}
+              </span>
             </div>
             {g.rows.map((t) => (
-              <button key={t.id} className={m.row} onClick={() => setDetailId(t.id)}>
-                <CatIcon id={t.category_id} />
-                <span className={m.rowMain}>
-                  <span className={m.rowDesc}>{t.description}</span>
-                  <span className={m.rowCat}>
-                    {CATEGORY_BY_ID[t.category_id]?.name}
-                    {t.recurring ? "  ↻" : ""}
+              <div
+                key={t.id}
+                className={m.rowWrap}
+                data-selected={selMode && sel.has(t.id)}
+              >
+                <button
+                  className={m.row}
+                  onClick={() =>
+                    selMode ? toggleSel(t.id) : setDetailId(t.id)
+                  }
+                  aria-pressed={selMode ? sel.has(t.id) : undefined}
+                >
+                  {selMode && (
+                    <input
+                      type="checkbox"
+                      className={m.check}
+                      checked={sel.has(t.id)}
+                      readOnly
+                      tabIndex={-1}
+                      aria-hidden
+                    />
+                  )}
+                  {t.type === "card_payment" ? (
+                    <span
+                      className={`${m.cardPayIcon} material-symbols-rounded`}
+                    >
+                      credit_card
+                    </span>
+                  ) : (
+                    <TxIcon categoryId={t.category_id} domain={t.merchant_domain} />
+                  )}
+                  <span className={m.rowMain}>
+                    <span className={m.rowDesc}>{t.description}</span>
+                    <span className={m.rowCat}>
+                      {t.type === "card_payment"
+                        ? "Pago de tarjeta · no es gasto"
+                        : CATEGORY_BY_ID[t.category_id]?.name}
+                      {t.recurring ? "  ↻" : ""}
+                    </span>
                   </span>
-                </span>
-                {t.status !== "synced" && (
+                  {t.status !== "synced" && (
+                    <span
+                      className={`material-symbols-rounded ${m.status}`}
+                      data-status={t.status}
+                      title={
+                        t.status === "failed"
+                          ? "No se pudo guardar"
+                          : "Guardando…"
+                      }
+                    >
+                      {t.status === "failed" ? "cloud_off" : "schedule"}
+                    </span>
+                  )}
                   <span
-                    className={`material-symbols-rounded ${m.status}`}
-                    data-status={t.status}
-                    title={t.status === "failed" ? "No se pudo guardar" : "Guardando…"}
+                    className={m.rowAmount}
+                    style={{
+                      color:
+                        t.type === "in"
+                          ? "var(--pos)"
+                          : t.type === "card_payment"
+                            ? "var(--mut)"
+                            : "var(--fg)",
+                    }}
                   >
-                    {t.status === "failed" ? "cloud_off" : "schedule"}
+                    {t.type === "in" ? "+" : "−"}
+                    {formatMoney(Number(t.amount), t.currency)}
                   </span>
+                </button>
+                {!selMode && (
+                  <button
+                    className={`${m.trash} material-symbols-rounded`}
+                    title="Eliminar"
+                    aria-label={`Eliminar ${t.description}`}
+                    onClick={() => void deleteTxs([t.id])}
+                  >
+                    delete
+                  </button>
                 )}
-                <span className={m.rowAmount} style={{ color: t.type === "in" ? "var(--pos)" : "var(--fg)" }}>
-                  {t.type === "in" ? "+" : "−"}
-                  {formatMoney(Number(t.amount), t.currency)}
-                </span>
-                <span className={`material-symbols-rounded ${m.chev}`}>chevron_right</span>
-              </button>
+              </div>
             ))}
           </div>
         ))}
         {!groups.length && (
           <div className={m.noResults}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={72} height={79} />
+            <img
+              src="/bolsi/bolsi-bienvenida.svg"
+              alt=""
+              width={72}
+              height={79}
+            />
             <span>No hay movimientos con estos filtros.</span>
           </div>
         )}
       </section>
+
+      {selMode && (
+        <div className={m.selBar} role="toolbar" aria-label="Eliminar varios">
+          <span>
+            {sel.size
+              ? `${sel.size} ${sel.size === 1 ? "seleccionado" : "seleccionados"}`
+              : "Tocá los que querés borrar"}
+          </span>
+          <button className={m.selCancel} onClick={exitSel}>
+            Cancelar
+          </button>
+          <button
+            className={m.selDelete}
+            disabled={!sel.size}
+            onClick={removeSelected}
+          >
+            <span className="material-symbols-rounded">delete</span>
+            Eliminar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

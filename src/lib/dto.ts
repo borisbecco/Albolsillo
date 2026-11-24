@@ -21,6 +21,10 @@ export function txDto(t: Transaction) {
     imported: t.imported,
     shared_expense_id: t.sharedExpenseId,
     merchant_domain: t.merchantDomain,
+    source: t.source,
+    loan_id: t.loanId,
+    installment_id: t.installmentId,
+    installment_number: t.installmentNumber,
     updated_at: t.updatedAt.toISOString(),
   };
 }

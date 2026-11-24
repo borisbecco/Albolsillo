@@ -59,7 +59,7 @@ export async function checkTxRefs(db: Tx, userId: string, t: TxInputT) {
 /** Suma o resta el movimiento del saldo de su cuenta (las tarjetas toman el saldo del resumen). */
 export async function applyToBalance(
   db: Tx,
-  t: { type: "in" | "out"; accountId: string | null; grossAmount: Prisma.Decimal | string },
+  t: { type: "in" | "out" | "card_payment"; accountId: string | null; grossAmount: Prisma.Decimal | string },
   direction: 1 | -1,
 ) {
   if (!t.accountId) return;

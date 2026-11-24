@@ -8,7 +8,7 @@ import { VIEWS } from "@/lib/nav";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { dueInfo, useObligations } from "@/components/debts/obligations";
-import { CatIcon, todayAR } from "@/components/tx/parts";
+import { CatIcon, TxIcon, todayAR } from "@/components/tx/parts";
 import { useSummary } from "./useSummary";
 import h from "./dashboard.module.css";
 
@@ -48,7 +48,7 @@ export function Activity() {
           <div className={h.fade} key="recent">
             {recent.map((t) => (
               <button key={t.id} className={h.item} onClick={() => setDetailId(t.id)}>
-                <CatIcon id={t.category_id} />
+                <TxIcon categoryId={t.category_id} domain={t.merchant_domain} />
                 <span className={h.itemName}>{t.description}</span>
                 <span className={h.itemDate}>
                   {Number(t.date.slice(8))} {MONTH_SHORT[Number(t.date.slice(5, 7)) - 1]}

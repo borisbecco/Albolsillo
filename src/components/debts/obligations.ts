@@ -89,3 +89,22 @@ export function dueInfo(month: string, day: number, paid: boolean) {
   if (d <= 7) return { label: `Vence en ${d} días`, color: "var(--amb)" };
   return { label: `Vence en ${d} días`, color: "var(--mut)" };
 }
+
+/** Estado de un préstamo en el mes: Terminado, Cuota pagada, Vencida, Vence hoy, Vence en N d. */
+export function loanStatus(month: string, l: { n: number; of: number; due_day: number; last_paid_month: string | null }) {
+  if (l.last_paid_month === month) return { label: "Cuota pagada", color: "var(--pos)", canPay: false, done: false };
+  if (l.n >= l.of) return { label: "Terminado", color: "var(--pos)", canPay: false, done: true };
+  const day = Math.min(l.due_day, daysInMonth(month));
+  const due = new Date(`${month}-${String(day).padStart(2, "0")}T00:00:00Z`);
+  const now = new Date(`${todayAR()}T00:00:00Z`);
+  const d = Math.round((due.getTime() - now.getTime()) / 86_400_000);
+  const s =
+    d < 0
+      ? { label: `Vencida hace ${-d} d`, color: "var(--red)" }
+      : d === 0
+        ? { label: "Vence hoy", color: "var(--red)" }
+        : d <= 7
+          ? { label: `Vence en ${d} d`, color: "var(--amb)" }
+          : { label: `Vence el ${day}`, color: "var(--mut)" };
+  return { ...s, canPay: true, done: false };
+}

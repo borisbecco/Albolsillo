@@ -6,7 +6,8 @@ import type { UserDto } from "@/lib/auth/session";
 import { currentMonth, navigableMonths } from "@/lib/month";
 
 export type BolsiPose = "bienvenida" | "ingreso" | "gasto" | "meta" | "alerta" | "errorguardar";
-export type Toast = { id: number; message: string; pose: BolsiPose };
+export type ToastAction = { label: string; fn: () => void };
+export type Toast = { id: number; message: string; pose: BolsiPose; action?: ToastAction };
 
 type Prefs = Partial<Pick<UserDto, "theme" | "display_currency" | "rate_type" | "manual_rate" | "pay_strategy" | "alert_days" | "mail_alerts" | "name" | "last_month_opened">>;
 
@@ -23,7 +24,8 @@ type Shell = {
   /** En un mes pasado no se puede cargar nada. */
   isPastMonth: boolean;
   toast: Toast | null;
-  flash: (message: string, pose?: BolsiPose) => void;
+  flash: (message: string, pose?: BolsiPose, action?: ToastAction) => void;
+  dismissToast: () => void;
   profileOpen: boolean;
   setProfileOpen: (v: boolean) => void;
   newTxOpen: boolean;
@@ -53,7 +55,7 @@ type Shell = {
   setMovAccount: (id: string | null) => void;
 };
 
-export type DebtSheet = { kind: "card" | "bill" | "loan"; id: string | null } | null;
+export type DebtSheet = { kind: "card" | "bill" | "loan" | "loanpay" | "cardpay" | "stmt"; id: string | null } | null;
 
 const Ctx = createContext<Shell | null>(null);
 
@@ -74,10 +76,15 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const [profileOpen, setProfileOpen] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const flash = useCallback((message: string, pose: BolsiPose = "bienvenida") => {
+  const flash = useCallback((message: string, pose: BolsiPose = "bienvenida", action?: ToastAction) => {
     clearTimeout(toastTimer.current);
-    setToast({ id: Date.now(), message, pose });
-    toastTimer.current = setTimeout(() => setToast(null), 2800);
+    setToast({ id: Date.now(), message, pose, action });
+    // Con "Deshacer" queda 6 segundos; si no, menos.
+    toastTimer.current = setTimeout(() => setToast(null), action ? 6000 : 2800);
+  }, []);
+  const dismissToast = useCallback(() => {
+    clearTimeout(toastTimer.current);
+    setToast(null);
   }, []);
 
   const updatePrefs = useCallback(
@@ -133,6 +140,7 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     isPastMonth,
     toast,
     flash,
+    dismissToast,
     profileOpen,
     setProfileOpen,
     newTxOpen,

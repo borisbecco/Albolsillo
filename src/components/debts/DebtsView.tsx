@@ -10,13 +10,16 @@ import { CardFace } from "@/components/cards/CardFace";
 import { useData } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
-import { CatIcon } from "@/components/tx/parts";
-import { dueInfo } from "./obligations";
+import { TxIcon } from "@/components/tx/parts";
+import { merchantDomain } from "@/lib/merchants";
+import { dueInfo, loanStatus } from "./obligations";
+import { entityDomain } from "@/lib/entities";
+import { Logo } from "@/components/shell/Logo";
 import d from "./debts.module.css";
 
 export function DebtsView() {
   const { month, isPastMonth, flash, setDebtSheet, setImportFor } = useShell();
-  const { cards, bills, loans, installments, isBillPaid, payBill, unpayBill, payLoan, unpayLoan, toDisplay, user } = useDebtsData();
+  const { cards, bills, loans, installments, isBillPaid, payBill, unpayBill, toDisplay, user } = useDebtsData();
   const [busyBill, setBusyBill] = useState<string | null>(null);
   const mShort = MONTH_SHORT[Number(month.slice(5)) - 1];
 
@@ -30,14 +33,6 @@ export function DebtsView() {
     const ok = paid ? await unpayBill(id, month) : await payBill(id, month);
     setBusyBill(null);
     if (ok && !paid) flash(`${name} marcado como pagado`, "gasto");
-  };
-
-  const toggleLoan = async (id: string, name: string, paid: boolean) => {
-    if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
-    setBusyBill(id);
-    const ok = paid ? await unpayLoan(id) : await payLoan(id, month);
-    setBusyBill(null);
-    if (ok && !paid) flash(`Cuota de ${name} pagada`, "gasto");
   };
 
   const pending = bills.filter((b) => !isBillPaid(b.id, month));
@@ -117,6 +112,72 @@ export function DebtsView() {
       </section>
 
       <section className={d.block}>
+        <div className={d.blockHead}>
+          <span className={d.blockTitle}>Préstamos</span>
+          <button className={d.pillBtn} onClick={() => setDebtSheet({ kind: "loan", id: null })}>
+            <span className="material-symbols-rounded">add</span>
+            Agregar préstamo
+          </button>
+        </div>
+        <div className={d.list}>
+          {!loans.length && (
+            <div className={d.emptyLoans}>
+              <span className="material-symbols-rounded">account_balance</span>
+              <span>No tenés préstamos cargados. Sumalos para que la cuota entre en el plan del mes y te avisemos antes de cada vencimiento.</span>
+              <button className={d.payBtn} onClick={() => setDebtSheet({ kind: "loan", id: null })}>
+                Agregar préstamo
+              </button>
+            </div>
+          )}
+          {loans.map((l) => {
+            const st = loanStatus(month, l);
+            return (
+              <div key={l.id} className={d.loanRow} style={{ opacity: st.done ? 0.6 : 1 }}>
+                <Logo domain={entityDomain(l.lender || l.name)} icon="account_balance" radius={12} />
+                <div className={d.loanInfo}>
+                  <strong>{l.name}</strong>
+                  <span>
+                    Cuota {formatMoney(Number(l.installment), "ARS")}
+                    {Number(l.tna) ? ` · TNA ${Number(l.tna)}%` : ""} · vence el {l.due_day}
+                  </span>
+                </div>
+                <div className={d.loanProgress}>
+                  <span className={d.loanTrack}>
+                    <span style={{ width: `${(l.n / l.of) * 100}%` }} />
+                  </span>
+                  <span>
+                    {l.n}/{l.of} cuotas
+                  </span>
+                </div>
+                <div className={d.loanBal}>
+                  <strong>{formatMoney(Number(l.balance), "ARS")}</strong>
+                  <span>saldo restante</span>
+                </div>
+                <div className={d.loanActions}>
+                  <span className={d.status} style={{ color: st.color, background: `color-mix(in oklch, ${st.color} 16%, transparent)` }}>
+                    {st.label}
+                  </span>
+                  {st.canPay && (
+                    <button
+                      className={d.payBtn}
+                      disabled={isPastMonth}
+                      title={isPastMonth ? "En un mes pasado no se puede cargar nada" : undefined}
+                      onClick={() => setDebtSheet({ kind: "loanpay", id: l.id })}
+                    >
+                      Pagar cuota
+                    </button>
+                  )}
+                  <button className={`${d.iconBtn} material-symbols-rounded`} title="Editar" aria-label={`Editar ${l.name}`} onClick={() => setDebtSheet({ kind: "loan", id: l.id })}>
+                    edit
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={d.block}>
         <span className={d.blockTitle}>Gastos fijos y suscripciones</span>
         <div className={d.list}>
           {bills.map((b) => {
@@ -124,7 +185,7 @@ export function DebtsView() {
             const due = dueInfo(month, b.due_day, paid);
             return (
               <div key={b.id} className={d.row}>
-                <CatIcon id={b.category_id} />
+                <TxIcon categoryId={b.category_id} domain={merchantDomain(b.name)} />
                 <button className={d.rowMain} onClick={() => setDebtSheet({ kind: "bill", id: b.id })}>
                   <strong>{b.name}</strong>
                   <span className={d.rowSub}>
@@ -163,55 +224,6 @@ export function DebtsView() {
         </div>
       </section>
 
-      <section className={d.block}>
-        <span className={d.blockTitle}>Préstamos</span>
-        <div className={d.list}>
-          {loans.map((l) => {
-            const paid = l.last_paid_month === month;
-            const done = l.n >= l.of && !paid;
-            const due = dueInfo(month, l.due_day, paid);
-            return (
-              <div key={l.id} className={d.row}>
-                <CatIcon id="prestamo" />
-                <button className={d.rowMain} onClick={() => setDebtSheet({ kind: "loan", id: l.id })}>
-                  <strong>{l.name}</strong>
-                  <span className={d.rowSub}>
-                    Cuota {formatMoney(Number(l.installment), "ARS")}
-                    {Number(l.tna) ? ` · TNA ${Number(l.tna)}%` : ""} · día {l.due_day}
-                  </span>
-                  <span className={d.cuotaBar} style={{ width: "100%" }}>
-                    <span className={d.loanTrack}>
-                      <span style={{ width: `${(l.n / l.of) * 100}%` }} />
-                    </span>
-                    <span>
-                      {l.n} de {l.of}
-                    </span>
-                  </span>
-                  <span className={d.rowSub} style={{ color: done ? "var(--pos)" : due.color, width: "100%" }}>
-                    {done ? "Préstamo terminado 🎉" : `${due.label} · resta ${formatMoney(Number(l.balance), "ARS")}`}
-                  </span>
-                </button>
-                <span className={d.amount}>{formatMoney(Number(l.installment), "ARS")}</span>
-                {!done && (
-                  <button
-                    className={d.pay}
-                    aria-pressed={paid}
-                    disabled={busyBill === l.id || isPastMonth}
-                    title={isPastMonth ? "En un mes pasado no se puede cargar nada" : paid ? "Deshacer el pago" : "Marcar la cuota como pagada"}
-                    onClick={() => toggleLoan(l.id, l.name, paid)}
-                  >
-                    {paid ? "✓ Pagado" : "Marcar pago"}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          <button className={d.addRow} onClick={() => setDebtSheet({ kind: "loan", id: null })}>
-            <span className="material-symbols-rounded">add</span>
-            Agregar préstamo
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

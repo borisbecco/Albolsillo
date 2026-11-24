@@ -10,6 +10,7 @@ import type { SharedDto } from "@/lib/shared";
 import type { LoanDto } from "@/lib/loans";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
+import { currentMonth } from "@/lib/month";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 
 // Datos de la app (bootstrap) y operaciones sobre movimientos.
@@ -33,7 +34,7 @@ export type Bootstrap = {
   loans: LoanDto[];
 };
 
-export type LoanDraft = { name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string };
+export type LoanDraft = { lender: string | null; name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string };
 
 export type ImportPreview = {
   import_id: string;
@@ -155,7 +156,7 @@ type Data = {
   loans: LoanDto[];
   saveLoan: (id: string | null, l: LoanDraft) => Promise<boolean>;
   deleteLoan: (id: string) => Promise<boolean>;
-  payLoan: (id: string, month: string) => Promise<boolean>;
+  payLoan: (id: string, month: string, opts?: { amount?: string; account_id?: string | null }) => Promise<boolean>;
   unpayLoan: (id: string) => Promise<boolean>;
   importStatement: (cardId: string, file: File) => Promise<ImportPreview | null>;
   confirmImport: (importId: string, rowIds: string[], categories: Record<string, string>) => Promise<number | null>;
@@ -169,6 +170,10 @@ type Data = {
   createTx: (d: TxDraft) => Promise<void>;
   updateTx: (id: string, d: Partial<TxDraft>) => Promise<boolean>;
   deleteTx: (id: string) => Promise<boolean>;
+  /** Borra uno o varios movimientos y ofrece Deshacer durante unos segundos. */
+  deleteTxs: (ids: string[]) => Promise<boolean>;
+  /** Vuelve a pedir todos los datos al servidor (después de operaciones con varios efectos). */
+  reload: () => Promise<void>;
   failed: Tx | null;
   retryFailed: () => void;
   dismissFailed: () => void;
@@ -256,7 +261,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     async (t: Tx): Promise<Tx | null> => {
       const body: TxDraft & { id: string } = {
         id: t.id,
-        type: t.type,
+        type: t.type === "in" ? "in" : "out",
         date: t.date,
         description: t.description,
         category_id: t.category_id,
@@ -343,6 +348,10 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         id: crypto.randomUUID(),
         gross_amount: d.amount,
         bill_id: null,
+        source: "manual",
+        loan_id: null,
+        installment_id: null,
+        installment_number: null,
         imported: false,
         shared_expense_id: null,
         merchant_domain: null,
@@ -401,6 +410,78 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       }
     },
     [patchTx, moveBalances, flash],
+  );
+
+  const reload = useCallback(async () => {
+    try {
+      const b = await api<Bootstrap>(`/me/bootstrap?month=${currentMonth()}`);
+      setCards(b.cards);
+      setBills(b.bills);
+      setBillPayments(b.bill_payments);
+      setBudgets(b.budgets);
+      setGoals(b.goals);
+      setInvestments(b.investments);
+      setPeople(b.people);
+      setShared(b.shared);
+      setInstallments(b.installments);
+      setLoans(b.loans);
+      setAccounts(b.accounts);
+      // Lo que todavía no llegó al servidor se conserva.
+      setTransactions((list) =>
+        sortTx([...b.transactions.map((t) => ({ ...t, status: "synced" as const })), ...list.filter((t) => t.status !== "synced")]),
+      );
+    } catch {}
+  }, []);
+
+  const deleteTxs = useCallback(
+    async (ids: string[]) => {
+      const set = new Set(ids);
+      const removed = txRef.current.filter((t) => set.has(t.id));
+      if (!removed.length) return false;
+      setTransactions((list) => list.filter((t) => !set.has(t.id)));
+      // Si alguno está en viaje al servidor, se espera a que termine.
+      const settled = await Promise.all(removed.map(async (t) => (inflight.current.get(t.id) ? await inflight.current.get(t.id)! : t)));
+      const remote = settled.filter((t): t is Tx => !!t && t.status === "synced");
+      const local = settled.filter((t): t is Tx => !!t && t.status !== "synced");
+      const putBackLocal = () => local.length && setTransactions((list) => sortTx([...list, ...local]));
+      const cuotas = removed.some((t) => t.installment_number === 1);
+      const msg =
+        removed.length === 1
+          ? cuotas
+            ? "Eliminamos la compra y cancelamos las cuotas que faltaban"
+            : "Movimiento eliminado"
+          : `Eliminamos ${removed.length} movimientos`;
+      let token: string | null = null;
+      if (remote.length) {
+        try {
+          const r = await api<{ undo_token: string }>("/transactions/bulk-delete", { method: "POST", body: JSON.stringify({ ids: remote.map((t) => t.id) }) });
+          token = r.undo_token;
+        } catch {
+          setTransactions((list) => sortTx([...list, ...remote]));
+          putBackLocal();
+          flash("No pudimos eliminarlo. Probá de nuevo.", "errorguardar");
+          return false;
+        }
+        await reload();
+      }
+      flash(msg, "bienvenida", {
+        label: "Deshacer",
+        fn: async () => {
+          putBackLocal();
+          if (token) {
+            try {
+              await api("/transactions/restore", { method: "POST", body: JSON.stringify({ undo_token: token }) });
+              await reload();
+            } catch {
+              return flash("No pudimos recuperarlo.", "errorguardar");
+            }
+          }
+          flash("Listo, lo recuperamos");
+        },
+      });
+      return true;
+    },
+    [flash, reload],
   );
 
   // ─── Cuentas: se espera la respuesta del servidor (no son optimistas) ───
@@ -819,21 +900,33 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       try {
         await api(`/loans/${id}`, { method: "DELETE" });
         setLoans((list) => list.filter((x) => x.id !== id));
+        flash("Préstamo eliminado", "bienvenida", {
+          label: "Deshacer",
+          fn: async () => {
+            try {
+              const r = await api<{ loan: LoanDto }>(`/loans/${id}/restore`, { method: "POST" });
+              setLoans((list) => [...list, r.loan]);
+              flash("Listo, lo recuperamos");
+            } catch (e) {
+              fail(e, "No pudimos recuperarlo.");
+            }
+          },
+        });
         return true;
       } catch (e) {
         fail(e, "No pudimos eliminar el préstamo. Probá de nuevo.");
         return false;
       }
     },
-    [fail],
+    [fail, flash],
   );
 
   const payLoan = useCallback(
-    async (id: string, month: string) => {
+    async (id: string, month: string, opts: { amount?: string; account_id?: string | null } = {}) => {
       try {
         const res = await api<{ loan: LoanDto; transaction: TxDto; account: AccountDto | null }>(`/loans/${id}/pay`, {
           method: "POST",
-          body: JSON.stringify({ month, today: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()) }),
+          body: JSON.stringify({ month, ...opts, today: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()) }),
         });
         setLoans((list) => list.map((x) => (x.id === id ? res.loan : x)));
         setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
@@ -951,6 +1044,8 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     createTx,
     updateTx,
     deleteTx,
+    deleteTxs,
+    reload,
     failed,
     retryFailed: () => {
       if (!failed) return;

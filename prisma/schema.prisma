@@ -74,6 +74,44 @@ enum CardNetwork {
 enum TxType {
   in
   out
+  /// Pago del resumen de una tarjeta: mueve plata de una cuenta a la tarjeta, no es gasto
+  card_payment
+}
+
+enum TxSource {
+  manual
+  import
+  mail
+  share
+}
+
+enum InviteStatus {
+  pending
+  joined
+  cancelled
+  expired
+}
+
+enum SourceKind {
+  forward
+  share
+}
+
+enum SourceStatus {
+  pending
+  active
+  disabled
+}
+
+enum DetectedOrigin {
+  mail
+  share
+}
+
+enum DetectedStatus {
+  pending
+  confirmed
+  discarded
 }
 
 enum CategoryKind {
@@ -124,30 +162,39 @@ model User {
   mailAlerts      MailAlerts  @default(each) @map("mail_alerts")
   pushEnabled     Boolean     @default(false) @map("push_enabled")
   lastMonthOpened String?     @map("last_month_opened") @db.Char(7)
+  tourDoneAt      DateTime?   @map("tour_done_at") @db.Timestamptz
+  invitedById     String?     @map("invited_by") @db.Uuid
+  invitesQuota    Int         @default(5) @map("invites_quota")
+  androidWaitlist Boolean     @default(false) @map("android_waitlist")
   createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt       DateTime?   @map("deleted_at") @db.Timestamptz
 
-  refreshTokens       RefreshToken[]
-  passwordResets      PasswordReset[]
-  pushSubscriptions   PushSubscription[]
-  accounts            Account[]
-  transfers           Transfer[]
-  cards               Card[]
-  cardInstallments    CardInstallment[]
-  loans               Loan[]
-  bills               Bill[]
-  billPayments        BillPayment[]
-  transactions        Transaction[]
-  budgets             Budget[]
-  goals               Goal[]
-  goalContributions   GoalContribution[]
-  investments         Investment[]
-  people              Person[]           @relation("PersonOwner")
-  linkedAsPerson      Person[]           @relation("PersonLinkedUser")
-  sharedExpenses      SharedExpense[]
-  imports             Import[]
-  syncedChanges       SyncedChange[]
+  refreshTokens     RefreshToken[]
+  passwordResets    PasswordReset[]
+  pushSubscriptions PushSubscription[]
+  accounts          Account[]
+  transfers         Transfer[]
+  cards             Card[]
+  cardInstallments  CardInstallment[]
+  loans             Loan[]
+  bills             Bill[]
+  billPayments      BillPayment[]
+  transactions      Transaction[]
+  budgets           Budget[]
+  goals             Goal[]
+  goalContributions GoalContribution[]
+  investments       Investment[]
+  people            Person[]           @relation("PersonOwner")
+  linkedAsPerson    Person[]           @relation("PersonLinkedUser")
+  sharedExpenses    SharedExpense[]
+  imports           Import[]
+  syncedChanges     SyncedChange[]
+  invitesSent       Invite[]           @relation("InviteInviter")
+  expenseSources    ExpenseSource[]
+  detectedExpenses  DetectedExpense[]
+  merchantRules     MerchantRule[]
+  cardStatements    CardStatement[]
 
   @@map("users")
 }
@@ -188,6 +235,7 @@ model PushSubscription {
   endpoint  String   @unique
   p256dh    String
   auth      String
+  userAgent String?  @map("user_agent")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -246,69 +294,85 @@ model Transfer {
 // ─── Tarjetas, cuotas y préstamos ───────────────────────
 
 model Card {
-  id         String       @id @default(uuid()) @db.Uuid
-  userId     String       @map("user_id") @db.Uuid
-  name       String
-  bank       Bank?
-  network    CardNetwork
-  last4      String?      @db.Char(4)
-  balance    Decimal      @default(0) @db.Decimal(14, 2)
-  minPayment Decimal      @default(0) @map("min_payment") @db.Decimal(14, 2)
-  closeDay   Int          @map("close_day")
-  dueDay     Int          @map("due_day")
-  tna        Decimal      @default(0) @db.Decimal(7, 2)
-  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt  DateTime?    @map("deleted_at") @db.Timestamptz
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String      @map("user_id") @db.Uuid
+  name         String
+  bank         Bank?
+  network      CardNetwork
+  last4        String?     @db.Char(4)
+  balance      Decimal     @default(0) @db.Decimal(14, 2)
+  minPayment   Decimal     @default(0) @map("min_payment") @db.Decimal(14, 2)
+  /// Saldo en dólares del resumen vigente
+  balanceUsd   Decimal     @default(0) @map("balance_usd") @db.Decimal(14, 2)
+  /// Lo pagado del resumen vigente (se reinicia al cargar el resumen nuevo)
+  cyclePaid    Decimal     @default(0) @map("cycle_paid") @db.Decimal(14, 2)
+  cyclePaidUsd Decimal     @default(0) @map("cycle_paid_usd") @db.Decimal(14, 2)
+  /// Inicio del ciclo vigente (para "compras nuevas este ciclo")
+  cycleStart   DateTime?   @map("cycle_start") @db.Date
+  closeDay     Int         @map("close_day")
+  dueDay       Int         @map("due_day")
+  tna          Decimal     @default(0) @db.Decimal(7, 2)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime?   @map("deleted_at") @db.Timestamptz
 
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   installments CardInstallment[]
   transactions Transaction[]
   bills        Bill[]
   imports      Import[]
+  statements   CardStatement[]
 
   @@index([userId])
   @@map("cards")
 }
 
 model CardInstallment {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @map("user_id") @db.Uuid
-  cardId    String    @map("card_id") @db.Uuid
-  name      String
-  n         Int
-  of        Int
-  amount    Decimal   @db.Decimal(14, 2)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  id                 String    @id @default(uuid()) @db.Uuid
+  userId             String    @map("user_id") @db.Uuid
+  cardId             String    @map("card_id") @db.Uuid
+  name               String
+  n                  Int
+  of                 Int
+  amount             Decimal   @db.Decimal(14, 2)
+  /// Compras cargadas en la app (las importadas del resumen no tienen estos datos)
+  categoryId         String?   @map("category_id")
+  total              Decimal?  @db.Decimal(14, 2)
+  firstTransactionId String?   @map("first_transaction_id") @db.Uuid
+  cancelledAt        DateTime? @map("cancelled_at") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card         Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
 
   @@index([cardId])
   @@map("card_installments")
 }
 
 model Loan {
-  id            String    @id @default(uuid()) @db.Uuid
-  userId        String    @map("user_id") @db.Uuid
-  name          String
-  installment   Decimal   @db.Decimal(14, 2)
-  dueDay        Int       @map("due_day")
-  n             Int
-  of            Int
-  tna           Decimal   @default(0) @db.Decimal(7, 2)
-  balance       Decimal   @default(0) @db.Decimal(14, 2)
-  paidThisMonth Boolean   @default(false) @map("paid_this_month")
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  lender          String?
+  name            String
+  installment     Decimal   @db.Decimal(14, 2)
+  dueDay          Int       @map("due_day")
+  n               Int
+  of              Int
+  tna             Decimal   @default(0) @db.Decimal(7, 2)
+  balance         Decimal   @default(0) @db.Decimal(14, 2)
+  paidThisMonth   Boolean   @default(false) @map("paid_this_month")
   /// Mes (YYYY-MM) de la última cuota pagada y el movimiento que la registró (para deshacer)
-  lastPaidMonth   String?  @map("last_paid_month") @db.Char(7)
-  lastPaymentTxId String?  @map("last_payment_tx_id") @db.Uuid
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+  lastPaidMonth   String?   @map("last_paid_month") @db.Char(7)
+  lastPaymentTxId String?   @map("last_payment_tx_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
 
   @@index([userId])
   @@map("loans")
@@ -317,14 +381,14 @@ model Loan {
 // ─── Categorías (fijas en v1) ────────────────────────────
 
 model Category {
-  id   String       @id // super, resto, transp, …
-  name String
-  type TxType
-  kind CategoryKind
-  icon String // Material Symbol
-  hue  Int
+  id            String       @id // super, resto, transp, …
+  name          String
+  type          TxType
+  kind          CategoryKind
+  icon          String // Material Symbol
+  hue           Int
   /// Presupuesto predeterminado si no hay fila en budgets
-  defaultBudget Decimal? @map("default_budget") @db.Decimal(14, 2)
+  defaultBudget Decimal?     @map("default_budget") @db.Decimal(14, 2)
 
   bills          Bill[]
   transactions   Transaction[]
@@ -385,37 +449,44 @@ model BillPayment {
 // ─── Movimientos ─────────────────────────────────────────
 
 model Transaction {
-  id              String    @id @default(uuid()) @db.Uuid // = client_id
-  userId          String    @map("user_id") @db.Uuid
-  type            TxType
-  date            DateTime  @db.Date
-  description     String
-  categoryId      String    @map("category_id")
+  id                String    @id @default(uuid()) @db.Uuid // = client_id
+  userId            String    @map("user_id") @db.Uuid
+  type              TxType
+  date              DateTime  @db.Date
+  description       String
+  categoryId        String    @map("category_id")
   /// La parte del usuario (total ÷ personas si se dividió)
-  amount          Decimal   @db.Decimal(14, 2)
+  amount            Decimal   @db.Decimal(14, 2)
   /// Lo que salió de la cuenta o tarjeta
-  grossAmount     Decimal   @map("gross_amount") @db.Decimal(14, 2)
-  currency        Currency
-  accountId       String?   @map("account_id") @db.Uuid
-  cardId          String?   @map("card_id") @db.Uuid
-  recurring       Boolean   @default(false)
-  billId          String?   @map("bill_id") @db.Uuid
-  imported        Boolean   @default(false)
-  importId        String?   @map("import_id") @db.Uuid
-  sharedExpenseId String?   @map("shared_expense_id") @db.Uuid
-  merchantDomain  String?   @map("merchant_domain")
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
+  grossAmount       Decimal   @map("gross_amount") @db.Decimal(14, 2)
+  currency          Currency
+  accountId         String?   @map("account_id") @db.Uuid
+  cardId            String?   @map("card_id") @db.Uuid
+  recurring         Boolean   @default(false)
+  billId            String?   @map("bill_id") @db.Uuid
+  imported          Boolean   @default(false)
+  importId          String?   @map("import_id") @db.Uuid
+  sharedExpenseId   String?   @map("shared_expense_id") @db.Uuid
+  merchantDomain    String?   @map("merchant_domain")
+  source            TxSource  @default(manual)
+  detectedExpenseId String?   @map("detected_expense_id") @db.Uuid
+  loanId            String?   @map("loan_id") @db.Uuid
+  installmentId     String?   @map("installment_id") @db.Uuid
+  installmentNumber Int?      @map("installment_number")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category      Category       @relation(fields: [categoryId], references: [id])
-  account       Account?       @relation(fields: [accountId], references: [id])
-  card          Card?          @relation(fields: [cardId], references: [id])
-  bill          Bill?          @relation(fields: [billId], references: [id])
-  import        Import?        @relation(fields: [importId], references: [id])
-  sharedExpense SharedExpense? @relation(fields: [sharedExpenseId], references: [id])
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category         @relation(fields: [categoryId], references: [id])
+  account       Account?         @relation(fields: [accountId], references: [id])
+  card          Card?            @relation(fields: [cardId], references: [id])
+  bill          Bill?            @relation(fields: [billId], references: [id])
+  import        Import?          @relation(fields: [importId], references: [id])
+  sharedExpense SharedExpense?   @relation(fields: [sharedExpenseId], references: [id])
   billPayment   BillPayment?
+  loan          Loan?            @relation(fields: [loanId], references: [id])
+  installment   CardInstallment? @relation(fields: [installmentId], references: [id])
 
   @@index([userId, date])
   @@index([userId, categoryId, date])
@@ -617,4 +688,119 @@ model FxRate {
   updatedAt DateTime @map("updated_at") @db.Timestamptz
 
   @@map("fx_rates")
+}
+
+// ─── Historial de resúmenes de tarjeta ───────────────────
+
+model CardStatement {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  cardId     String   @map("card_id") @db.Uuid
+  balance    Decimal  @db.Decimal(14, 2)
+  balanceUsd Decimal  @default(0) @map("balance_usd") @db.Decimal(14, 2)
+  minimum    Decimal  @db.Decimal(14, 2)
+  closeDay   Int      @map("close_day")
+  dueDay     Int      @map("due_day")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+  @@map("card_statements")
+}
+
+// ─── Invitaciones (registro solo con código) ─────────────
+
+model Invite {
+  id           String       @id @default(uuid()) @db.Uuid
+  inviterId    String?      @map("inviter_id") @db.Uuid
+  email        String       @db.Citext
+  /// XXXX-XXXX, sin 0/O/1/I
+  code         String       @unique @db.Char(9)
+  status       InviteStatus @default(pending)
+  expiresAt    DateTime     @map("expires_at") @db.Timestamptz
+  joinedUserId String?      @map("joined_user_id") @db.Uuid
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  inviter User? @relation("InviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([inviterId])
+  @@map("invites")
+}
+
+// ─── Carga automática ────────────────────────────────────
+
+model ExpenseSource {
+  id               String       @id @default(uuid()) @db.Uuid
+  userId           String       @map("user_id") @db.Uuid
+  kind             SourceKind
+  /// Lo que va después del + en la dirección de reenvío
+  addressCode      String?      @unique @map("address_code") @db.Char(6)
+  confirmationCode String?      @map("confirmation_code")
+  confirmationLink String?      @map("confirmation_link")
+  status           SourceStatus @default(pending)
+  lastReceivedAt   DateTime?    @map("last_received_at") @db.Timestamptz
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  detected DetectedExpense[]
+
+  @@index([userId])
+  @@map("expense_sources")
+}
+
+model DetectedExpense {
+  id                  String         @id @default(uuid()) @db.Uuid
+  userId              String         @map("user_id") @db.Uuid
+  sourceId            String?        @map("source_id") @db.Uuid
+  origin              DetectedOrigin
+  /// message_id del mail o hash del archivo
+  externalId          String?        @map("external_id")
+  wallet              String?
+  merchant            String
+  merchantDomain      String?        @map("merchant_domain")
+  amount              Decimal        @db.Decimal(14, 2)
+  currency            Currency       @default(ARS)
+  date                DateTime       @db.Date
+  suggestedCategoryId String?        @map("suggested_category_id")
+  suggestedAccountId  String?        @map("suggested_account_id") @db.Uuid
+  possibleDuplicateOf String?        @map("possible_duplicate_of") @db.Uuid
+  learned             Boolean        @default(false)
+  status              DetectedStatus @default(pending)
+  transactionId       String?        @map("transaction_id") @db.Uuid
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source ExpenseSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, externalId])
+  @@index([userId, status])
+  @@map("detected_expenses")
+}
+
+model MerchantRule {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  /// Nombre del comercio normalizado (minúsculas, sin tildes)
+  merchantKey   String   @map("merchant_key")
+  merchantLabel String   @map("merchant_label")
+  categoryId    String   @map("category_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, merchantKey])
+  @@map("merchant_rules")
+}
+
+/// Remitentes desconocidos que llegaron a la casilla (para detectar billeteras nuevas)
+model UnknownSender {
+  sender   String   @id
+  count    Int      @default(1)
+  lastSeen DateTime @default(now()) @map("last_seen") @db.Timestamptz
+
+  @@map("unknown_senders")
 }

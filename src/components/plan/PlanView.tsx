@@ -40,8 +40,8 @@ const STRATS: { id: Strategy; label: string; prio: string; icon: string; how: st
 ];
 
 export function PlanView() {
-  const { user, updatePrefs, flash } = useShell();
-  const { cards, bills, loans, toDisplay, payBill, payLoan } = useData();
+  const { user, updatePrefs, flash, setDebtSheet } = useShell();
+  const { cards, bills, loans, toDisplay, payBill } = useData();
   const { plan, interest, income, C, pendingFixed, pendingBills, pendingLoans, reserve } = useSummary();
   const cur = user.display_currency;
   const fmt = (n: number) => formatMoney(toDisplay(n, "ARS"), cur);
@@ -257,7 +257,7 @@ export function PlanView() {
                     <button
                       className={`${p.check} material-symbols-rounded`}
                       title="Marcar la cuota como pagada"
-                      onClick={async () => (await payLoan(l.id, month)) && flash(`Cuota de ${l.name} pagada`, "gasto")}
+                      onClick={() => setDebtSheet({ kind: "loanpay", id: l.id })}
                     >
                       check
                     </button>
