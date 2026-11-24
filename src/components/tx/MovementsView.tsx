@@ -9,6 +9,7 @@ import { useData, type Tx } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
 import { ACCOUNT_KINDS } from "@/components/accounts/kinds";
+import { ExportMenu } from "./ExportMenu";
 import { CatIcon, todayAR } from "./parts";
 import m from "./movements.module.css";
 
@@ -91,6 +92,7 @@ export function MovementsView() {
             </button>
           ))}
         </div>
+        <ExportMenu query={{ type: type === "all" ? undefined : type, category: cat === "all" ? undefined : cat, q: q.trim() || undefined, account: accFilter?.id }} />
       </div>
 
       {accFilter && (

@@ -77,7 +77,22 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   return (await res.json()) as T;
 }
 
-export const post = <T = unknown>(path: string, body?: unknown) =>
+/** Descarga un archivo de la API (CSV, PDF) con la sesión actual. */
+export async function download(path: string, filename: string) {
+  let res = await request(path, { method: "GET" });
+  if (res.status === 401 && (await refreshSession())) res = await request(path, { method: "GET" });
+  if (!res.ok) throw await toError(res);
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+export const post =<T = unknown>(path: string, body?: unknown) =>
   api<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
 
 export async function logout() {

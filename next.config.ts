@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // pdfkit lee sus fuentes (AFM) del disco: se carga desde node_modules sin empaquetar.
+  serverExternalPackages: ["pdfkit"],
 };
 
 export default nextConfig;
