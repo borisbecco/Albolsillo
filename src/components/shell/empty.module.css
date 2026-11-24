@@ -1,0 +1,134 @@
+.box {
+  animation: fadeUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  border: 1px solid var(--line2);
+  border-radius: var(--r-card);
+  background: var(--panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--cardsh);
+  padding: clamp(24px, 5vw, 48px) clamp(20px, 4vw, 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.halo {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--acc) 22%, transparent), transparent);
+}
+
+.badge {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklch, var(--acc) 14%, var(--elev));
+  border: 1px solid color-mix(in oklch, var(--acc) 30%, var(--line2));
+  color: var(--acc);
+  font-size: 32px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  max-width: 460px;
+  text-wrap: balance;
+}
+
+.text {
+  margin: 0;
+  color: var(--mut);
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 460px;
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.primary,
+.secondary {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-control);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.primary {
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+}
+
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.secondary {
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--fg);
+}
+
+.secondary span {
+  color: var(--mut);
+}
+
+.secondary:hover {
+  border-color: var(--acc);
+}
+
+.tips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 640px;
+  margin-top: 14px;
+  text-align: left;
+}
+
+.tip {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--elev);
+  font-size: 12px;
+  color: var(--mut);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.tip span:first-child {
+  font-size: 20px;
+  color: var(--acc2);
+  flex: none;
+}

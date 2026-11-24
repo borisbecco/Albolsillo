@@ -1,0 +1,555 @@
+/* Armazón de la app: barra lateral (desktop), encabezado, sub-navegación y barra inferior (mobile < 760 px). */
+
+.frame {
+  display: flex;
+  height: 100dvh;
+}
+
+.icon {
+  font-family: "Material Symbols Rounded";
+  font-weight: 400;
+  line-height: 1;
+  font-size: 20px;
+  user-select: none;
+}
+
+/* ─── Barra lateral ─── */
+
+.sidebar {
+  width: var(--sidebar-w);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 16px 0 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.isotipo {
+  width: 36px;
+  height: 38px;
+  object-fit: contain;
+  flex: none;
+  filter: drop-shadow(0 6px 18px rgba(68, 123, 246, 0.45));
+  margin-bottom: 22px;
+}
+
+.sideItem {
+  position: relative;
+  width: 76px;
+  padding: 6px 0;
+  flex: none;
+  border-radius: 12px;
+  color: var(--mut);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.sideItem:hover {
+  color: var(--fg);
+}
+
+.sideIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  color: var(--mut);
+  transition: background 0.2s, color 0.2s;
+}
+
+.sideLabel {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.sideItem[aria-current="page"] {
+  color: var(--fg);
+}
+
+.sideItem[aria-current="page"] .sideIcon {
+  background: var(--acc);
+  color: var(--onacc);
+  box-shadow: 0 8px 22px -8px var(--acc);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.sideTool {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 21px;
+}
+
+.sideTool:hover {
+  background: var(--sel);
+  color: var(--fg);
+}
+
+.avatarBtn {
+  width: 40px;
+  height: 40px;
+  margin-top: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--line2);
+  background: color-mix(in oklch, var(--acc) 22%, var(--panel));
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex: none;
+}
+
+.avatarBtn:hover {
+  box-shadow: 0 0 0 3px var(--sel);
+}
+
+/* ─── Columna principal ─── */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  height: var(--header-h);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 var(--gutter);
+}
+
+.greet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: none;
+}
+
+.ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 2px;
+  background: conic-gradient(from 200deg, var(--acc), var(--red), var(--acc));
+  flex: none;
+  box-shadow: 0 0 22px -6px var(--acc);
+}
+
+.ringInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 17px;
+  background-image: linear-gradient(160deg, color-mix(in oklch, var(--acc) 35%, var(--panel)), var(--panel));
+  background-color: var(--bg);
+}
+
+.greetText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.greetHello {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.greetName {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.mobLogo {
+  display: none;
+  width: 26px;
+  height: 28px;
+  object-fit: contain;
+  flex: none;
+  filter: drop-shadow(0 6px 18px rgba(68, 123, 246, 0.45));
+}
+
+.title {
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.monthPicker {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  font-size: 12px;
+  white-space: nowrap;
+  flex: none;
+}
+
+.monthArrow {
+  width: 30px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.monthArrow:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.monthArrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.monthLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+  font-weight: 500;
+}
+
+.monthLabel .icon {
+  font-size: 15px;
+  color: var(--mut);
+}
+
+.short {
+  display: none;
+}
+
+.segmented {
+  display: flex;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  flex: none;
+}
+
+.segBtn {
+  height: 26px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.segBtn[aria-pressed="true"] {
+  background: var(--elev);
+  color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.roundBtn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 19px;
+}
+
+.roundBtn:hover {
+  border-color: var(--acc);
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--red);
+  color: #fff;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.mobAvatar {
+  display: none;
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+  margin-top: 0;
+}
+
+.scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.content {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 4px var(--gutter) 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ─── Sub-navegación en pastillas ─── */
+
+.subnav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 2px var(--gutter) 4px;
+}
+
+.subnav::-webkit-scrollbar {
+  display: none;
+}
+
+.pill {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px 0 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--mut);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pill:hover {
+  color: var(--fg);
+}
+
+.pill .icon {
+  font-size: 18px;
+}
+
+.pill[aria-current="page"] {
+  background: var(--acc);
+  color: var(--onacc);
+  border-color: transparent;
+  box-shadow: 0 8px 22px -10px var(--acc);
+}
+
+/* ─── Botón flotante (desktop) ─── */
+
+.fab {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 0;
+  background: radial-gradient(circle at 32% 26%, color-mix(in oklch, var(--acc) 55%, white), var(--acc) 62%);
+  color: var(--onacc);
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 0 0 6px color-mix(in oklch, var(--acc) 16%, transparent), 0 14px 40px -6px var(--acc);
+  z-index: 10;
+}
+
+.fab:hover {
+  filter: brightness(1.08);
+}
+
+.fab:disabled,
+.addBtn:disabled .addIcon {
+  filter: grayscale(0.7);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ─── Barra inferior (mobile) ─── */
+
+.bottomNav {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(72px + env(safe-area-inset-bottom));
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  background: color-mix(in oklch, var(--bg) 70%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--line2);
+  border-radius: 26px 26px 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 15;
+}
+
+.bottomItem,
+.addBtn {
+  height: 56px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--mut);
+  font-size: 11px;
+}
+
+.bottomIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: var(--mut);
+  transition: width 0.2s, height 0.2s, background 0.2s;
+}
+
+.bottomItem[aria-current="page"] {
+  color: var(--fg);
+}
+
+.bottomItem[aria-current="page"] .bottomIcon {
+  width: 34px;
+  height: 34px;
+  background: color-mix(in oklch, var(--acc) 20%, transparent);
+  color: var(--acc);
+}
+
+.addIcon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  margin-top: -30px;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  color: var(--onacc);
+  background: radial-gradient(circle at 32% 26%, color-mix(in oklch, var(--acc) 55%, white), var(--acc) 62%);
+  box-shadow: 0 0 0 7px var(--bg), 0 0 0 8px var(--line2), 0 12px 34px -4px var(--acc);
+}
+
+/* ─── Aviso (toast) con Bolsi ─── */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 8px 10px;
+  border-radius: 18px;
+  background: var(--elev);
+  border: 1px solid var(--line2);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 40;
+  max-width: calc(100vw - 28px);
+  animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.toast img {
+  width: 40px;
+  height: 44px;
+  flex: none;
+  margin: -4px 0;
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 979px) {
+  .title {
+    display: none;
+  }
+}
+
+@media (max-width: 759px) {
+  .sidebar,
+  .fab,
+  .greetText {
+    display: none;
+  }
+  .mobLogo,
+  .mobAvatar {
+    display: block;
+  }
+  .bottomNav {
+    display: grid;
+  }
+  .content {
+    padding-bottom: 96px;
+  }
+  .full {
+    display: none;
+  }
+  .short {
+    display: inline;
+  }
+  .header {
+    gap: 8px;
+  }
+  .title {
+    font-size: 18px;
+  }
+  .toast {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
