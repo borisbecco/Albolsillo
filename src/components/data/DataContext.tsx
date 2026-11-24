@@ -5,6 +5,7 @@ import { ApiClientError, api } from "@/lib/api-client";
 import type { UserDto } from "@/lib/auth/session";
 import type { AccountDto, BillDto, CardDto, PersonDto, TxDto } from "@/lib/dto";
 import type { GoalDto, InvestmentDto } from "@/lib/savings";
+import type { SharedDto } from "@/lib/shared";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
 import { CATEGORY_BY_ID } from "@/lib/categories";
@@ -25,6 +26,19 @@ export type Bootstrap = {
   budgets: BudgetRow[];
   goals: GoalDto[];
   investments: InvestmentDto[];
+  shared: SharedDto[];
+};
+
+export type SharedDraft = {
+  description: string;
+  date: string;
+  category_id: string;
+  total: string;
+  currency: Currency;
+  paid_by: string;
+  participants: string[];
+  account_id?: string | null;
+  card_id?: string | null;
 };
 
 export type IpcRow = { month: string; value: number };
@@ -110,6 +124,13 @@ type Data = {
   closeInvestment: (id: string, amount: string) => Promise<AccountDto | null | false>;
   /** Inflación mensual (%) por mes, de la API de IPC. */
   ipc: IpcRow[];
+  shared: SharedDto[];
+  addPerson: (name: string, email: string | null) => Promise<PersonDto | null>;
+  invitePerson: (id: string, email?: string) => Promise<boolean>;
+  deletePerson: (id: string) => Promise<boolean>;
+  addShared: (d: SharedDraft) => Promise<boolean>;
+  deleteShared: (id: string) => Promise<boolean>;
+  settle: (personId: string, amount: string) => Promise<boolean>;
   /** Cotizaciones del día (null mientras carga). */
   fx: FxResponse | null;
   /** Pesos por dólar según la cotización elegida (null mientras carga). */
@@ -167,6 +188,8 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [goals, setGoals] = useState(initial.goals);
   const [investments, setInvestments] = useState(initial.investments);
   const [ipc, setIpc] = useState<IpcRow[]>([]);
+  const [people, setPeople] = useState(initial.people);
+  const [shared, setShared] = useState(initial.shared);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -626,6 +649,97 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail, replaceAccount],
   );
 
+  // ─── Contactos y gastos compartidos ───
+
+  const addPerson = useCallback(
+    async (name: string, email: string | null) => {
+      try {
+        const res = await api<{ person: PersonDto }>("/people", { method: "POST", body: JSON.stringify({ name, email }) });
+        setPeople((l) => [...l, res.person]);
+        return res.person;
+      } catch (e) {
+        fail(e, "No pudimos agregar el contacto. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail],
+  );
+
+  const invitePerson = useCallback(
+    async (id: string, email?: string) => {
+      try {
+        const res = await api<{ person: PersonDto }>(`/people/${id}/invite`, { method: "POST", body: JSON.stringify(email ? { email } : {}) });
+        setPeople((l) => l.map((p) => (p.id === id ? res.person : p)));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos mandar la invitación. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const deletePerson = useCallback(
+    async (id: string) => {
+      try {
+        await api(`/people/${id}`, { method: "DELETE" });
+        setPeople((l) => l.filter((p) => p.id !== id));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos eliminar el contacto. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
+  const addShared = useCallback(
+    async (d: SharedDraft) => {
+      try {
+        const res = await api<{ shared: SharedDto; transaction: TxDto | null; account: AccountDto | null }>("/shared", { method: "POST", body: JSON.stringify(d) });
+        setShared((l) => [res.shared, ...l]);
+        if (res.transaction) setTransactions((l) => sortTx([{ ...res.transaction!, status: "synced" }, ...l]));
+        replaceAccount(res.account);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos guardar el gasto compartido. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
+  const deleteShared = useCallback(
+    async (id: string) => {
+      try {
+        await api(`/shared/${id}`, { method: "DELETE" });
+        setShared((l) => l.filter((x) => x.id !== id));
+        const removed = txRef.current.filter((t) => t.shared_expense_id === id);
+        setTransactions((l) => l.filter((t) => t.shared_expense_id !== id));
+        moveBalances(...removed.map((t) => delta(t, -1)));
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos eliminarlo. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail, moveBalances],
+  );
+
+  const settle = useCallback(
+    async (personId: string, amount: string) => {
+      try {
+        const res = await api<{ shared: SharedDto }>("/shared/settle", { method: "POST", body: JSON.stringify({ person_id: personId, amount }) });
+        setShared((l) => [res.shared, ...l]);
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos registrar el pago. Probá de nuevo.");
+        return false;
+      }
+    },
+    [fail],
+  );
+
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
   const value: Data = {
@@ -633,7 +747,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     accounts,
     cards,
     bills,
-    people: initial.people,
+    people,
     saveOnboarding,
     billPayments,
     isBillPaid,
@@ -654,6 +768,13 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     createInvestment,
     closeInvestment,
     ipc,
+    shared,
+    addPerson,
+    invitePerson,
+    deletePerson,
+    addShared,
+    deleteShared,
+    settle,
     fx,
     rate,
     toDisplay,

@@ -31,6 +31,62 @@ function describeAgent(ua: string | null) {
   return os ? `${browser} en ${os}` : browser;
 }
 
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const money = (n: number) => `$ ${Math.round(Math.abs(n)).toLocaleString("es-AR")}`;
+
+export type InviteRow = { description: string; payer: string; among: number; dateLabel: string; share: number };
+
+/**
+ * Mail "invitacion": quién invita, los últimos gastos compartidos (la parte del invitado) y el saldo.
+ * `balance` es desde el lado del invitado: > 0 le debe a quien invita, < 0 quien invita le debe.
+ */
+export async function sendInvite(opts: {
+  to: string;
+  inviterName: string;
+  inviterEmail: string;
+  token: string;
+  rows: InviteRow[];
+  balance: number;
+}) {
+  const first = esc(opts.inviterName.split(" ")[0] || opts.inviterName);
+  const full = esc(opts.inviterName);
+  const link = `${appUrl()}/invitacion/${opts.token}`;
+  let html = await readFile(path.join(TEMPLATES, "invitacion.html"), "utf8");
+
+  // Filas de gastos: se reemplazan las dos de ejemplo por las reales (o se quitan si no hay).
+  const start = html.indexOf('<tr><td class="line"');
+  const end = html.indexOf('<tr><td style="padding:14px 0 0 0');
+  if (start > 0 && end > start) {
+    const sample = html.slice(start, html.indexOf("</tr>", start) + 5);
+    const rows = opts.rows
+      .slice(0, 4)
+      .map((r) =>
+        sample
+          .replace("Asado del sábado", esc(r.description))
+          .replace("Pagó Lucía · entre 4 · 15 nov", `Pagó ${esc(r.payer)} · entre ${r.among} · ${esc(r.dateLabel)}`)
+          .replace("$ 12.000", money(r.share)),
+      )
+      .join("");
+    html = html.slice(0, start) + rows + html.slice(end);
+  }
+
+  // Saldo final.
+  const owes = opts.balance >= 1;
+  const owed = opts.balance <= -1;
+  html = html
+    .replace(`Le debés a Lucía</td>`, owes ? `Le debés a ${first}</td>` : owed ? `${first} te debe</td>` : `Están a mano</td>`)
+    .replace(`color:#C2414F">$ 18.500</td>`, owes ? `color:#C2414F">${money(opts.balance)}</td>` : owed ? `color:#1F8A5B">${money(opts.balance)}</td>` : `color:#525A6B">$ 0</td>`)
+    .replace(`Le debés $ 18.500.`, owes ? `Le debés ${money(opts.balance)}.` : owed ? `Te debe ${money(opts.balance)}.` : "");
+
+  html = html
+    .replaceAll("https://albolsillo.app/invitacion/ABC123", link)
+    .replaceAll("Lucía Fernández (lucia@email.com)", `${full} (${esc(opts.inviterEmail)})`)
+    .replaceAll("Lucía Fernández", full)
+    .replaceAll("Lucía", first);
+
+  await send(opts.to, `${opts.inviterName.split(" ")[0]} te invitó a dividir gastos en Albolsillo`, html, `Link: ${link}`);
+}
+
 export async function sendPasswordReset(to: string, token: string, userAgent: string | null) {
   const link = `${appUrl()}/reset/${token}`;
   const when = new Intl.DateTimeFormat("es-AR", {

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { VIEWS } from "@/lib/nav";
 import { DEFAULT_CATEGORY, catColor, catTint, pickableCategories } from "@/lib/categories";
 import { guessCategory } from "@/lib/merchants";
-import { maskAmountInput, parseAmount, toDecimal, type Currency } from "@/lib/money";
+import { formatMoney, maskAmountInput, parseAmount, toDecimal, type Currency } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { sourceOptions, splitSource, todayAR } from "./parts";
@@ -23,7 +23,7 @@ export function NewTxModal() {
 function Form() {
   const router = useRouter();
   const { closeNewTx, flash, setAccountFormOpen } = useShell();
-  const { accounts, cards, createTx } = useData();
+  const { accounts, cards, people, createTx, addShared } = useData();
   const isMobile = useIsMobile();
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +37,7 @@ function Form() {
   const [recurring, setRecurring] = useState(false);
   const [source, setSource] = useState<string | null>(null);
   const [err, setErr] = useState("");
+  const [split, setSplit] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isMobile) amountRef.current?.focus();
@@ -76,6 +77,23 @@ function Form() {
     if (!value) {
       setErr("Ingresá un monto");
       return amountRef.current?.focus();
+    }
+    // Dividido con contactos: se guarda como gasto compartido (tu parte va a tus gastos).
+    if (type === "out" && split.length) {
+      const share = value / (split.length + 1);
+      closeNewTx();
+      const ok = await addShared({
+        description: desc.trim() || "Gasto compartido",
+        date,
+        category_id: cat,
+        total: toDecimal(value),
+        currency,
+        paid_by: "me",
+        participants: ["me", ...split],
+        ...splitSource(source),
+      });
+      if (ok) flash(`Guardamos tu parte: ${formatMoney(share, currency)}`, "gasto");
+      return;
     }
     closeNewTx();
     flash(type === "in" ? "Ingreso guardado" : "Gasto guardado", type === "in" ? "ingreso" : "gasto");
@@ -205,6 +223,28 @@ function Form() {
                   {o.label}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {type === "out" && people.length > 0 && (
+          <div className={s.group}>
+            <div className={s.splitHead}>
+              <span className={s.groupLabel}>Dividir con</span>
+              {split.length > 0 && value > 0 && (
+                <span className={s.splitHint}>Tu parte: {formatMoney(value / (split.length + 1), currency)} · el resto te lo deben</span>
+              )}
+            </div>
+            <div className={s.chips} style={{ flexWrap: "wrap" }}>
+              {people.map((p) => {
+                const on = split.includes(p.id);
+                return (
+                  <button key={p.id} className={s.chip} aria-pressed={on} onClick={() => setSplit(on ? split.filter((x) => x !== p.id) : [...split, p.id])}>
+                    <span className={s.personDot}>{p.name[0]?.toUpperCase()}</span>
+                    {p.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

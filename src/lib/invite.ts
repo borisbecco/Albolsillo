@@ -1,0 +1,46 @@
+import { prisma } from "@/lib/db";
+import { ApiError } from "@/lib/http";
+import { sendInvite } from "@/lib/mail";
+import { randomToken } from "@/lib/auth/session";
+import { MONTH_SHORT } from "@/lib/month";
+import { balances, sharedDto } from "@/lib/shared";
+
+/** Marca el contacto como invitado, le genera un token y le manda el mail "invitacion". */
+export async function invitePerson(userId: string, personId: string, email: string) {
+  const [user, person] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { id: userId } }),
+    prisma.person.findFirst({ where: { id: personId, userId, deletedAt: null } }),
+  ]);
+  if (!person) throw new ApiError(404, "not_found", "No encontramos ese contacto.");
+
+  // Si ya usa Albolsillo con ese email, queda vinculado.
+  const linked = await prisma.user.findFirst({ where: { email, deletedAt: null }, select: { id: true } });
+  const token = person.inviteToken ?? randomToken();
+  const updated = await prisma.person.update({
+    where: { id: personId },
+    data: { email, inviteToken: token, invitedAt: new Date(), status: linked ? "user" : "invited", linkedUserId: linked?.id ?? null },
+  });
+
+  const expenses = await prisma.sharedExpense.findMany({ where: { userId, deletedAt: null }, orderBy: { date: "desc" } });
+  const list = expenses.map(sharedDto);
+  const mine = list.filter((e) => e.kind === "expense" && e.participants.includes(personId)).slice(0, 4);
+  const name = (id: string) => (id === "me" ? user.name.split(" ")[0] : id === personId ? person.name : "otra persona");
+  // Desde el lado del invitado: lo que el usuario dice que le deben, el invitado lo debe.
+  const balance = balances(list)[personId] ?? 0;
+
+  await sendInvite({
+    to: email,
+    inviterName: user.name,
+    inviterEmail: user.email,
+    token,
+    balance,
+    rows: mine.map((e) => ({
+      description: e.description,
+      payer: name(e.paid_by),
+      among: e.participants.length,
+      dateLabel: `${Number(e.date.slice(8))} ${MONTH_SHORT[Number(e.date.slice(5, 7)) - 1]}`,
+      share: Number(e.total) / e.participants.length,
+    })),
+  });
+  return updated;
+}

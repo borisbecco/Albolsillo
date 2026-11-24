@@ -5,9 +5,8 @@ import { EMPTY, VIEWS, type EmptyAction, type EmptyCopy, type ViewId } from "@/l
 import { useShell } from "./ShellContext";
 import e from "./empty.module.css";
 
-const LATER: Record<Exclude<EmptyAction, "newTx" | "toDebts" | "newAccount" | "newCard" | "newBill" | "onboarding" | "newGoal" | "simulate">, string> = {
+const LATER: Record<Exclude<EmptyAction, "newTx" | "toDebts" | "newAccount" | "newCard" | "newBill" | "onboarding" | "newGoal" | "simulate" | "newPerson">, string> = {
   import: "Importar resumen",
-  newPerson: "Agregar contactos",
 };
 
 export function EmptyState({ copy }: { copy: EmptyCopy }) {
@@ -19,6 +18,7 @@ export function EmptyState({ copy }: { copy: EmptyCopy }) {
     if (a === "onboarding") return router.push("/bienvenida");
     if (a === "newGoal") return force("goals");
     if (a === "simulate") return force("inv");
+    if (a === "newPerson") return force("shared");
     if (a === "toDebts") return router.push(VIEWS.debts.href);
     if (a === "newCard" || a === "newBill") return setDebtSheet({ kind: a === "newCard" ? "card" : "bill", id: null });
     if (a === "newAccount") {
