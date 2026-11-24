@@ -27,7 +27,7 @@ export const daysInMonth = (ym: string) => {
 
 /** Vencimientos del mes: gastos fijos y préstamos (con su pago) y tarjetas (saldo a pagar). */
 export function useObligations(month: string): Obligation[] {
-  const { bills, cards, loans, isBillPaid } = useData();
+  const { bills, cards, loans, isBillPaid, rate } = useData();
   return useMemo(() => {
     const last = daysInMonth(month);
     const list: Obligation[] = [
@@ -44,19 +44,24 @@ export function useObligations(month: string): Obligation[] {
         paid: isBillPaid(b.id, month),
       })),
       ...cards
-        .filter((c) => Number(c.balance) > 0)
-        .map((c) => ({
-          key: `card:${c.id}`,
-          kind: "card" as const,
-          id: c.id,
-          name: c.name,
-          day: Math.min(c.due_day, last),
-          amount: Number(c.balance),
-          currency: "ARS" as const,
-          categoryId: null,
-          bank: c.bank as BankId | null,
-          paid: false,
-        })),
+        .filter((c) => Number(c.balance) > 0 || Number(c.balance_usd) > 0)
+        .map((c) => {
+          // Pesos + dólares; queda pagada cuando lo pagado del ciclo cubre el resumen.
+          const total = Number(c.balance) + Number(c.balance_usd) * (rate ?? 0);
+          const paid = Number(c.cycle_paid) + Number(c.cycle_paid_usd) * (rate ?? 0);
+          return {
+            key: `card:${c.id}`,
+            kind: "card" as const,
+            id: c.id,
+            name: c.name,
+            day: Math.min(c.due_day, last),
+            amount: total,
+            currency: "ARS" as const,
+            categoryId: null,
+            bank: c.bank as BankId | null,
+            paid: total > 0 && paid >= total - 0.5,
+          };
+        }),
       ...loans
         .filter((l) => l.n < l.of || l.last_paid_month === month)
         .map((l) => ({
@@ -73,7 +78,7 @@ export function useObligations(month: string): Obligation[] {
         })),
     ];
     return list.sort((a, b) => a.day - b.day || a.name.localeCompare(b.name));
-  }, [bills, cards, loans, isBillPaid, month]);
+  }, [bills, cards, loans, isBillPaid, month, rate]);
 }
 
 /** Etiqueta y color del vencimiento respecto de hoy. */

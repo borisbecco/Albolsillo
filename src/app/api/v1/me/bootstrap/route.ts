@@ -32,7 +32,7 @@ export const GET = handle(async (req: Request) => {
     prisma.goal.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.investment.findMany({ where: { ...live, closedAt: null }, orderBy: { startDate: "asc" } }),
     prisma.sharedExpense.findMany({ where: live, orderBy: [{ date: "desc" }, { createdAt: "desc" }] }),
-    prisma.cardInstallment.findMany({ where: live, orderBy: { createdAt: "asc" } }),
+    prisma.cardInstallment.findMany({ where: { ...live, cancelledAt: null }, orderBy: { createdAt: "asc" } }),
     prisma.loan.findMany({ where: live, orderBy: { createdAt: "asc" } }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");

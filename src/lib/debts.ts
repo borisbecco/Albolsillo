@@ -10,6 +10,8 @@ export const month = z.string().regex(/^\d{4}-\d{2}$/, "Revisá el mes");
 export const CardFields = z.object({
   name: z.string().trim().min(1, "Poné un nombre a la tarjeta").max(60),
   balance: money,
+  /** Saldo en dólares del resumen vigente */
+  balance_usd: money.optional(),
   min_payment: money,
   due_day: day,
   close_day: day,

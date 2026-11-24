@@ -674,3 +674,109 @@ select.input {
   font-size: 30px;
   color: var(--dim);
 }
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--elev);
+  min-width: 0;
+}
+
+.facts span {
+  font-size: 11px;
+  color: var(--mut);
+}
+
+.facts strong {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quickPills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.quickPills button {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quickPills button span {
+  color: var(--mut);
+}
+
+.quickPills button[aria-pressed="true"] {
+  border-color: var(--acc);
+  background: color-mix(in oklch, var(--acc) 14%, var(--elev));
+}
+
+/* Tarjeta: compras nuevas, dólares y resumen pagado */
+.cardNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--elev);
+  color: var(--mut);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.cardNote > span:first-child {
+  font-size: 17px;
+  color: var(--acc);
+}
+
+.cardBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cardBtns button {
+  flex: 1 1 140px;
+}
+
+.cycle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+
+button.face {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardBox {
+  cursor: default;
+}

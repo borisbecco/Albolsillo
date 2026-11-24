@@ -41,6 +41,10 @@ export function cardDto(c: Card) {
     network: c.network,
     last4: c.last4,
     balance: c.balance.toFixed(2),
+    balance_usd: c.balanceUsd.toFixed(2),
+    cycle_paid: c.cyclePaid.toFixed(2),
+    cycle_paid_usd: c.cyclePaidUsd.toFixed(2),
+    cycle_start: c.cycleStart ? c.cycleStart.toISOString().slice(0, 10) : null,
     min_payment: c.minPayment.toFixed(2),
     close_day: c.closeDay,
     due_day: c.dueDay,
@@ -74,6 +78,6 @@ export type PersonDto = ReturnType<typeof personDto>;
 export type BillDto = ReturnType<typeof billDto>;
 
 export function installmentDto(i: CardInstallment) {
-  return { id: i.id, card_id: i.cardId, name: i.name, n: i.n, of: i.of, amount: i.amount.toFixed(2) };
+  return { id: i.id, card_id: i.cardId, name: i.name, n: i.n, of: i.of, amount: i.amount.toFixed(2), first_transaction_id: i.firstTransactionId };
 }
 export type InstallmentDto = ReturnType<typeof installmentDto>;

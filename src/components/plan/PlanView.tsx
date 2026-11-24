@@ -41,8 +41,8 @@ const STRATS: { id: Strategy; label: string; prio: string; icon: string; how: st
 
 export function PlanView() {
   const { user, updatePrefs, flash, setDebtSheet } = useShell();
-  const { cards, bills, loans, toDisplay, payBill } = useData();
-  const { plan, interest, income, C, pendingFixed, pendingBills, pendingLoans, reserve } = useSummary();
+  const { cards, bills, loans, transactions, toDisplay, payBill } = useData();
+  const { plan, interest, income, C, pendingFixed, pendingBills, pendingLoans, reserve, toArs } = useSummary();
   const cur = user.display_currency;
   const fmt = (n: number) => formatMoney(toDisplay(n, "ARS"), cur);
   const month = currentMonth();
@@ -174,15 +174,20 @@ export function PlanView() {
             <div className={p.cards}>
               {plan.rows.map((r, i) => {
                 const c = cards.find((x) => x.id === r.id)!;
-                const cover = r.balance > 0 ? Math.min(1, r.pay / r.balance) : 1;
+                const cover = r.done ? 1 : r.balance > 0 ? Math.min(1, r.pay / r.balance) : 1;
+                const start = c.cycle_start ?? `${month}-01`;
+                const buys = transactions
+                  .filter((t) => t.card_id === c.id && t.type === "out" && t.date >= start && (t.installment_number ?? 1) === 1)
+                  .reduce((sum, t) => sum + toArs(Number(t.amount), t.currency), 0);
                 return (
-                  <div key={r.id} className={p.cardCol}>
+                  <div key={r.id} className={p.cardCol} data-tour={i === 0 ? "plancard" : undefined}>
                     <div className={p.cardWrap}>
                       <CardFace
                         name={c.name}
                         bank={c.bank as BankId | null}
                         network={c.network as Network}
-                        balance={r.balance}
+                        balance={Number(c.balance)}
+                        usd={Number(c.balance_usd)}
                         last4={c.last4}
                         dueDay={c.due_day}
                         index={cards.indexOf(c)}
@@ -203,14 +208,29 @@ export function PlanView() {
                       <div className={p.coverTrack}>
                         <div style={{ width: `${cover * 100}%`, background: r.tagColor, boxShadow: `0 0 10px -2px ${r.tagColor}` }} />
                       </div>
-                      <span>{cover >= 1 ? "Saldo completo" : `Cubre ${Math.round(cover * 100)}%`}</span>
+                      <span>{r.done ? "Pagado" : cover >= 1 ? "Saldo completo" : `Cubre ${Math.round(cover * 100)}%`}</span>
                     </div>
                     <div className={p.note}>
-                      {r.tag === "Pago total"
-                        ? `Pagás el total y evitás ~${fmt(r.avoidedInterest)} de intereses`
-                        : `Quedan ${fmt(r.left)} → ~${fmt(r.nextInterest)} de intereses el próximo mes`}
-                      {` · vence ${c.due_day} ${mShort} · mínimo ${fmt(r.min)}`}
+                      {r.done
+                        ? `Pagaste el total: ${fmt(r.paid)}`
+                        : r.tag === "Pago total"
+                          ? `Pagás el total y evitás ~${fmt(r.avoidedInterest)} de intereses`
+                          : `Quedan ${fmt(r.left)} → ~${fmt(r.nextInterest)} de intereses el próximo mes`}
+                      {!r.done && r.paid > 0 && ` · ya pagaste ${fmt(r.paid)}`}
+                      {` · vence ${c.due_day} ${mShort} · mínimo ${fmt(Number(c.min_payment))}`}
                     </div>
+                    {buys > 0 && (
+                      <div className={p.note}>
+                        Compras nuevas este mes: {fmt(buys)}. Entran en el resumen que cierra el {c.close_day}.
+                      </div>
+                    )}
+                    <button
+                      className={p.payCardBtn}
+                      data-done={r.done}
+                      onClick={() => setDebtSheet({ kind: "cardpay", id: c.id })}
+                    >
+                      {r.done ? "Registrar otro pago" : "Registrar pago"}
+                    </button>
                   </div>
                 );
               })}

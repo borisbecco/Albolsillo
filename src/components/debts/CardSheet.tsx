@@ -21,6 +21,7 @@ export function CardSheet({ id, onClose }: { id: string | null; onClose: () => v
   const [name, setName] = useState(card?.name ?? "");
   const [balance, setBalance] = useState(card && Number(card.balance) ? toInput(card.balance) : "");
   const [min, setMin] = useState(card && Number(card.min_payment) ? toInput(card.min_payment) : "");
+  const [usd, setUsd] = useState(card && Number(card.balance_usd) ? toInput(card.balance_usd) : "");
   const [due, setDue] = useState(card ? String(card.due_day) : "20");
   const [close, setClose] = useState(card ? String(card.close_day) : "");
   const [tna, setTna] = useState(card ? String(Number(card.tna)) : "110");
@@ -44,6 +45,7 @@ export function CardSheet({ id, onClose }: { id: string | null; onClose: () => v
     const ok = await saveCard(id, {
       name: name.trim(),
       balance: toDecimal(parseAmount(balance)),
+      balance_usd: toDecimal(parseAmount(usd)),
       min_payment: toDecimal(parseAmount(min)),
       due_day: Number(due),
       close_day: close ? Number(close) : estimateCloseDay(Number(due)),
@@ -126,6 +128,10 @@ export function CardSheet({ id, onClose }: { id: string | null; onClose: () => v
           <label className={d.field}>
             TNA %
             <input className={d.input} value={tna} onChange={(e) => edit(setTna)(maskAmountEvent(e))} inputMode="decimal" />
+          </label>
+          <label className={d.field}>
+            Saldo en dólares
+            <input className={d.input} value={usd} onChange={(e) => edit(setUsd)(maskAmountEvent(e))} inputMode="decimal" placeholder="US$ 0" />
           </label>
           <label className={d.field}>
             Últimos 4

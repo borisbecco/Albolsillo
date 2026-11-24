@@ -7,6 +7,7 @@ import { MONTH_SHORT } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import type { BankId, Network } from "@/lib/banks";
 import { CardFace } from "@/components/cards/CardFace";
+import type { CardDto } from "@/lib/dto";
 import { useData } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
@@ -50,19 +51,20 @@ export function DebtsView() {
         </div>
         <div className={d.cards}>
           {cards.map((c, i) => (
-            <button key={c.id} className={d.cardBox} onClick={() => setDebtSheet({ kind: "card", id: c.id })} aria-label={`Editar ${c.name}`}>
-              <div className={d.face}>
+            <div key={c.id} className={d.cardBox}>
+              <button className={d.face} onClick={() => setDebtSheet({ kind: "card", id: c.id })} aria-label={`Editar ${c.name}`}>
                 <CardFace
                   name={c.name}
                   bank={c.bank as BankId | null}
                   network={c.network as Network}
                   balance={Number(c.balance)}
+                  usd={Number(c.balance_usd)}
                   last4={c.last4}
                   dueDay={c.due_day}
                   index={i}
                   month={month}
                 />
-              </div>
+              </button>
               <div className={d.tiles}>
                 <div className={d.tile}>
                   <span>Mínimo</span>
@@ -102,7 +104,8 @@ export function DebtsView() {
                     ))}
                 </div>
               )}
-            </button>
+              <CardCycle card={c} />
+            </div>
           ))}
           <button className={d.addCard} onClick={() => setDebtSheet({ kind: "card", id: null })}>
             <span className="material-symbols-rounded">add_card</span>
@@ -224,6 +227,52 @@ export function DebtsView() {
         </div>
       </section>
 
+    </div>
+  );
+}
+
+/** Lo pagado del resumen vigente, las compras nuevas del ciclo y las acciones de la tarjeta. */
+function CardCycle({ card }: { card: CardDto }) {
+  const { month, isPastMonth, setDebtSheet } = useShell();
+  const { transactions, toDisplay, user } = useDebtsData();
+  const start = card.cycle_start ?? `${month}-01`;
+  const buys = transactions
+    .filter((t) => t.card_id === card.id && t.type === "out" && t.date >= start && (t.installment_number ?? 1) === 1)
+    .reduce((s, t) => s + toDisplay(Number(t.amount), t.currency), 0);
+  const paid = Number(card.cycle_paid);
+  const paidUsd = Number(card.cycle_paid_usd);
+  const bal = Number(card.balance);
+  const usd = Number(card.balance_usd);
+  const covered = bal > 0 && paid >= bal - 0.005 && paidUsd >= usd - 0.005;
+  return (
+    <div className={d.cycle}>
+      {(paid > 0 || paidUsd > 0) && (
+        <div className={d.cardNote}>
+          <span className="material-symbols-rounded">{covered ? "task_alt" : "payments"}</span>
+          <span>
+            {covered
+              ? "Pagaste este resumen. Cuando cierre el próximo, cargalo acá: lo pagado vuelve a cero y las cuotas avanzan un mes."
+              : `Ya pagaste ${formatMoney(paid, "ARS")}${paidUsd ? ` y ${formatMoney(paidUsd, "USD")}` : ""} · faltan ${formatMoney(Math.max(0, bal - paid), "ARS")}`}
+          </span>
+        </div>
+      )}
+      {buys > 0 && (
+        <div className={d.cardNote}>
+          <span className="material-symbols-rounded">shopping_bag</span>
+          <span>
+            Compras nuevas: {formatMoney(buys, user.display_currency)}. Entran en el resumen que cierra el {card.close_day}.
+          </span>
+        </div>
+      )}
+      <div className={d.cardBtns}>
+        <button className={d.payBtn} disabled={isPastMonth || bal + usd <= 0} onClick={() => setDebtSheet({ kind: "cardpay", id: card.id })}>
+          {covered ? "Registrar otro pago" : "Registrar pago"}
+        </button>
+        <button className={d.pillBtn} onClick={() => setDebtSheet({ kind: "stmt", id: card.id })}>
+          <span className="material-symbols-rounded">receipt_long</span>
+          Cargar resumen nuevo
+        </button>
+      </div>
     </div>
   );
 }

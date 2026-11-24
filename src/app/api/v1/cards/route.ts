@@ -24,6 +24,7 @@ export const POST = handle(async (req: Request) => {
       network: detectNetwork(c.name),
       last4: c.last4,
       balance: c.balance,
+      balanceUsd: c.balance_usd ?? "0",
       minPayment: c.min_payment,
       dueDay: c.due_day,
       closeDay: c.close_day ?? estimateCloseDay(c.due_day),

@@ -89,13 +89,13 @@ export function Activity() {
           </Link>
         </div>
         {plan.rows.map((r) => (
-          <div key={r.id} className={h.planRow}>
+          <button key={r.id} className={h.planRow} title="Registrar pago" onClick={() => setDebtSheet({ kind: "cardpay", id: r.id })}>
             <span className={h.itemName}>{r.name}</span>
             <span className={h.planTag} style={{ color: r.tagColor }}>
               {r.tag}
             </span>
             <span className={h.itemAmount}>{formatMoney(toDisplay(r.pay, "ARS"), cur)}</span>
-          </div>
+          </button>
         ))}
         {!plan.rows.length && <div className={h.emptyList}>Sin tarjetas con saldo a pagar.</div>}
         <div className={h.planFoot}>

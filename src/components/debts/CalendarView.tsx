@@ -112,6 +112,17 @@ export function CalendarView() {
                 <span style={{ color: due.color, fontSize: 12 }}>{due.label}</span>
               </button>
               <span className={c.itemAmount}>{formatMoney(o.amount, o.currency)}</span>
+              {o.kind === "card" && (
+                <button
+                  className={c.pay}
+                  aria-pressed={o.paid}
+                  disabled={isPastMonth}
+                  onClick={() => setDebtSheet({ kind: "cardpay", id: o.id })}
+                  title={o.paid ? "Pagado · registrar otro pago" : "Registrar pago"}
+                >
+                  <span className="material-symbols-rounded">{o.paid ? "check_circle" : "radio_button_unchecked"}</span>
+                </button>
+              )}
               {o.kind !== "card" && (
                 <button className={c.pay} aria-pressed={o.paid} disabled={isPastMonth} onClick={() => toggle(o)} title={o.paid ? "Deshacer el pago" : "Marcar como pagado"}>
                   <span className="material-symbols-rounded">{o.paid ? "check_circle" : "radio_button_unchecked"}</span>

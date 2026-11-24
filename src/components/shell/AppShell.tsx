@@ -11,6 +11,8 @@ import { BillSheet } from "@/components/debts/BillSheet";
 import { CardSheet } from "@/components/debts/CardSheet";
 import { LoanSheet } from "@/components/debts/LoanSheet";
 import { LoanPaySheet } from "@/components/debts/LoanPaySheet";
+import { CardPaySheet } from "@/components/debts/CardPaySheet";
+import { StatementSheet } from "@/components/debts/StatementSheet";
 import { AlertsPanel } from "@/components/alerts/AlertsPanel";
 import { useAlerts } from "@/components/alerts/useAlerts";
 import { NewMonthModal, laterToday } from "@/components/month/NewMonthModal";
@@ -291,6 +293,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {debtSheet?.kind === "bill" && <BillSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "loan" && <LoanSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "loanpay" && debtSheet.id && <LoanPaySheet id={debtSheet.id} onClose={closeDebtSheet} />}
+      {debtSheet?.kind === "cardpay" && debtSheet.id && <CardPaySheet id={debtSheet.id} onClose={closeDebtSheet} />}
+      {debtSheet?.kind === "stmt" && debtSheet.id && <StatementSheet id={debtSheet.id} onClose={closeDebtSheet} />}
     </div>
   );
 }

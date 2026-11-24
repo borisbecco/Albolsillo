@@ -24,6 +24,7 @@ export const PATCH = handle(async (req: Request, { params }: Ctx) => {
       ...(c.name !== undefined && { name: c.name, bank: detectBank(c.name), network: detectNetwork(c.name) }),
       last4: c.last4,
       balance: c.balance,
+      balanceUsd: c.balance_usd,
       minPayment: c.min_payment,
       dueDay: c.due_day,
       closeDay: c.close_day,

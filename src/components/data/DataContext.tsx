@@ -74,7 +74,7 @@ export type InvestmentDraft = {
 export type BudgetRow = { month: string; category_id: string; amount: string };
 
 export type BillPayment = { bill_id: string; month: string; transaction_id: string | null };
-export type CardDraft = { name: string; balance: string; min_payment: string; due_day: number; close_day: number; tna: string; last4: string | null };
+export type CardDraft = { name: string; balance: string; balance_usd?: string; min_payment: string; due_day: number; close_day: number; tna: string; last4: string | null };
 export type BillDraft = {
   name: string;
   amount: string;
@@ -108,7 +108,12 @@ export type TxDraft = {
   account_id: string | null;
   card_id: string | null;
   recurring: boolean;
+  /** Compra con tarjeta en cuotas (1 = un pago). */
+  installments?: number;
 };
+
+export type CardPayDraft = { amount: string; account_id: string | null; currency: Currency };
+export type StatementDraft = { balance: string; balance_usd: string; minimum: string; close_day: number; due_day: number };
 
 export type FxQuote = { buy: string; sell: string; updated_at: string };
 export type FxResponse = Partial<Record<"oficial" | "blue" | "bolsa" | "tarjeta", FxQuote>> & { stale: boolean };
@@ -174,6 +179,11 @@ type Data = {
   deleteTxs: (ids: string[]) => Promise<boolean>;
   /** Vuelve a pedir todos los datos al servidor (después de operaciones con varios efectos). */
   reload: () => Promise<void>;
+  /** Registra el pago del resumen; devuelve el id del movimiento (para deshacer). */
+  payCard: (cardId: string, p: CardPayDraft) => Promise<string | null>;
+  voidTx: (txId: string) => Promise<boolean>;
+  /** Carga el resumen nuevo; devuelve cuántas cuotas se sumaron como gasto. */
+  loadStatement: (cardId: string, st: StatementDraft) => Promise<number | null>;
   failed: Tx | null;
   retryFailed: () => void;
   dismissFailed: () => void;
@@ -233,6 +243,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [fx, setFx] = useState<FxResponse | null>(null);
   const [failedId, setFailedId] = useState<string | null>(null);
   const txRef = useRef(transactions);
+  const reloadRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => {
     txRef.current = transactions;
     savePending(user.id, transactions);
@@ -343,7 +354,21 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
 
   const createTx = useCallback(
     async (d: TxDraft) => {
+      if ((d.installments ?? 1) > 1) {
+        // En cuotas: lo arma el servidor (compra en la tarjeta + gasto de la cuota 1), sin modo sin conexión.
+        try {
+          const res = await api<{ transaction: TxDto }>("/transactions", { method: "POST", body: JSON.stringify({ ...d, id: crypto.randomUUID() }) });
+          setTransactions((list) => sortTx([{ ...res.transaction, status: "synced" }, ...list]));
+          void reloadRef.current();
+        } catch (e) {
+          flash(e instanceof ApiClientError ? e.message : "Para cargar una compra en cuotas necesitás conexión.", "errorguardar");
+        }
+        return;
+      }
+      const { installments: _i, ...plain } = d;
+      void _i;
       const t: Tx = {
+        ...plain,
         ...d,
         id: crypto.randomUUID(),
         gross_amount: d.amount,
@@ -361,7 +386,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       setTransactions((list) => sortTx([t, ...list]));
       await send(t);
     },
-    [send],
+    [send, flash],
   );
 
   const updateTx = useCallback(
@@ -432,6 +457,10 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       );
     } catch {}
   }, []);
+
+  useEffect(() => {
+    reloadRef.current = reload;
+  }, [reload]);
 
   const deleteTxs = useCallback(
     async (ids: string[]) => {
@@ -956,6 +985,58 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail, replaceAccount],
   );
 
+  // ─── Pagos y resúmenes de tarjeta ───
+
+  const payCard = useCallback(
+    async (cardId: string, p: CardPayDraft) => {
+      try {
+        const res = await api<{ card: CardDto; transaction: TxDto; account: AccountDto | null }>(`/cards/${cardId}/payments`, { method: "POST", body: JSON.stringify(p) });
+        setCards((l) => l.map((c) => (c.id === cardId ? res.card : c)));
+        setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
+        replaceAccount(res.account);
+        return res.transaction.id;
+      } catch (e) {
+        fail(e, "No pudimos registrar el pago. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
+  /** Anula un pago (o cualquier movimiento) sin el aviso genérico; vuelve a pedir los datos. */
+  const voidTx = useCallback(
+    async (txId: string) => {
+      try {
+        await api(`/transactions/${txId}`, { method: "DELETE" });
+        await reload();
+        return true;
+      } catch (e) {
+        fail(e, "No pudimos anularlo.");
+        return false;
+      }
+    },
+    [fail, reload],
+  );
+
+  const loadStatement = useCallback(
+    async (cardId: string, st: StatementDraft) => {
+      try {
+        const res = await api<{ card: CardDto; transactions: TxDto[]; installments: InstallmentDto[] }>(`/cards/${cardId}/statements`, {
+          method: "POST",
+          body: JSON.stringify(st),
+        });
+        setCards((l) => l.map((c) => (c.id === cardId ? res.card : c)));
+        setInstallments((l) => [...l.filter((q) => q.card_id !== cardId), ...res.installments]);
+        if (res.transactions.length) setTransactions((l) => sortTx([...res.transactions.map((t) => ({ ...t, status: "synced" as const })), ...l]));
+        return res.transactions.length;
+      } catch (e) {
+        fail(e, "No pudimos guardar el resumen. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail],
+  );
+
   // ─── Importar resumen ───
 
   const importStatement = useCallback(
@@ -1046,6 +1127,9 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     deleteTx,
     deleteTxs,
     reload,
+    payCard,
+    voidTx,
+    loadStatement,
     failed,
     retryFailed: () => {
       if (!failed) return;

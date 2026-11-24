@@ -29,6 +29,8 @@ export const TxInput = TxFields.extend({
   account_id: TxFields.shape.account_id.default(null),
   card_id: TxFields.shape.card_id.default(null),
   recurring: TxFields.shape.recurring.default(false),
+  /** Compras con tarjeta en cuotas (1 = un pago). */
+  installments: z.number().int().min(1).max(18).default(1),
 });
 
 /** Edición: solo cambia lo que viene (sin valores por defecto). */
@@ -37,7 +39,7 @@ export const TxPatch = TxFields.partial();
 export type TxInputT = z.infer<typeof TxInput>;
 
 /** Valida reglas que dependen de la base: dueño de la cuenta o tarjeta, moneda y tipo de categoría. */
-export async function checkTxRefs(db: Tx, userId: string, t: TxInputT) {
+export async function checkTxRefs(db: Tx, userId: string, t: Omit<TxInputT, "installments" | "id">) {
   const cat = CATEGORY_BY_ID[t.category_id];
   if (cat.type !== t.type) throw new ApiError(400, "validation", "Esa categoría no corresponde a este tipo de movimiento.");
   if (t.account_id && t.card_id) throw new ApiError(400, "validation", "Elegí una cuenta o una tarjeta, no las dos.");

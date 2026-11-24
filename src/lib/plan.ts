@@ -41,14 +41,19 @@ export function dailyVariableSpend(txs: TxLike[], ym: string, days: number, toAr
   });
 }
 
-export type PlanCard = { id: string; name: string; balance: number; min: number; dueDay: number; tna: number };
+/** balance: saldo del resumen (pesos + dólares convertidos); paid: lo ya pagado en el ciclo. */
+export type PlanCard = { id: string; name: string; balance: number; min: number; dueDay: number; tna: number; paid?: number };
 export type Strategy = "intereses" | "avalancha" | "bola";
 
 export type PlanRow = PlanCard & {
   pay: number;
   extra: number;
   left: number;
-  tag: "Pago total" | "Parcial" | "Mínimo";
+  tag: "Pago total" | "Parcial" | "Mínimo" | "Pagado";
+  /** Lo que ya se pagó de este resumen. */
+  paid: number;
+  /** El resumen ya está cubierto. */
+  done: boolean;
   tagColor: string;
   /** Interés estimado del mes que viene sobre lo que queda. */
   nextInterest: number;
@@ -85,8 +90,16 @@ export type PlanInput = {
 };
 
 export function computePlan(input: PlanInput): Plan {
-  const available = input.income - input.spent - input.pendingFixed - (input.reserve ?? 0);
-  const cards = input.cards.filter((c) => c.balance > 0);
+  // Lo ya pagado a las tarjetas salió del ingreso del mes: se descuenta de lo disponible,
+  // y cada tarjeta queda con lo que falta (el mínimo también baja).
+  const paidTotal = input.cards.reduce((s, c) => s + Math.min(c.paid ?? 0, c.balance), 0);
+  const available = input.income - input.spent - input.pendingFixed - (input.reserve ?? 0) - paidTotal;
+  const doneRows: PlanRow[] = input.cards
+    .filter((c) => c.balance > 0 && (c.paid ?? 0) >= c.balance - 0.005)
+    .map((c) => ({ ...c, paid: c.paid ?? 0, done: true, pay: 0, extra: 0, left: 0, tag: "Pagado", tagColor: "var(--pos)", nextInterest: 0, avoidedInterest: 0 }));
+  const cards = input.cards
+    .filter((c) => c.balance - (c.paid ?? 0) > 0.005)
+    .map((c) => ({ ...c, paid: c.paid ?? 0, balance: c.balance - (c.paid ?? 0), min: Math.max(0, c.min - (c.paid ?? 0)) }));
   const mins = cards.reduce((s, c) => s + Math.min(c.min, c.balance), 0);
   const order = [...cards].sort((a, b) =>
     input.strategy === "avalancha" ? b.tna - a.tna : input.strategy === "bola" ? a.balance - b.balance : a.dueDay - b.dueDay,
@@ -102,6 +115,7 @@ export function computePlan(input: PlanInput): Plan {
     const full = left <= 0.005;
     return {
       ...c,
+      done: false,
       pay,
       extra,
       left,
@@ -111,6 +125,7 @@ export function computePlan(input: PlanInput): Plan {
       avoidedInterest: full ? c.balance * monthly : extra * monthly,
     };
   });
+  rows.push(...doneRows);
   return {
     available,
     mins,

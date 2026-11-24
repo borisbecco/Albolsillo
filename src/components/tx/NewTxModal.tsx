@@ -9,6 +9,7 @@ import { formatMoney, maskAmountEvent, maskAmountInput, parseAmount, toDecimal, 
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { sourceOptions, splitSource, todayAR } from "./parts";
+import { Logo } from "@/components/shell/Logo";
 import { useIsMobile } from "./useIsMobile";
 import s from "./tx.module.css";
 
@@ -38,6 +39,7 @@ function Form() {
   const [source, setSource] = useState<string | null>(null);
   const [err, setErr] = useState("");
   const [split, setSplit] = useState<string[]>([]);
+  const [cuotas, setCuotas] = useState(1);
 
   useEffect(() => {
     if (!isMobile) amountRef.current?.focus();
@@ -96,7 +98,11 @@ function Form() {
       return;
     }
     closeNewTx();
-    flash(type === "in" ? "Ingreso guardado" : "Gasto guardado", type === "in" ? "ingreso" : "gasto");
+    const inCuotas = source?.startsWith("card:") && currency === "ARS" && cuotas > 1;
+    flash(
+      type === "in" ? "Ingreso guardado" : inCuotas ? `Compra en ${cuotas} cuotas de ${formatMoney(value / cuotas, "ARS")}` : "Gasto guardado",
+      type === "in" ? "ingreso" : "gasto",
+    );
     await createTx({
       type,
       date,
@@ -106,6 +112,7 @@ function Form() {
       currency,
       recurring,
       ...splitSource(source),
+      installments: source?.startsWith("card:") && currency === "ARS" ? cuotas : 1,
     });
   };
 
@@ -216,14 +223,59 @@ function Form() {
         {options.length > 0 && (
           <div className={s.group}>
             <span className={s.groupLabel}>{type === "in" ? "Entra en" : "Pagado con"}</span>
-            <div className={s.chips}>
-              {options.map((o) => (
-                <button key={o.key} className={s.chip} aria-pressed={source === o.key} onClick={() => setSource(source === o.key ? null : o.key)}>
-                  <span className={`${s.ic} material-symbols-rounded`}>{o.icon}</span>
-                  {o.label}
-                </button>
+            {options.some((o) => !o.card) && (
+              <div className={s.chips}>
+                {options
+                  .filter((o) => !o.card)
+                  .map((o) => (
+                    <button key={o.key} className={s.chip} aria-pressed={source === o.key} onClick={() => setSource(source === o.key ? null : o.key)}>
+                      <Logo domain={o.domain} icon={o.icon} size={22} iconBg="transparent" iconColor="currentColor" />
+                      {o.label}
+                    </button>
+                  ))}
+              </div>
+            )}
+            {options.some((o) => o.card) && (
+              <>
+                <span className={s.groupLabel} style={{ marginTop: 4 }}>
+                  Tarjeta de crédito
+                </span>
+                <div className={s.chips}>
+                  {options
+                    .filter((o) => o.card)
+                    .map((o) => (
+                      <button
+                        key={o.key}
+                        className={s.chip}
+                        aria-pressed={source === o.key}
+                        onClick={() => {
+                          setSource(source === o.key ? null : o.key);
+                          setCuotas(1);
+                        }}
+                      >
+                        <Logo domain={o.domain} icon="credit_card" size={22} iconBg="transparent" iconColor="currentColor" />
+                        {o.label}
+                      </button>
+                    ))}
+                </div>
+              </>
+            )}
+            {source?.startsWith("card:") &&
+              (currency === "ARS" ? (
+                <div className={s.cuotas}>
+                  <span>Cuotas</span>
+                  <div role="group" aria-label="Cuotas">
+                    {[1, 3, 6, 9, 12, 18].map((n) => (
+                      <button key={n} aria-pressed={cuotas === n} onClick={() => setCuotas(n)}>
+                        {n === 1 ? "1 pago" : n}
+                      </button>
+                    ))}
+                  </div>
+                  {cuotas > 1 && value > 0 && <small>{formatMoney(value / cuotas, "ARS")} por mes · cuenta como gasto la cuota de cada mes</small>}
+                </div>
+              ) : (
+                <small className={s.cuotasNote}>Las compras en dólares con tarjeta van en un pago.</small>
               ))}
-            </div>
           </div>
         )}
 

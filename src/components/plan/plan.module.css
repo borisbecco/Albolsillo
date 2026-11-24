@@ -594,3 +594,22 @@
     padding-left: 0;
   }
 }
+
+.payCardBtn {
+  height: 40px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px -12px var(--acc);
+}
+
+.payCardBtn[data-done="true"] {
+  background: var(--elev);
+  color: var(--fg);
+  box-shadow: none;
+  border: 1px solid var(--line2);
+}

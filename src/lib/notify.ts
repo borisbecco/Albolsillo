@@ -69,7 +69,15 @@ export async function buildNotice(userId: string, today = todayAR()): Promise<No
     pendingFixed,
     reserve,
     strategy: user.payStrategy,
-    cards: cards.map((c) => ({ id: c.id, name: c.name, balance: Number(c.balance), min: Number(c.minPayment), dueDay: c.dueDay, tna: Number(c.tna) })),
+    cards: cards.map((c) => ({
+      id: c.id,
+      name: c.name,
+      balance: Number(c.balance) + toArs(Number(c.balanceUsd), "USD"),
+      paid: Number(c.cyclePaid) + toArs(Number(c.cyclePaidUsd), "USD"),
+      min: Number(c.minPayment),
+      dueDay: c.dueDay,
+      tna: Number(c.tna),
+    })),
   });
 
   const lastDay = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5)), 0)).getUTCDate();
@@ -77,9 +85,9 @@ export async function buildNotice(userId: string, today = todayAR()): Promise<No
   for (const c of cards) {
     const d = Math.min(c.dueDay, lastDay);
     const left = d - day;
-    if (Number(c.balance) <= 0 || left < 0 || left > user.alertDays) continue;
     const row = plan.rows.find((r) => r.id === c.id);
-    due.push({ kind: "card", name: c.name, day: d, daysLeft: left, amount: Number(c.balance), currency: "ARS", min: Number(c.minPayment), suggested: row?.pay, suggestedTag: row?.tag });
+    if (!row || row.done || left < 0 || left > user.alertDays) continue;
+    due.push({ kind: "card", name: c.name, day: d, daysLeft: left, amount: row.balance, currency: "ARS", min: row.min, suggested: row.pay, suggestedTag: row.tag });
   }
   for (const b of pending) {
     const d = Math.min(b.dueDay, lastDay);

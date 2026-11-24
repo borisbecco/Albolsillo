@@ -45,7 +45,9 @@ export function useSummary() {
     const planCards: PlanCard[] = cards.map((c) => ({
       id: c.id,
       name: c.name,
-      balance: Number(c.balance),
+      // Pesos + dólares al dólar del día; lo pagado del ciclo se descuenta en el plan.
+      balance: Number(c.balance) + toArs(Number(c.balance_usd), "USD"),
+      paid: Number(c.cycle_paid) + toArs(Number(c.cycle_paid_usd), "USD"),
       min: Number(c.min_payment),
       dueDay: c.due_day,
       tna: Number(c.tna),

@@ -1,6 +1,7 @@
 "use client";
 
 import { logoUrl } from "@/lib/logos";
+import { entityDomain } from "@/lib/entities";
 import { Logo } from "@/components/shell/Logo";
 
 import { CATEGORY_BY_ID, catColor, catTint } from "@/lib/categories";
@@ -16,8 +17,10 @@ export const ACC_ICON: Record<AccountDto["kind"], string> = {
 /** Opciones de "Pagado con" / "Entra en": cuentas de la misma moneda y, para gastos, tarjetas. */
 export function sourceOptions(accounts: AccountDto[], cards: CardDto[], type: "in" | "out", currency: Currency) {
   return [
-    ...accounts.filter((a) => a.currency === currency).map((a) => ({ key: a.id, label: a.name, icon: ACC_ICON[a.kind] })),
-    ...(type === "out" ? cards.map((c) => ({ key: `card:${c.id}`, label: c.name, icon: "credit_card" })) : []),
+    ...accounts
+      .filter((a) => a.currency === currency)
+      .map((a) => ({ key: a.id, label: a.name, icon: ACC_ICON[a.kind], card: false, domain: a.kind === "efectivo" ? null : entityDomain(a.name) })),
+    ...(type === "out" ? cards.map((c) => ({ key: `card:${c.id}`, label: c.name, icon: "credit_card", card: true, domain: entityDomain(c.name) })) : []),
   ];
 }
 

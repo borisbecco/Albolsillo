@@ -1,3 +1,4 @@
+import { installmentAmount } from "@/lib/cards";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -65,9 +66,41 @@ export const POST = handle(async (req: Request) => {
   }
 
   const description = t.description || CATEGORY_BY_ID[t.category_id].name;
+  const cuotas = t.installments;
+  if (cuotas > 1) {
+    if (!t.card_id || t.type !== "out") throw new ApiError(400, "validation", "Las cuotas son solo para compras con tarjeta.");
+    if (t.currency === "USD") throw new ApiError(400, "validation", "Las compras en dólares van en un pago.");
+  }
   const created = await prisma
     .$transaction(async (db) => {
     await checkTxRefs(db, userId, t);
+    if (cuotas > 1) {
+      // Compra en cuotas: se registra la compra en la tarjeta y el gasto de la cuota 1.
+      const each = installmentAmount(t.amount, cuotas);
+      const q = await db.cardInstallment.create({
+        data: { userId, cardId: t.card_id!, name: description, n: 1, of: cuotas, amount: each, categoryId: t.category_id, total: t.amount },
+      });
+      const row = await db.transaction.create({
+        data: {
+          ...(t.id && { id: t.id }),
+          userId,
+          type: "out",
+          date: toDate(t.date),
+          description: `${description} (cuota 1/${cuotas})`,
+          categoryId: t.category_id,
+          amount: each,
+          grossAmount: each,
+          currency: "ARS",
+          cardId: t.card_id,
+          recurring: false,
+          merchantDomain: merchantDomain(description),
+          installmentId: q.id,
+          installmentNumber: 1,
+        },
+      });
+      await db.cardInstallment.update({ where: { id: q.id }, data: { firstTransactionId: row.id } });
+      return row;
+    }
     const row = await db.transaction.create({
       data: {
         ...(t.id && { id: t.id }),

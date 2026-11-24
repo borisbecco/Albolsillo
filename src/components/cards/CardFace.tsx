@@ -10,6 +10,8 @@ type Props = {
   bank: BankId | null;
   network: Network;
   balance: number;
+  /** Saldo en dólares del resumen (si tiene) */
+  usd?: number;
   last4: string | null;
   dueDay: number | null;
   index?: number;
@@ -18,7 +20,7 @@ type Props = {
 };
 
 /** Tarjeta de crédito con el degradado de su banco (proporción 1.586, radio 20). */
-export function CardFace({ name, bank, network, balance, last4, dueDay, index = 0, month }: Props) {
+export function CardFace({ name, bank, network, balance, usd, last4, dueDay, index = 0, month }: Props) {
   const f = cardFace(name, bank, index);
   return (
     <div className={c.card} style={{ background: f.face, boxShadow: `0 28px 50px -22px ${f.glow}, 0 2px 0 rgba(255,255,255,.18) inset`, animationDelay: `${index * -2.3}s` }}>
@@ -37,6 +39,7 @@ export function CardFace({ name, bank, network, balance, last4, dueDay, index = 
       <div className={c.spacer} />
       <div className={c.label}>Saldo a pagar</div>
       <div className={c.balance}>{formatMoney(balance, "ARS")}</div>
+      {!!usd && <div className={c.usd}>+ {formatMoney(usd, "USD")}</div>}
       <div className={c.bottom}>
         <span className="mono">•••• {last4 || "0000"}</span>
         <span>

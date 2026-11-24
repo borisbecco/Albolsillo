@@ -93,6 +93,7 @@ export function CardsCarousel() {
                 bank={card.bank as BankId | null}
                 network={card.network as Network}
                 balance={Number(card.balance)}
+                usd={Number(card.balance_usd)}
                 last4={card.last4}
                 dueDay={card.due_day}
                 index={i}
