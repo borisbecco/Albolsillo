@@ -23,8 +23,8 @@ function dayLabel(ymd: string) {
 }
 
 export function MovementsView() {
-  const { month, user, setDetailId, movAccount, setMovAccount } = useShell();
-  const { transactions, accounts, toDisplay, deleteTxs } = useData();
+  const { month, user, setDetailId, movAccount, setMovAccount, setAutoSheet } = useShell();
+  const { transactions, accounts, toDisplay, deleteTxs, detected } = useData();
   const accFilter = accounts.find((x) => x.id === movAccount) ?? null;
   const [q, setQ] = useState("");
   const [type, setType] = useState<TypeFilter>("all");
@@ -152,6 +152,13 @@ export function MovementsView() {
             {selMode ? "close" : "checklist"}
           </span>
           {selMode ? "Cancelar" : "Seleccionar"}
+        </button>
+        <button className={m.exportBtn} data-tour="auto" onClick={() => setAutoSheet(detected.length ? "detected" : "sources")}>
+          <span className="material-symbols-rounded" style={{ color: "var(--acc)" }}>
+            bolt
+          </span>
+          Carga automática
+          {detected.length > 0 && <span className={m.autoCount}>{detected.length}</span>}
         </button>
         <ExportMenu
           query={{

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { detectedDto } from "@/lib/auto/detected";
 import { ApiError, handle } from "@/lib/http";
 import { requireUserId, toUserDto } from "@/lib/auth/session";
 import { accountDto, billDto, cardDto, installmentDto, personDto, txDto } from "@/lib/dto";
@@ -17,7 +18,7 @@ export const GET = handle(async (req: Request) => {
 
   const live = { userId, deletedAt: null };
   const months = Array.from({ length: 6 }, (_, i) => addMonths(month, i - 5));
-  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared, installments, loans] = await Promise.all([
+  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared, installments, loans, detected] = await Promise.all([
     prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
     prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
@@ -34,6 +35,7 @@ export const GET = handle(async (req: Request) => {
     prisma.sharedExpense.findMany({ where: live, orderBy: [{ date: "desc" }, { createdAt: "desc" }] }),
     prisma.cardInstallment.findMany({ where: { ...live, cancelledAt: null }, orderBy: { createdAt: "asc" } }),
     prisma.loan.findMany({ where: live, orderBy: { createdAt: "asc" } }),
+    prisma.detectedExpense.findMany({ where: { userId, status: "pending" }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 200 }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
 
@@ -52,5 +54,6 @@ export const GET = handle(async (req: Request) => {
     goals: goals.map(goalDto),
     investments: investments.map(investmentDto),
     shared: shared.map(sharedDto),
+    detected: detected.map(detectedDto),
   });
 });

@@ -505,3 +505,16 @@
     bottom: 84px;
   }
 }
+
+.autoCount {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: var(--onacc);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}

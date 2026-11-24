@@ -41,13 +41,21 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
    - Mails: `RESEND_API_KEY` y `MAIL_FROM` (dominio verificado en Resend, con SPF, DKIM y DMARC).
    - Avisos push: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (`npx web-push generate-vapid-keys`) y `VAPID_SUBJECT`.
    - Job diario: `CRON_SECRET` (32+ caracteres al azar).
+   - Carga automática: `INBOX_ADDRESS` (la cuenta de Gmail de la app, ej. `albolsillo.entrada@gmail.com`) e
+     `INBOX_APP_PASSWORD` (contraseña de aplicación de Google; la cuenta necesita verificación en dos pasos).
 3. `railway.json` configura build, pre-deploy (migraciones + seed), arranque y healthcheck.
 4. Job diario de avisos: un servicio Cron en Railway con horario `0 11 * * *` (8:00 de Argentina) que corra
    `curl -fsS -X POST "$APP_URL/api/v1/cron/alerts" -H "Authorization: Bearer $CRON_SECRET"`.
+5. Casilla de reenvío: otro servicio Cron con horario `*/5 * * * *` que corra
+   `curl -fsS -X POST "$APP_URL/api/v1/cron/inbox" -H "Authorization: Bearer $CRON_SECRET"`.
+   Lee los mails no leídos, crea los gastos detectados y borra los mails.
 
 ## Desarrollo
 - Sin `RESEND_API_KEY`, los mails se escriben en la consola. Con `MAIL_DUMP_DIR=/una/carpeta` también se guardan como HTML.
 - El registro es **solo por invitación** (código `XXXX-XXXX`). Cada usuario tiene 5 desde Perfil › Invitaciones. Para desarrollo o pruebas, `REGISTRATION_OPEN=1` permite registrarse sin código (no lo pongas en Railway).
+- Carga automática sin Gmail: con `INBOX_DEV_ENDPOINT=1`, `POST /api/v1/dev/inbound-mail` recibe un mail crudo
+  (RFC 822) y lo procesa como si hubiera llegado a la casilla. Los parsers de avisos (`src/lib/auto/parse.ts`) son
+  generales: conviene afinarlos con mails reales de cada billetera.
 - El importador de resúmenes usa un parser general (fecha, descripción, cuotas, columnas de pesos y dólares).
   Falta afinarlo con resúmenes reales de cada banco (API.md pide un parser y tests por banco).
 

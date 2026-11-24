@@ -9,6 +9,7 @@ import { Activity } from "./Activity";
 import { CardsCarousel } from "./CardsCarousel";
 import { FirstSteps, useFirstSteps } from "./FirstSteps";
 import { FxCard } from "./FxCard";
+import { DetectedBanner } from "@/components/auto/DetectedBanner";
 import { Hero } from "./Hero";
 import { Numbers } from "./Numbers";
 import { useSummary } from "./useSummary";
@@ -26,6 +27,7 @@ function Dashboard() {
   const { plan } = useSummary();
   return (
     <div className={h.wrap}>
+      <DetectedBanner />
       <Hero />
       <div className={h.row2} style={{ alignItems: "center" }}>
         <CardsCarousel />

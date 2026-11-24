@@ -10,7 +10,10 @@ import { SaveErrorBar, TxDetail } from "@/components/tx/TxDetail";
 import { BillSheet } from "@/components/debts/BillSheet";
 import { CardSheet } from "@/components/debts/CardSheet";
 import { LoanSheet } from "@/components/debts/LoanSheet";
+import { useData } from "@/components/data/DataContext";
 import { HelpSheet } from "@/components/help/HelpSheet";
+import { SourcesSheet } from "@/components/auto/SourcesSheet";
+import { DetectedSheet } from "@/components/auto/DetectedSheet";
 import { Tour } from "@/components/help/Tour";
 import { LoanPaySheet } from "@/components/debts/LoanPaySheet";
 import { CardPaySheet } from "@/components/debts/CardPaySheet";
@@ -53,14 +56,27 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }, []);
 
-  // Atajos del ícono instalado: /?nuevo=gasto abre el alta.
+  // Atajos del ícono instalado y de los avisos: /?nuevo=gasto abre el alta; /?ver=detectados, la bandeja.
+  // Con &compartido=1, el service worker dejó el comprobante compartido en la caché: se sube acá.
+  const { setAutoSheet } = shell;
+  const { shareReceipt } = useData();
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    if (q.get("nuevo") === "gasto") {
-      openNewTx();
-      window.history.replaceState(null, "", window.location.pathname);
-    }
-  }, [openNewTx]);
+    if (!q.get("nuevo") && !q.get("ver")) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    if (q.get("nuevo") === "gasto") openNewTx();
+    if (q.get("ver") !== "detectados") return;
+    setAutoSheet("detected");
+    if (q.get("compartido") !== "1" || !("caches" in window)) return;
+    void (async () => {
+      const cache = await caches.open("albolsillo-compartido");
+      const res = await cache.match("/compartido/ultimo");
+      if (!res) return;
+      await cache.delete("/compartido/ultimo");
+      const name = decodeURIComponent(res.headers.get("x-file-name") ?? "comprobante");
+      await shareReceipt(await res.blob(), name);
+    })().catch(() => {});
+  }, [openNewTx, setAutoSheet, shareReceipt]);
 
   // Recién terminada la configuración inicial: arranca el recorrido guiado en Inicio.
   useEffect(() => {
@@ -327,6 +343,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {debtSheet?.kind === "card" && <CardSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "bill" && <BillSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {shell.helpOpen && <HelpSheet />}
+      {(shell.autoSheet === "sources" || shell.autoSheet === "forward" || shell.autoSheet === "waiting") && <SourcesSheet />}
+      {shell.autoSheet === "detected" && <DetectedSheet />}
       <Tour />
       {debtSheet?.kind === "loan" && <LoanSheet id={debtSheet.id} onClose={closeDebtSheet} />}
       {debtSheet?.kind === "loanpay" && debtSheet.id && <LoanPaySheet id={debtSheet.id} onClose={closeDebtSheet} />}

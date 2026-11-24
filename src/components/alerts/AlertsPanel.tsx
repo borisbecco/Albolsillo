@@ -8,7 +8,7 @@ import a from "./alerts.module.css";
 
 /** Panel de la campana: alertas activas, anticipación y avisos por mail. */
 export function AlertsPanel() {
-  const { alertsOpen, setAlertsOpen, user, updatePrefs } = useShell();
+  const { alertsOpen, setAlertsOpen, user, updatePrefs, setAutoSheet } = useShell();
   const alerts = useAlerts();
   const push = usePush();
 
@@ -47,7 +47,21 @@ export function AlertsPanel() {
 
         <div className={a.list}>
           {alerts.map((x) => (
-            <div key={x.key} className={a.item}>
+            <div
+              key={x.key}
+              className={a.item}
+              role={x.open ? "button" : undefined}
+              tabIndex={x.open ? 0 : undefined}
+              style={x.open ? { cursor: "pointer" } : undefined}
+              onClick={
+                x.open
+                  ? () => {
+                      setAlertsOpen(false);
+                      setAutoSheet(x.open!);
+                    }
+                  : undefined
+              }
+            >
               <span className={`${a.icon} material-symbols-rounded`} style={{ color: x.color, background: `color-mix(in oklch, ${x.color} 16%, transparent)` }}>
                 {x.icon}
               </span>

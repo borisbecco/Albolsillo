@@ -10,7 +10,7 @@ import { useShell } from "@/components/shell/ShellContext";
 import { useObligations } from "@/components/debts/obligations";
 import { todayAR } from "@/components/tx/parts";
 
-export type Alert = { key: string; icon: string; title: string; sub: string; color: string; order: number };
+export type Alert = { key: string; icon: string; title: string; sub: string; color: string; order: number; open?: "detected" };
 
 const when = (d: number) => (d < 0 ? `Vencido hace ${-d} ${d === -1 ? "día" : "días"}` : d === 0 ? "Hoy" : d === 1 ? "Mañana" : `En ${d} días`);
 
@@ -20,13 +20,25 @@ const when = (d: number) => (d < 0 ? `Vencido hace ${-d} ${d === -1 ? "día" : "
  */
 export function useAlerts(): Alert[] {
   const { user } = useShell();
-  const { transactions, budgetFor, rate } = useData();
+  const { transactions, budgetFor, rate, detected } = useData();
   const month = currentMonth();
   const obligations = useObligations(month);
 
   return useMemo(() => {
     const today = Number(todayAR().slice(8));
     const list: Alert[] = [];
+    // Gastos detectados para revisar: primero.
+    if (detected.length) {
+      list.push({
+        key: "detected",
+        icon: "bolt",
+        title: detected.length === 1 ? "1 gasto detectado para revisar" : `${detected.length} gastos detectados para revisar`,
+        sub: "Tocá para confirmarlos o descartarlos",
+        color: "var(--acc)",
+        order: -100,
+        open: "detected",
+      });
+    }
     for (const o of obligations) {
       if (o.paid) continue;
       const d = o.day - today;
@@ -57,5 +69,5 @@ export function useAlerts(): Alert[] {
       });
     }
     return list.sort((a, b) => a.order - b.order);
-  }, [obligations, user.alert_days, transactions, budgetFor, rate, month]);
+  }, [obligations, user.alert_days, transactions, budgetFor, rate, month, detected.length]);
 }

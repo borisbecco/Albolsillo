@@ -8,6 +8,7 @@ import type { ParsedRow } from "@/lib/import/statement";
 import type { GoalDto, InvestmentDto } from "@/lib/savings";
 import type { SharedDto } from "@/lib/shared";
 import type { LoanDto } from "@/lib/loans";
+import type { DetectedDto } from "@/lib/auto/detected";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
 import { currentMonth } from "@/lib/month";
@@ -32,6 +33,7 @@ export type Bootstrap = {
   shared: SharedDto[];
   installments: InstallmentDto[];
   loans: LoanDto[];
+  detected: DetectedDto[];
 };
 
 export type LoanDraft = { lender: string | null; name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string };
@@ -181,6 +183,12 @@ type Data = {
   deleteTxs: (ids: string[]) => Promise<boolean>;
   /** Vuelve a pedir todos los datos al servidor (después de operaciones con varios efectos). */
   reload: () => Promise<void>;
+  /** Gastos detectados pendientes de confirmar. */
+  detected: DetectedDto[];
+  confirmDetected: (ids: string[], learn: { id: string; category_id: string }[], edits: Record<string, { category_id?: string; account_id?: string | null }>) => Promise<{ count: number; learned: number } | null>;
+  discardDetected: (id: string) => Promise<boolean>;
+  /** Sube un comprobante (imagen o PDF) y lo agrega a la bandeja. */
+  shareReceipt: (file: Blob, name?: string) => Promise<DetectedDto | null>;
   /** Registra el pago del resumen; devuelve el id del movimiento (para deshacer). */
   payCard: (cardId: string, p: CardPayDraft) => Promise<string | null>;
   voidTx: (txId: string) => Promise<boolean>;
@@ -238,6 +246,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [shared, setShared] = useState(initial.shared);
   const [installments, setInstallments] = useState(initial.installments);
   const [loans, setLoans] = useState(initial.loans);
+  const [detected, setDetected] = useState<DetectedDto[]>(initial.detected ?? []);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -452,6 +461,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       setShared(b.shared);
       setInstallments(b.installments);
       setLoans(b.loans);
+      setDetected(b.detected ?? []);
       setAccounts(b.accounts);
       // Lo que todavía no llegó al servidor se conserva.
       setTransactions((list) =>
@@ -1051,6 +1061,59 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [fail],
   );
 
+  // ─── Carga automática: gastos detectados ───
+
+  const confirmDetected = useCallback(
+    async (ids: string[], learn: { id: string; category_id: string }[], edits: Record<string, { category_id?: string; account_id?: string | null }>) => {
+      try {
+        const r = await api<{ transactions: TxDto[]; accounts: AccountDto[]; learned: number; pending: DetectedDto[] }>("/detected/confirm", {
+          method: "POST",
+          body: JSON.stringify({ ids, learn, edits }),
+        });
+        setTransactions((l) => sortTx([...r.transactions.map((t) => ({ ...t, status: "synced" as const })), ...l]));
+        r.accounts.forEach((a) => replaceAccount(a));
+        setDetected(r.pending);
+        return { count: r.transactions.length, learned: r.learned };
+      } catch (e) {
+        fail(e, "No pudimos sumar los gastos. Probá de nuevo.");
+        return null;
+      }
+    },
+    [fail, replaceAccount],
+  );
+
+  const discardDetected = useCallback(
+    async (id: string) => {
+      const prev = detected;
+      setDetected((l) => l.filter((d) => d.id !== id));
+      try {
+        await api(`/detected/${id}/discard`, { method: "POST" });
+        return true;
+      } catch (e) {
+        setDetected(prev);
+        fail(e, "No pudimos descartarlo.");
+        return false;
+      }
+    },
+    [detected, fail],
+  );
+
+  const shareReceipt = useCallback(
+    async (file: Blob, name = "comprobante") => {
+      const form = new FormData();
+      form.append("file", file, name);
+      try {
+        const r = await api<{ detected: DetectedDto }>("/detected/share", { method: "POST", body: form });
+        setDetected((l) => [r.detected, ...l]);
+        return r.detected;
+      } catch (e) {
+        fail(e, "No pudimos leer el comprobante.");
+        return null;
+      }
+    },
+    [fail],
+  );
+
   // ─── Importar resumen ───
 
   const importStatement = useCallback(
@@ -1141,6 +1204,10 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     deleteTx,
     deleteTxs,
     reload,
+    detected,
+    confirmDetected,
+    discardDetected,
+    shareReceipt,
     payCard,
     voidTx,
     loadStatement,

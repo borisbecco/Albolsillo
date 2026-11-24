@@ -28,7 +28,7 @@ const LEVEL_COLORS = ["var(--line2)", "var(--red)", "var(--amb)", "var(--pos)", 
 /** Panel de Perfil y configuración. */
 export function ProfilePanel() {
   const router = useRouter();
-  const { user, profileOpen, setProfileOpen, updatePrefs, flash } = useShell();
+  const { user, profileOpen, setProfileOpen, updatePrefs, flash, setAutoSheet } = useShell();
   const [name, setName] = useState(user.name);
   const [legal, setLegal] = useState<LegalTab | null>(null);
   const [manual, setManual] = useState(user.manual_rate ? toInput(user.manual_rate) : "");
@@ -151,6 +151,36 @@ export function ProfilePanel() {
         </section>
 
         <InvitesSection />
+
+        <section className={p.section}>
+          <span className={p.sectionTitle}>Carga automática</span>
+          <button
+            className={p.rowBtn}
+            onClick={() => {
+              setProfileOpen(false);
+              setAutoSheet("sources");
+            }}
+          >
+            <span className="material-symbols-rounded">bolt</span>
+            Fuentes
+            <span className="material-symbols-rounded" style={{ marginLeft: "auto" }}>
+              chevron_right
+            </span>
+          </button>
+          <button
+            className={p.rowBtn}
+            onClick={() => {
+              setProfileOpen(false);
+              setAutoSheet("detected");
+            }}
+          >
+            <span className="material-symbols-rounded">inbox</span>
+            Gastos detectados
+            <span className="material-symbols-rounded" style={{ marginLeft: "auto" }}>
+              chevron_right
+            </span>
+          </button>
+        </section>
 
         <section className={p.section}>
           <span className={p.sectionTitle}>Preferencias</span>

@@ -6,6 +6,7 @@ import type { UserDto } from "@/lib/auth/session";
 import { currentMonth, navigableMonths } from "@/lib/month";
 
 export type BolsiPose = "bienvenida" | "ingreso" | "gasto" | "meta" | "alerta" | "errorguardar" | "cargando";
+export type AutoSheet = null | "sources" | "forward" | "waiting" | "detected";
 export type ToastAction = { label: string; fn: () => void };
 export type Toast = { id: number; message: string; pose: BolsiPose; action?: ToastAction };
 
@@ -43,6 +44,9 @@ type Shell = {
   setAlertsOpen: (v: boolean) => void;
   helpOpen: boolean;
   setHelpOpen: (v: boolean) => void;
+  /** Carga automática: fuentes, guía de reenvío o bandeja de gastos detectados. */
+  autoSheet: AutoSheet;
+  setAutoSheet: (v: AutoSheet) => void;
   /** Paso del recorrido guiado (null = cerrado). */
   tourStep: number | null;
   setTourStep: (i: number | null) => void;
@@ -123,6 +127,7 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   const [forced, setForced] = useState<Shell["forced"]>({});
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [autoSheet, setAutoSheet] = useState<AutoSheet>(null);
   const [tourStep, setTourStep] = useState<number | null>(null);
   const [importFor, setImportFor] = useState<{ cardId: string | null } | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -168,6 +173,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     setAlertsOpen,
     helpOpen,
     setHelpOpen,
+    autoSheet,
+    setAutoSheet,
     tourStep,
     setTourStep,
     importFor,
