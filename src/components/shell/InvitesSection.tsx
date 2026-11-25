@@ -86,7 +86,7 @@ export function InvitesSection() {
         <span className={p.sectionTitle}>Invitaciones</span>
         {data && <span className={p.invLeft}>{left === 1 ? "Te queda 1" : `Te quedan ${left}`}</span>}
       </div>
-      <span className={p.invNote}>Albolsillo es solo por invitación. Cada link sirve para una persona y vence a los 14 días.</span>
+      <span className={p.invNote}>Cada link sirve para una persona y vence a los 14 días.</span>
       <form className={p.invForm} onSubmit={send} noValidate>
         <input
           className={p.input}

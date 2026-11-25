@@ -16,7 +16,7 @@ const maskCode = (v: string) => {
   return c.length > 4 ? `${c.slice(0, 4)}-${c.slice(4)}` : c;
 };
 
-export function RegisterForm() {
+export function RegisterForm({ inviteOnly }: { inviteOnly: boolean }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -58,8 +58,9 @@ export function RegisterForm() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!INVITE_RE.test(code)) return setErr("Poné el código de invitación (XXXX-XXXX).");
-    if (info && !info.valid) return setErr("Ese código no sirve: venció, ya se usó o está mal escrito.");
+    // Con registro abierto el código es opcional (si viene en el link, se usa para saber quién invitó).
+    if (inviteOnly && !INVITE_RE.test(code)) return setErr("Poné el código de invitación (XXXX-XXXX).");
+    if (inviteOnly && info && !info.valid) return setErr("Ese código no sirve: venció, ya se usó o está mal escrito.");
     if (!name.trim()) return setErr(MSG.regName);
     if (!isValidEmail(email)) return setErr(MSG.regEmail);
     if (pass.length < MIN_PASSWORD) return setErr(MSG.regPass);
@@ -72,7 +73,7 @@ export function RegisterForm() {
         email,
         password: pass,
         accept_terms: true,
-        invite_code: code,
+        ...(INVITE_RE.test(code) && { invite_code: code }),
       });
       setAccessToken(res.access_token);
       router.replace("/bienvenida");
@@ -87,6 +88,7 @@ export function RegisterForm() {
       <Logo />
       <h1 className={s.title}>Creá tu cuenta</h1>
       <p className={s.lead}>Después te pedimos tus ingresos y tarjetas para armar el plan del mes.</p>
+      {(inviteOnly || code) && (
       <label className={s.inviteField}>
         Código de invitación
         <span className={s.inviteBox}>
@@ -111,9 +113,12 @@ export function RegisterForm() {
               : "Código válido."
             : info
               ? "Ese código no sirve: venció, ya se usó o está mal escrito."
-              : "Albolsillo es por invitación. El código viene en el link que te mandaron."}
+              : inviteOnly
+                ? "Albolsillo es por invitación. El código viene en el link que te mandaron."
+                : "Viene en el link que te mandaron."}
         </span>
       </label>
+      )}
       <Field
         label="Nombre"
         value={name}

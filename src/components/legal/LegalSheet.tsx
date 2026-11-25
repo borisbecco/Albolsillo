@@ -9,7 +9,7 @@ export type LegalTab = "terms" | "privacy";
 const UPDATED = "Última actualización: 24 de noviembre de 2026";
 
 const TERMS: [string, string[]][] = [
-  ["Qué es Albolsillo", ["Una app para ordenar tus finanzas personales: gastos, ingresos, tarjetas, metas y deudas. La usamos un grupo de conocidos y se accede solo por invitación."]],
+  ["Qué es Albolsillo", ["Una app para ordenar tus finanzas personales: gastos, ingresos, tarjetas, metas y deudas. Está en una etapa inicial y la usamos un grupo de conocidos."]],
   [
     "Tu cuenta",
     [

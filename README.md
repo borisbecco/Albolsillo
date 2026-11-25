@@ -64,7 +64,7 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
 - `npm test` corre las pruebas de `tests/` (montos, plan de pagos, recurrentes, lectura de avisos y casilla de reenvío)
   con el corredor de Node, sin base ni servidor. Corrélas antes de subir cambios en `src/lib`.
 - Sin `RESEND_API_KEY`, los mails se escriben en la consola. Con `MAIL_DUMP_DIR=/una/carpeta` también se guardan como HTML.
-- El registro es **solo por invitación** (código `XXXX-XXXX`). Cada usuario tiene 5 desde Perfil › Invitaciones. Para desarrollo o pruebas, `REGISTRATION_OPEN=1` permite registrarse sin código (no lo pongas en Railway).
+- **Registro abierto** por defecto: cualquiera se crea una cuenta. Para cerrarlo y pedir código de invitación (`XXXX-XXXX`), cargá `INVITE_ONLY=1` en Railway. Las invitaciones de Perfil (5 por usuario) funcionan en los dos casos y registran quién invitó a quién. `REGISTRATION_OPEN=1` es solo para pruebas (abre el registro y saca el límite de intentos): no lo pongas en Railway.
 - Carga automática sin Gmail: con `INBOX_DEV_ENDPOINT=1`, `POST /api/v1/dev/inbound-mail` recibe un mail crudo
   (RFC 822) y lo procesa como si hubiera llegado a la casilla. Los parsers de avisos (`src/lib/auto/parse.ts`) son
   generales: conviene afinarlos con mails reales de cada billetera.

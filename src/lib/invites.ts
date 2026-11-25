@@ -20,8 +20,12 @@ function newCode() {
 
 export const inviteLink = (code: string) => `${appUrl()}/registro?invite=${code}`;
 
-/** El registro exige código salvo que REGISTRATION_OPEN=1 (desarrollo y pruebas). */
-export const invitesRequired = () => process.env.REGISTRATION_OPEN !== "1";
+/**
+ * El registro exige código solo con INVITE_ONLY=1 (en Railway, para cerrarlo más adelante).
+ * Sin esa variable cualquiera se crea una cuenta; si llega con código, igual se registra quién lo invitó.
+ * REGISTRATION_OPEN=1 (solo pruebas) lo abre siempre.
+ */
+export const invitesRequired = () => process.env.INVITE_ONLY === "1" && process.env.REGISTRATION_OPEN !== "1";
 
 export function inviteStatus(i: Invite) {
   return i.status === "pending" && i.expiresAt < new Date() ? "expired" : i.status;
