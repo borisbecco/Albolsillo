@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { handle, readBody } from "@/lib/http";
+import { ApiError, handle, readBody } from "@/lib/http";
 import { requireUserId, toUserDto } from "@/lib/auth/session";
-import { billDto, cardDto } from "@/lib/dto";
+import { accountDto, billDto, cardDto } from "@/lib/dto";
+import { findEntity } from "@/lib/entities";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import { detectBank, detectNetwork, estimateCloseDay } from "@/lib/banks";
 
@@ -37,6 +38,9 @@ const Body = z.union([
     usd_income: money.nullable(),
     salary_currency: z.enum(["ARS", "USD"]).default("ARS"),
     other_income_currency: z.enum(["ARS", "USD"]).default("USD"),
+    /** Cuenta donde te depositan el sueldo, o un banco/billetera nuevo para crearla */
+    salary_account_id: z.uuid().nullable().optional(),
+    salary_bank: z.string().trim().min(1).max(60).nullable().optional(),
     cards: z.array(CardIn).max(20),
     bills: z.array(BillIn).max(50),
     strategy: z.enum(["intereses", "avalancha", "bola"]),
@@ -58,9 +62,22 @@ export const POST = handle(async (req: Request) => {
 
   const result = await prisma.$transaction(async (db) => {
     const now = new Date();
+    // Cuenta del sueldo: una existente (de la misma moneda) o una nueva con saldo 0.
+    let salaryAccountId: string | null | undefined = b.salary_account_id;
+    let newAccount = null;
+    if (b.salary_bank) {
+      newAccount = await db.account.create({
+        data: { userId, name: b.salary_bank, kind: findEntity(b.salary_bank)?.kind ?? "banco", currency: b.salary_currency, balance: "0" },
+      });
+      salaryAccountId = newAccount.id;
+    } else if (salaryAccountId) {
+      const acc = await db.account.findFirst({ where: { id: salaryAccountId, userId, deletedAt: null } });
+      if (!acc) throw new ApiError(422, "validation", "Elegí una de tus cuentas para el sueldo.");
+      if (acc.currency !== b.salary_currency) throw new ApiError(422, "validation", `El sueldo es en ${b.salary_currency === "USD" ? "dólares" : "pesos"}: elegí una cuenta en esa moneda.`);
+    }
     const user = await db.user.update({
       where: { id: userId },
-      data: { salary: b.salary, payday: b.payday, usdIncome: b.usd_income, salaryCurrency: b.salary_currency, otherIncomeCurrency: b.other_income_currency, payStrategy: b.strategy, onboardedAt: now },
+      data: { salaryAccountId, salary: b.salary, payday: b.payday, usdIncome: b.usd_income, salaryCurrency: b.salary_currency, otherIncomeCurrency: b.other_income_currency, payStrategy: b.strategy, onboardedAt: now },
     });
 
     // Tarjetas
@@ -105,8 +122,8 @@ export const POST = handle(async (req: Request) => {
       db.card.findMany({ where: { userId, deletedAt: null }, orderBy: { createdAt: "asc" } }),
       db.bill.findMany({ where: { userId, deletedAt: null }, orderBy: [{ dueDay: "asc" }, { createdAt: "asc" }] }),
     ]);
-    return { user, cards, bills };
+    return { user, cards, bills, newAccount };
   }, { timeout: 20_000 }); // varias consultas contra una base remota
 
-  return Response.json({ user: toUserDto(result.user), cards: result.cards.map(cardDto), bills: result.bills.map(billDto) });
+  return Response.json({ user: toUserDto(result.user), cards: result.cards.map(cardDto), bills: result.bills.map(billDto), account: result.newAccount ? accountDto(result.newAccount) : null });
 });

@@ -476,3 +476,38 @@
   background: var(--acc);
   color: var(--onacc);
 }
+
+/* Cuenta del sueldo */
+.depositRow {
+  grid-column: 1 / -1;
+}
+
+.depositChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.depositChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 0 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.depositChip[aria-pressed="true"] {
+  border-color: var(--acc);
+  background: color-mix(in oklch, var(--acc) 14%, var(--panel));
+}
+
+.depositHint {
+  font-size: 12px;
+  color: var(--dim);
+}

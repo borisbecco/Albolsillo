@@ -113,6 +113,14 @@
   display: none;
 }
 
+/* En compu no hay forma cómoda de deslizar de costado: las categorías bajan de renglón. */
+@media (min-width: 760px) {
+  .cats {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
 .catChip {
   flex: none;
   display: flex;

@@ -23,7 +23,7 @@ export function NewTxModal() {
 
 function Form() {
   const router = useRouter();
-  const { closeNewTx, flash, setAccountFormOpen } = useShell();
+  const { closeNewTx, flash, setAccountFormOpen, user } = useShell();
   const { accounts, cards, people, createTx, addShared } = useData();
   const isMobile = useIsMobile();
   const amountRef = useRef<HTMLInputElement>(null);
@@ -48,11 +48,14 @@ function Form() {
   const options = sourceOptions(accounts, cards, type, currency);
   const value = parseAmount(amount);
 
+  // El sueldo entra, de entrada, en la cuenta donde te lo depositan.
+  const salaryAcc = accounts.find((a) => a.id === user.salary_account_id && a.currency === currency);
   const changeType = (t: "in" | "out") => {
     setType(t);
     setCat(DEFAULT_CATEGORY[t]);
     setCatTouched(false);
-    if (t === "in" && source?.startsWith("card:")) setSource(null);
+    if (t === "in" && (!source || source.startsWith("card:"))) setSource(salaryAcc?.id ?? null);
+    else if (t === "in" && source?.startsWith("card:")) setSource(null);
   };
 
   const changeDesc = (v: string) => {
@@ -196,6 +199,7 @@ function Form() {
               onClick={() => {
                 setCat(c.id);
                 setCatTouched(true);
+                if (c.id === "sueldo" && !source && salaryAcc) setSource(salaryAcc.id);
               }}
             >
               <span className={`${s.catIcon} material-symbols-rounded`} style={{ background: catTint(c.id), color: catColor(c.id) }}>

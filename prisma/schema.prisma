@@ -160,6 +160,8 @@ model User {
   /// Moneda del sueldo y de los otros ingresos mensuales (usd_income = monto de otros ingresos)
   salaryCurrency      Currency    @default(ARS) @map("salary_currency")
   otherIncomeCurrency Currency    @default(USD) @map("other_income_currency")
+  /// Cuenta donde te depositan el sueldo (sin FK: si se borra la cuenta, se ignora)
+  salaryAccountId     String?     @map("salary_account_id") @db.Uuid
   onboardedAt         DateTime?   @map("onboarded_at") @db.Timestamptz
   alertDays           Int         @default(3) @map("alert_days")
   mailAlerts          MailAlerts  @default(each) @map("mail_alerts")

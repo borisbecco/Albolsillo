@@ -11,6 +11,7 @@ import { FirstSteps, useFirstSteps } from "./FirstSteps";
 import { FxCard } from "./FxCard";
 import { DetectedBanner } from "@/components/auto/DetectedBanner";
 import { Hero } from "./Hero";
+import { SalaryBanner } from "./SalaryBanner";
 import { Numbers } from "./Numbers";
 import { useSummary } from "./useSummary";
 import h from "./dashboard.module.css";
@@ -18,7 +19,14 @@ import h from "./dashboard.module.css";
 /** Inicio: "Primeros pasos" hasta completar 3 de 5; después, el resumen del mes. */
 export function Home() {
   const { done } = useFirstSteps();
-  return done < 3 ? <FirstSteps /> : <Dashboard />;
+  return done < 3 ? (
+    <div className={h.wrap}>
+      <SalaryBanner />
+      <FirstSteps />
+    </div>
+  ) : (
+    <Dashboard />
+  );
 }
 
 function Dashboard() {
@@ -28,6 +36,7 @@ function Dashboard() {
   return (
     <div className={h.wrap}>
       <DetectedBanner />
+      <SalaryBanner />
       <Hero />
       <div className={h.row2} style={{ alignItems: "center" }}>
         <CardsCarousel />

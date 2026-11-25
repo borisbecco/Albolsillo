@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
-import { sortedEntities } from "@/lib/entities";
+import { findEntity } from "@/lib/entities";
+import { EntityCombo } from "./EntityCombo";
 import { MONTH_FULL, currentMonth } from "@/lib/month";
 import { todayAR } from "@/components/tx/parts";
 import { useData } from "@/components/data/DataContext";
@@ -19,7 +20,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
   const { loans, saveLoan, deleteLoan } = useData();
   const loan = id ? loans.find((l) => l.id === id) : null;
 
-  const [lender, setLender] = useState(loan?.lender ?? "");
+  const [lender, setLender] = useState(loan?.lender ?? findEntity(loan?.name)?.name ?? "");
   const [name, setName] = useState(loan?.name ?? "");
   const [installment, setInstallment] = useState(loan ? toInput(loan.installment) : "");
   const [n, setN] = useState(loan ? String(loan.n) : "0");
@@ -70,7 +71,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
     if (!dayOk(due)) return setErr("El día va de 1 a 31");
     setBusy(true);
     const ok = await saveLoan(id, {
-      lender: lender && lender !== "Otra" ? lender : null,
+      lender: lender.trim() || null,
       name: name.trim(),
       installment: toDecimal(parseAmount(installment)),
       n: Number(n),
@@ -112,36 +113,18 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
         </button>
         <span className={d.sheetTitle}>{id ? "Editar préstamo" : "Nuevo préstamo"}</span>
         <div className={d.fields}>
-          <label className={`${d.field} ${d.full}`}>
+          <div className={`${d.field} ${d.full}`}>
             Entidad
-            <select
-              className={d.input}
+            <EntityCombo
               value={lender}
-              onChange={(e) => {
-                const v = e.target.value;
+              onChange={(v) => {
                 setErr("");
+                // Si el nombre lo habíamos armado con la entidad anterior, lo actualizamos.
+                if (v && (!name.trim() || name === `Préstamo ${lender}`)) setName(`Préstamo ${v}`);
                 setLender(v);
-                if (!name.trim() && v && v !== "Otra") setName(`Préstamo ${v}`);
               }}
-            >
-              <option value="">Elegí banco, billetera u otra</option>
-              <optgroup label="Bancos">
-                {sortedEntities("banco").map((e) => (
-                  <option key={e.name} value={e.name}>
-                    {e.name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Billeteras">
-                {sortedEntities("billetera").map((e) => (
-                  <option key={e.name} value={e.name}>
-                    {e.name}
-                  </option>
-                ))}
-              </optgroup>
-              <option value="Otra">Otra</option>
-            </select>
-          </label>
+            />
+          </div>
           <label className={`${d.field} ${d.full}`}>
             Nombre
             <input className={d.input} value={name} onChange={(e) => edit(setName)(e.target.value)} placeholder="Ej. Préstamo personal" maxLength={60} />
@@ -196,7 +179,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
         {askPaid && (
           <label className={d.check}>
             <input type="checkbox" checked={paidThisMonth} onChange={(e) => setPaidThisMonth(e.target.checked)} />
-            Ya pagué la cuota de {MONTH_FULL[Number(month.slice(5)) - 1].toLowerCase()} (está entre las {n} pagadas)
+            Ya pagué la cuota de {MONTH_FULL[Number(month.slice(5)) - 1].toLowerCase()} (ya la conté entre las pagadas)
           </label>
         )}
         {err && (

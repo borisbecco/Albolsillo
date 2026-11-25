@@ -94,6 +94,8 @@ export type OnboardingDraft = {
   usd_income: string | null;
   salary_currency?: Currency;
   other_income_currency?: Currency;
+  salary_account_id?: string | null;
+  salary_bank?: string | null;
   strategy: UserDto["pay_strategy"];
   cards: { id?: string; name: string; balance: string; min_payment: string; due_day: number; tna: string; last4: string | null }[];
   bills: { id?: string; name: string; amount: string; currency: Currency; due_day: number; category_id: string }[];
@@ -591,13 +593,15 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const saveOnboarding = useCallback(
     async (d: OnboardingDraft | { skipped: true }) => {
       try {
-        const res = await api<{ user: UserDto; cards?: CardDto[]; bills?: BillDto[] }>("/me/onboarding", {
+        const res = await api<{ user: UserDto; cards?: CardDto[]; bills?: BillDto[]; account?: AccountDto | null }>("/me/onboarding", {
           method: "POST",
           body: JSON.stringify(d),
         });
         setUser(res.user);
         if (res.cards) setCards(res.cards);
         if (res.bills) setBills(res.bills);
+        const acc = res.account;
+        if (acc) setAccounts((list) => [...list, acc]);
         return true;
       } catch (e) {
         fail(e, "No pudimos guardar tu plan. Probá de nuevo.");

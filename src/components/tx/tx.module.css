@@ -683,3 +683,11 @@
   color: var(--dim);
   font-size: 12px;
 }
+
+/* En compu las cuentas bajan de renglón (no hay cómo deslizar de costado con el mouse). */
+@media (min-width: 760px) {
+  .chips {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}

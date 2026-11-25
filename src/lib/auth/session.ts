@@ -134,6 +134,7 @@ export function toUserDto(u: User) {
     usd_income: u.usdIncome?.toFixed(2) ?? null,
     salary_currency: u.salaryCurrency,
     other_income_currency: u.otherIncomeCurrency,
+    salary_account_id: u.salaryAccountId,
     onboarded_at: u.onboardedAt?.toISOString() ?? null,
     last_month_opened: u.lastMonthOpened,
     tour_done_at: u.tourDoneAt?.toISOString() ?? null,

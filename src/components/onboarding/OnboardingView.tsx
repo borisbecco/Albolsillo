@@ -9,6 +9,9 @@ import { maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from 
 import { currentMonth } from "@/lib/month";
 import type { UserDto } from "@/lib/auth/session";
 import { CardFace } from "@/components/cards/CardFace";
+import { EntityCombo } from "@/components/debts/EntityCombo";
+import { Logo } from "@/components/shell/Logo";
+import { entityDomain, norm } from "@/lib/entities";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import o from "./onboarding.module.css";
@@ -44,7 +47,7 @@ function billCategory(name: string) {
 export function OnboardingView() {
   const router = useRouter();
   const { user, flash, onboardingStep, setOnboardingStep } = useShell();
-  const { cards: savedCards, bills: savedBills, saveOnboarding } = useData();
+  const { cards: savedCards, bills: savedBills, accounts, saveOnboarding } = useData();
   const redo = !!user.onboarded_at;
 
   // Arranca en el paso pedido (p. ej. "Sumá tarjetas" abre Tarjetas) y lo deja en 0 para la próxima.
@@ -55,6 +58,15 @@ export function OnboardingView() {
   const [usd, setUsd] = useState(fromDec(user.usd_income));
   const [salaryCur, setSalaryCur] = useState<Currency>(user.salary_currency ?? "ARS");
   const [otherCur, setOtherCur] = useState<Currency>(user.other_income_currency ?? "USD");
+  // Dónde te depositan el sueldo: una cuenta tuya o un banco nuevo (se crea al guardar).
+  const [salaryAcc, setSalaryAcc] = useState<string | null>(() => (accounts.some((a) => a.id === user.salary_account_id) ? user.salary_account_id : null));
+  const [salaryBank, setSalaryBank] = useState("");
+  const salaryAccounts = accounts.filter((a) => a.currency === salaryCur && a.kind !== "efectivo");
+  const pickSalaryBank = (v: string) => {
+    const same = salaryAccounts.find((a) => norm(a.name) === norm(v));
+    setSalaryAcc(same ? same.id : null);
+    setSalaryBank(same ? "" : v);
+  };
   const [cards, setCards] = useState<CardRow[]>(() =>
     savedCards.map((c) => ({
       key: c.id,
@@ -133,6 +145,8 @@ export function OnboardingView() {
       usd_income: parseAmount(usd) ? toDecimal(parseAmount(usd)) : null,
       salary_currency: salaryCur,
       other_income_currency: otherCur,
+      salary_account_id: salaryAcc && salaryAccounts.some((a) => a.id === salaryAcc) ? salaryAcc : null,
+      salary_bank: salaryAcc ? null : salaryBank.trim() || null,
       strategy,
       cards: cards.map((c) => ({
         id: c.id,
@@ -201,7 +215,13 @@ export function OnboardingView() {
               <label className={o.field}>
                 <span className={o.fieldHead}>
                   Sueldo mensual neto
-                  <CurSeg value={salaryCur} onChange={setSalaryCur} />
+                  <CurSeg
+                    value={salaryCur}
+                    onChange={(c) => {
+                      setSalaryCur(c);
+                      if (salaryAcc && accounts.find((a) => a.id === salaryAcc)?.currency !== c) setSalaryAcc(null);
+                    }}
+                  />
                 </span>
                 <input className={o.big} value={salary} onChange={(e) => edit(setSalary)(maskAmountEvent(e))} inputMode="decimal" placeholder="2.400.000" autoFocus />
               </label>
@@ -216,6 +236,34 @@ export function OnboardingView() {
                 </span>
                 <input className={o.big} value={usd} onChange={(e) => edit(setUsd)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
               </label>
+              <div className={`${o.field} ${o.depositRow}`}>
+                <span className={o.fieldHead}>¿Dónde te depositan el sueldo?</span>
+                {salaryAccounts.length > 0 && (
+                  <div className={o.depositChips} role="group" aria-label="Cuenta del sueldo">
+                    {salaryAccounts.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        className={o.depositChip}
+                        aria-pressed={salaryAcc === a.id}
+                        onClick={() => {
+                          setSalaryAcc(salaryAcc === a.id ? null : a.id);
+                          setSalaryBank("");
+                        }}
+                      >
+                        <Logo domain={entityDomain(a.name)} icon="account_balance" size={24} />
+                        {a.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <EntityCombo key={salaryAcc ?? "nuevo"} value={salaryAcc ? "" : salaryBank} onChange={pickSalaryBank} />
+                <span className={o.depositHint}>
+                  {salaryBank && !salaryAcc
+                    ? `Creamos la cuenta ${salaryBank} con saldo $ 0. Después cargá su saldo en Cuentas.`
+                    : "El día de cobro te proponemos sumarlo a esa cuenta con un toque."}
+                </span>
+              </div>
             </div>
           )}
 
