@@ -14,6 +14,8 @@ export const LoanFields = z.object({
   of: z.number().int().min(1, "Poné la cantidad de cuotas").max(600),
   tna: z.string().regex(/^\d{1,3}(\.\d{1,2})?$/, "Revisá la TNA"),
   balance: money,
+  /** La cuota de este mes ya está paga (al cargar un préstamo que venías pagando por fuera de la app) */
+  paid_this_month: z.boolean().optional(),
 });
 
 export function loanDto(l: Loan) {

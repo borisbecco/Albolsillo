@@ -36,7 +36,7 @@ export type Bootstrap = {
   detected: DetectedDto[];
 };
 
-export type LoanDraft = { lender: string | null; name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string };
+export type LoanDraft = { lender: string | null; name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string; paid_this_month?: boolean };
 
 export type ImportPreview = {
   import_id: string;

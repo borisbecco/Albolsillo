@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import { sortedEntities } from "@/lib/entities";
+import { MONTH_FULL, currentMonth } from "@/lib/month";
+import { todayAR } from "@/components/tx/parts";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
@@ -29,6 +31,11 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
   // Al editar se muestra el guardado, pero si cambiás cuota o cuotas se vuelve a calcular.
   const [balanceTouched, setBalanceTouched] = useState(false);
   const [termsChanged, setTermsChanged] = useState(!loan);
+  // Si el vencimiento de este mes ya pasó, preguntamos si esa cuota ya está paga
+  // (si no, un préstamo recién cargado aparece como vencido).
+  const month = currentMonth();
+  const paidAlready = loan?.last_paid_month === month;
+  const [paidThisMonth, setPaidThisMonth] = useState(!loan);
   const [confirmDel, setConfirmDel] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -43,6 +50,10 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
   const suggested = Math.max(0, Number(of) - Number(n)) * parseAmount(installment);
   const balanceShown = balanceTouched || !termsChanged ? balance : suggested ? toInput(Math.round(suggested)) : "";
   const left = Math.max(0, Number(of) - Number(n));
+  const askPaid = !paidAlready && dayOk(due) && Number(due) <= Number(todayAR().slice(8)) && Number(n) > 0 && left > 0;
+  const remaining = left * parseAmount(installment);
+  // El saldo de capital nunca debería superar lo que falta pagar en cuotas.
+  const balanceOff = left > 0 && remaining > 0 && parseAmount(balanceShown) > remaining * 1.05;
   const terms =
     <T,>(fn: (v: T) => void) =>
     (v: T) => {
@@ -67,6 +78,7 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
       due_day: Number(due),
       tna: String(Math.min(999, parseAmount(tna))),
       balance: toDecimal(parseAmount(balanceShown)),
+      ...(askPaid && { paid_this_month: paidThisMonth }),
     });
     setBusy(false);
     if (ok) {
@@ -175,6 +187,17 @@ export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => v
               ? `Faltan ${left} ${left === 1 ? "cuota" : "cuotas"} de ${formatMoney(parseAmount(installment), "ARS")} · ${formatMoney(left * parseAmount(installment), "ARS")} en total`
               : "Ya están todas las cuotas pagadas"}
           </p>
+        )}
+        {balanceOff && (
+          <p className={d.hint} style={{ color: "var(--red)" }}>
+            El saldo ({formatMoney(parseAmount(balanceShown), "ARS")}) es mayor que lo que te falta pagar ({formatMoney(remaining, "ARS")}). Revisá la cuota o el saldo.
+          </p>
+        )}
+        {askPaid && (
+          <label className={d.check}>
+            <input type="checkbox" checked={paidThisMonth} onChange={(e) => setPaidThisMonth(e.target.checked)} />
+            Ya pagué la cuota de {MONTH_FULL[Number(month.slice(5)) - 1].toLowerCase()} (está entre las {n} pagadas)
+          </label>
         )}
         {err && (
           <div className={t.error} role="alert">
