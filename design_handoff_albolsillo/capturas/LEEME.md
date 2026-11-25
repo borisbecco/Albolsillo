@@ -2,7 +2,7 @@
 
 Vista de escritorio con datos de ejemplo. Cada pantalla se puede abrir en vivo en `prototipo/Albolsillo.dc.html?demo=1&...` (los parámetros están en el Mapa y en CAMBIOS.md).
 
-1. inicio — `01-inicio.png`
+1. inicio — sin captura: cambió en v11, abrir `prototipo/Albolsillo.dc.html?demo=1`
 2. movimientos — `02-movimientos.png`
 3. cuentas — `03-cuentas.png`
 4. plan de pagos — `04-plan-de-pagos.png`

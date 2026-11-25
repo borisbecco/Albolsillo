@@ -38,6 +38,12 @@ Encabezado: título de la vista (oculto en Inicio y por debajo de 980 px), selec
 
 Botón principal: **Nuevo movimiento** (atajo `N`). En mobile es el botón central de la barra inferior.
 
+## Inicio
+Orden: aviso de gastos detectados → saldo del mes con el gráfico acumulado y la proyección → Mis tarjetas | Dólar hoy + Qué pagar → Recientes/Próximos | Distribución + Mis números. Detalle del gráfico, la fórmula de proyección, el estado del resumen y los duplicados en `CAMBIOS.md` › v9 → v11.
+
+## Proyección
+Planificar › Proyección: simulador "¿Me lo puedo permitir?" (monto, cuotas, recargo), libre de los próximos 12 meses con y sin la compra, y detalle por mes. Ver `CAMBIOS.md` › 1.
+
 ## Flujo de nuevo usuario
 1. **Registro**: nombre, email, contraseña (mínimo 8 caracteres, medidor de 4 niveles: Débil, Media, Buena, Fuerte) y aceptación de términos.
 2. **Onboarding** en 4 pasos con barra de progreso. Se puede saltear ("Saltar por ahora") y rehacer desde Perfil → "Ingresos, tarjetas y gastos fijos".
@@ -234,7 +240,7 @@ La app tiene tema **oscuro** (predeterminado) y **claro**, aplicados con `data-t
 - **Espaciado**: gaps de 4, 6, 8, 10, 12, 14, 16, 20, 24 y 28 px. Padding de tarjeta: 18–24 px.
 
 ## Archivos
-- `prototipo/Albolsillo.dc.html`: la app completa (29 pantallas y estados).
+- `prototipo/Albolsillo.dc.html` (v11): la app completa, con pantallas y estados.
 - `prototipo/Albolsillo Mapa.dc.html`: mapa de pantallas.
 - `prototipo/Albolsillo Mails.dc.html`: vista previa de los 4 mails.
 - `prototipo/emails/*.html`: los mails listos para enviar.

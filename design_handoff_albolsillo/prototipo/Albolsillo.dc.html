@@ -410,28 +410,40 @@ input:focus,select:focus{outline:none;border-color:var(--acc)!important}
         <span>Gastos <span style="color:var(--red);font-weight:600">{{ hero.out }}</span></span>
         <span>vs. mes anterior <span style="color:{{ hero.chColor }};font-weight:600">{{ hero.ch }}</span></span>
       </div>
-      <div style="position:relative;width:100%;height:{{ heroChartH }};margin-top:6px">
+      <sc-if value="{{ evo.showProj }}" hint-placeholder-val="{{ true }}"><div data-screen-label="Proyección fin de mes" style="display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 6px;margin-top:10px;padding:7px 16px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);backdrop-filter:blur(16px);font-size:13px;text-align:center"><span style="color:var(--mut)">Si seguís así, terminás el mes gastando</span><span style="font-weight:700;color:{{ evo.projColor }}">{{ evo.projStr }}</span><span style="color:var(--dim);font-size:12px">· {{ evo.projSub }}</span></div></sc-if>
+      <div style="position:relative;width:calc(100% - 48px);height:{{ heroChartH }};margin-top:14px">
         <svg viewBox="0 0 600 200" preserveAspectRatio="none" style="width:100%;height:100%;display:block;overflow:visible">
           <defs><linearGradient id="gHero" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--acc);stop-opacity:.22"></stop><stop offset="1" style="stop-color:var(--acc);stop-opacity:0"></stop></linearGradient></defs>
-          <path d="{{ wave.prev }}" style="fill:none;stroke:var(--red);stroke-width:2;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 6px var(--red))"></path>
-          <path d="{{ wave.area }}" style="fill:url(#gHero)"></path>
-          <path d="{{ wave.cur }}" style="fill:none;stroke:var(--acc);stroke-width:2.5;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 8px var(--acc))"></path>
+          <path d="{{ evo.prev }}" style="fill:none;stroke:var(--red);stroke-width:1.5;opacity:.6;vector-effect:non-scaling-stroke"></path>
+          <path d="{{ evo.area }}" style="fill:url(#gHero)"></path>
+          <path d="{{ evo.proj }}" style="fill:none;stroke:var(--acc);stroke-width:2;stroke-dasharray:6 6;opacity:.8;vector-effect:non-scaling-stroke"></path>
+          <path d="{{ evo.cur }}" style="fill:none;stroke:var(--acc);stroke-width:2.5;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 8px var(--acc))"></path>
         </svg>
-        <span style="position:absolute;left:{{ wave.prevL }};top:{{ wave.prevT }};width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid var(--red);background:var(--bg);display:{{ wave.prevDisplay }}"></span>
-        <span style="position:absolute;left:{{ wave.curL }};top:0;bottom:0;width:1px;background:linear-gradient(var(--line2),transparent)"></span>
-        <span style="position:absolute;left:{{ wave.curL }};top:{{ wave.curT }};width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid var(--acc);background:var(--bg);box-shadow:0 0 14px var(--acc)"></span>
+        <div style="position:absolute;left:0;right:0;top:{{ evo.incT }};display:{{ evo.incDisplay }};border-top:1px dashed color-mix(in oklch,var(--pos) 55%,transparent);pointer-events:none"><span style="position:absolute;left:0;bottom:4px;font-size:11px;color:var(--pos);white-space:nowrap">Ingresos {{ evo.incStr }}</span></div>
+        <span style="position:absolute;left:{{ evo.dotL }};top:0;bottom:0;width:1px;background:linear-gradient(var(--line2),transparent)"></span>
+        <span style="position:absolute;left:{{ evo.dotL }};top:{{ evo.dotT }};width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid var(--acc);background:var(--bg);box-shadow:0 0 14px var(--acc)"></span>
+        <span style="position:absolute;left:100%;top:{{ evo.endT }};width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid var(--acc);background:var(--bg);display:{{ evo.endDisplay }}"></span>
+        <span style="position:absolute;right:0;top:{{ evo.endT }};margin-top:-26px;font-size:11px;font-weight:600;color:{{ evo.projColor }};white-space:nowrap;display:{{ evo.endDisplay }}">{{ evo.projStr }}</span>
       </div>
-      <div style="display:flex;gap:16px;font-size:11px;color:var(--mut)">
-        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:2px;border-radius:1px;background:var(--acc);box-shadow:0 0 6px var(--acc)"></span>Gasto diario · {{ wave.curName }}</span>
-        <span style="display:{{ wave.prevDisplay }};align-items:center;gap:6px"><span style="width:14px;height:2px;border-radius:1px;background:var(--red)"></span>{{ wave.prevName }}</span>
+      <div style="width:calc(100% - 48px);display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--dim)"><span>{{ evo.x0 }}</span><span style="color:var(--mut)">{{ evo.xMid }}</span><span>{{ evo.x1 }}</span></div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;font-size:11px;color:var(--mut)">
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:2px;border-radius:1px;background:var(--acc);box-shadow:0 0 6px var(--acc)"></span>Gastado · {{ evo.curName }}</span>
+        <span style="display:{{ evo.projLegend }};align-items:center;gap:6px"><span style="width:14px;height:0;border-top:2px dashed var(--acc)"></span>Proyección</span>
+        <span style="display:{{ evo.prevDisplay }};align-items:center;gap:6px"><span style="width:14px;height:2px;border-radius:1px;background:var(--red);opacity:.6"></span>{{ evo.prevName }}</span>
+        <span style="display:{{ evo.incLegend }};align-items:center;gap:6px"><span style="width:14px;height:0;border-top:1px dashed var(--pos)"></span>Ingresos</span>
       </div>
     </section>
-    <div style="animation:fadeUp .6s cubic-bezier(.2,.8,.2,1) .08s both;display:grid;grid-template-columns:{{ row2Cols }};gap:16px;align-items:center">
+    <sc-if value="{{ plan.short }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:10px;align-items:center;padding:12px 16px;border:1px solid var(--red);border-radius:10px;color:var(--red)">El dinero libre no alcanza para cubrir los mínimos de tarjetas. Revisá el plan de pagos.</div>
+    </sc-if>
+    <div style="animation:fadeUp .6s cubic-bezier(.2,.8,.2,1) .08s both;display:grid;grid-template-columns:{{ row2Cols }};gap:16px;align-items:start">
     <section style="display:flex;flex-direction:column;gap:2px;min-width:0">
       <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-weight:600;font-size:16px">Mis tarjetas</span><button onClick="{{ go.debts }}" style="border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px" style-hover="color:var(--fg)">Ver todas</button></div>
+      <sc-if value="{{ cardsAny }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:{{ cardGrid }};gap:4px 28px;align-items:center">
+      <div style="min-width:0;width:{{ carWrapW }};display:flex;flex-direction:column">
       <div style="position:relative">
-      <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}"><button onClick="{{ carPrev }}" title="Tarjeta anterior" style="position:absolute;left:4px;top:50%;margin-top:-22px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:color-mix(in oklch,var(--bg) 55%,transparent);backdrop-filter:blur(14px);color:var(--fg);cursor:pointer;opacity:{{ carPrevOp }};z-index:5;font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:24px;box-shadow:0 8px 24px -8px rgba(0,0,0,.6);transition:opacity .2s,border-color .2s" style-hover="border-color:var(--acc)">chevron_left</button><button onClick="{{ carNext }}" title="Tarjeta siguiente" style="position:absolute;right:4px;top:50%;margin-top:-22px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:color-mix(in oklch,var(--bg) 55%,transparent);backdrop-filter:blur(14px);color:var(--fg);cursor:pointer;opacity:{{ carNextOp }};z-index:5;font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:24px;box-shadow:0 8px 24px -8px rgba(0,0,0,.6);transition:opacity .2s,border-color .2s" style-hover="border-color:var(--acc)">chevron_right</button></sc-if>
-      <div data-car="1" onScroll="{{ onCarScroll }}" style="display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:26px calc(50% - {{ carHalf }}) 28px;scrollbar-width:none">
+      <sc-if value="{{ carArrows }}" hint-placeholder-val="{{ true }}"><button onClick="{{ carPrev }}" title="Tarjeta anterior" style="position:absolute;left:4px;top:50%;margin-top:-22px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:color-mix(in oklch,var(--bg) 55%,transparent);backdrop-filter:blur(14px);color:var(--fg);cursor:pointer;opacity:{{ carPrevOp }};z-index:5;font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:24px;box-shadow:0 8px 24px -8px rgba(0,0,0,.6);transition:opacity .2s,border-color .2s" style-hover="border-color:var(--acc)">chevron_left</button><button onClick="{{ carNext }}" title="Tarjeta siguiente" style="position:absolute;right:4px;top:50%;margin-top:-22px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:color-mix(in oklch,var(--bg) 55%,transparent);backdrop-filter:blur(14px);color:var(--fg);cursor:pointer;opacity:{{ carNextOp }};z-index:5;font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:24px;box-shadow:0 8px 24px -8px rgba(0,0,0,.6);transition:opacity .2s,border-color .2s" style-hover="border-color:var(--acc)">chevron_right</button></sc-if>
+      <div data-car="1" onScroll="{{ onCarScroll }}" style="display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:{{ carPad }};scrollbar-width:none">
         <sc-for list="{{ cards }}" as="c" hint-placeholder-count="2">
           <div onClick="{{ c.focus }}" style="flex:none;width:{{ cardW }};scroll-snap-align:center;transform:{{ c.tf }};opacity:{{ c.op }};z-index:{{ c.z }};position:relative;cursor:pointer;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s">
               <div style="position:relative;aspect-ratio:1.586;border-radius:20px;overflow:hidden;background:{{ c.face }};color:#fff;padding:20px 22px;display:flex;flex-direction:column;box-shadow:0 28px 50px -22px {{ c.glow }},0 2px 0 rgba(255,255,255,.18) inset;animation:bFloat 7s ease-in-out infinite;animation-delay:{{ c.delay }}">
@@ -451,15 +463,22 @@ input:focus,select:focus{outline:none;border-color:var(--acc)!important}
         </sc-for>
       </div>
       </div>
-      <div style="display:flex;justify-content:center;gap:6px">
+      <sc-if value="{{ carMulti }}" hint-placeholder-val="{{ true }}"><div style="display:flex;justify-content:center;gap:6px">
         <sc-for list="{{ cardDots }}" as="d" hint-placeholder-count="2"><button onClick="{{ d.go }}" title="{{ d.label }}" style="width:{{ d.w }};height:6px;padding:0;border-radius:3px;border:0;background:{{ d.bg }};cursor:pointer;transition:width .3s,background .3s"></button></sc-for>
+      </div></sc-if>
       </div>
-      <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:14px">
-        <span style="height:30px;padding:0 12px;border-radius:999px;background:var(--sel);display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--mut)">Pagar</span><span style="font-weight:600">{{ ac.payStr }}</span></span>
-        <span style="height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);display:flex;align-items:center;font-size:12px;font-weight:600;color:{{ ac.tagColor }}">{{ ac.tag }}</span>
-        <span style="height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);display:flex;align-items:center;font-size:12px;color:var(--mut)">{{ ac.due }}</span>
+      <div data-screen-label="Estado del resumen" style="width:100%;max-width:{{ progW }};justify-self:center;display:flex;flex-direction:column;gap:10px;margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12px;color:var(--mut)">{{ ac.close }} · {{ ac.due }}</span><span style="height:24px;padding:0 10px;border-radius:999px;border:1px solid var(--line2);display:flex;align-items:center;font-size:11px;font-weight:600;color:{{ ac.tagColor }}">{{ ac.tag }}</span></div>
+        <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--mut)">Pagaste<span style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:var(--fg)">{{ ac.paidStr }}</span>de {{ ac.totalStr }}</div>
+        <div style="position:relative;height:8px;border-radius:4px;background:var(--line2)"><div style="position:absolute;left:0;top:0;bottom:0;width:{{ ac.paidPct }};border-radius:4px;background:var(--acc);box-shadow:0 0 10px var(--acc);transition:width .4s"></div><span title="Pago mínimo" style="position:absolute;left:{{ ac.minPct }};top:-4px;bottom:-4px;width:2px;margin-left:-1px;border-radius:1px;background:var(--fg)"></span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--dim)"><span>Mínimo {{ ac.minStr }}</span><span>{{ ac.leftLabel }}</span></div>
+        <sc-if value="{{ cardSingle }}" hint-placeholder-val="{{ false }}"><button onClick="{{ ac.pay }}" style="align-self:flex-start;height:38px;padding:0 16px;border-radius:999px;border:0;background:var(--acc);color:var(--onacc);font-size:13px;font-weight:600;cursor:pointer;margin-top:4px">{{ ac.payLabel }}</button></sc-if>
       </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ cardsEmpty }}" hint-placeholder-val="{{ false }}"><button onClick="{{ newCardF }}" data-screen-label="Inicio sin tarjetas" style="margin-top:12px;width:100%;max-width:{{ cardW }};align-self:center;aspect-ratio:1.586;border-radius:20px;border:1.5px dashed color-mix(in oklch,var(--acc) 45%,var(--line2));background:color-mix(in oklch,var(--acc) 4%,transparent);color:var(--fg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;font-size:14px;font-weight:500" style-hover="border-color:var(--acc);background:color-mix(in oklch,var(--acc) 9%,transparent)"><span style="width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:color-mix(in oklch,var(--acc) 14%,transparent);color:var(--acc);font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:24px">add_card</span>Agregar tarjeta<span style="font-size:12px;color:var(--mut);font-weight:400;max-width:260px;text-align:center;text-wrap:pretty">Con el saldo y el vencimiento te decimos cuánto pagar de cada una</span></button></sc-if>
     </section>
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
     <section style="border:1px solid var(--line2);border-radius:24px;background:var(--panel);backdrop-filter:blur(20px);padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-weight:600;font-size:16px">Dólar hoy</span><span style="display:flex;align-items:center;gap:6px;color:var(--dim);font-size:11px"><span style="width:7px;height:7px;border-radius:50%;background:{{ fxDot }};box-shadow:0 0 8px {{ fxDot }}"></span>{{ fxStatus }}</span></div>
       <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
@@ -473,67 +492,6 @@ input:focus,select:focus{outline:none;border-color:var(--acc)!important}
       </div>
       <div style="font-size:12px;color:var(--mut)">Convertimos los US$ con el dólar {{ fxSel }}.</div>
     </section>
-    </div>
-    <div style="animation:fadeUp .6s cubic-bezier(.2,.8,.2,1) .16s both;display:grid;grid-template-columns:{{ row2Cols }};gap:16px">
-      <section style="border:1px solid var(--line2);border-radius:24px;background:var(--panel);backdrop-filter:blur(20px);padding:20px;display:flex;flex-direction:column;gap:6px;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:16px">Mis números</span><button onClick="{{ go.rep }}" style="border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px" style-hover="color:var(--fg)">Ver reportes</button></div>
-        <sc-for list="{{ stats }}" as="k" hint-placeholder-count="4">
-          <div style="display:flex;align-items:center;gap:14px;padding:8px 0">
-            <span style="width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sel);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);color:var(--fg);font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:21px;flex:none">{{ k.icon }}</span>
-            <div style="flex:1;min-width:0;font-weight:500;font-size:14px">{{ k.label }}</div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-weight:600;font-size:15px;white-space:nowrap">{{ k.value }}</span><button onClick="{{ k.go }}" style="border:0;background:none;padding:0;color:{{ k.badgeFg }};font-size:11px;cursor:pointer">{{ k.badge }}</button></div>
-          </div>
-        </sc-for>
-      </section>
-      <section style="border:1px solid var(--line);border-radius:18px;background:var(--panel);padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0">
-        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-weight:600;font-size:15px">Distribución del gasto</span><button onClick="{{ go.rep }}" style="border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px" style-hover="color:var(--fg)">Reportes →</button></div>
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:20px">
-          <div style="width:136px;height:136px;border-radius:50%;background:{{ donutBg }};display:grid;place-items:center;flex:none;box-shadow:0 0 40px -12px var(--acc)">
-            <div style="width:104px;height:104px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="color:var(--mut);font-size:11px">Total</span><span style="font-weight:700;font-size:15px">{{ bento.outStr }}</span></div>
-          </div>
-          <div style="flex:1 1 160px;display:flex;flex-direction:column;gap:9px">
-            <sc-for list="{{ donutLegend }}" as="c" hint-placeholder-count="5">
-              <div onClick="{{ c.go }}" style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;border-radius:8px;margin:-3px -6px;padding:3px 6px" style-hover="background:var(--hover)"><span style="width:8px;height:8px;border-radius:50%;background:{{ c.dot }};flex:none"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span><span style="color:var(--dim);width:32px;text-align:right">{{ c.pctLabel }}</span><span style="min-width:84px;text-align:right">{{ c.amountStr }}</span></div>
-            </sc-for>
-          </div>
-        </div>
-      </section>
-    </div>
-    <sc-if value="{{ plan.short }}" hint-placeholder-val="{{ false }}">
-      <div style="display:flex;gap:10px;align-items:center;padding:12px 16px;border:1px solid var(--red);border-radius:10px;color:var(--red)">El dinero libre no alcanza para cubrir los mínimos de tarjetas. Revisá el plan de pagos.</div>
-    </sc-if>
-    <div style="animation:fadeUp .6s cubic-bezier(.2,.8,.2,1) .24s both;display:grid;grid-template-columns:{{ row2Cols }};gap:16px;align-items:start">
-      
-      <section style="border:1px solid var(--line2);border-radius:24px;overflow:hidden;background:var(--panel);backdrop-filter:blur(20px);box-shadow:var(--cardsh)">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--line)">
-          <div style="display:flex;padding:4px;border-radius:999px;background:var(--elev);border:1px solid var(--line)">
-            <sc-for list="{{ dashTabs }}" as="o" hint-placeholder-count="2">
-              <button onClick="{{ o.go }}" style="height:32px;padding:0 14px;border-radius:999px;border:0;background:{{ o.bg }};color:{{ o.fg }};cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:{{ o.sh }};transition:background .2s,color .2s">{{ o.label }}<sc-if value="{{ o.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;display:grid;place-items:center">{{ o.badge }}</span></sc-if></button>
-            </sc-for>
-          </div>
-          <button onClick="{{ dashTabMore }}" style="border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px;white-space:nowrap" style-hover="color:var(--fg)">{{ dashTabMoreLabel }}</button>
-        </div>
-        <sc-if value="{{ tabRecent }}" hint-placeholder-val="{{ true }}"><div style="animation:fadeUp .3s cubic-bezier(.2,.8,.2,1) both">
-        <sc-for list="{{ recent }}" as="t" hint-placeholder-count="6">
-          <div onClick="{{ t.open }}" style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line)">
-            <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ t.tint }};color:{{ t.dot }};font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:20px;flex:none;overflow:hidden"><sc-if value="{{ t.hasLogo }}" hint-placeholder-val="{{ false }}"><span role="img" aria-hidden="true" style="width:100%;height:100%;border-radius:50%;display:block;background:#fff url({{ t.logo }}) center/cover no-repeat"></span></sc-if><sc-if value="{{ t.noLogo }}" hint-placeholder-val="{{ true }}">{{ t.icon }}</sc-if></span>
-            <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.desc }}</div>
-            <div style="color:var(--dim);font-size:12px;white-space:nowrap">{{ t.dateStr }}</div>
-            <div style="min-width:96px;text-align:right;color:{{ t.color }}">{{ t.amountStr }}</div>
-          </div>
-        </sc-for>
-        </div></sc-if>
-        <sc-if value="{{ tabUpcoming }}" hint-placeholder-val="{{ false }}"><div style="animation:fadeUp .3s cubic-bezier(.2,.8,.2,1) both">
-        <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="5">
-          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)">
-            <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ u.tint }};color:{{ u.dot }};font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:20px;flex:none;overflow:hidden"><sc-if value="{{ u.hasLogo }}" hint-placeholder-val="{{ false }}"><span role="img" aria-hidden="true" style="width:100%;height:100%;border-radius:50%;display:block;background:#fff url({{ u.logo }}) center/cover no-repeat"></span></sc-if><sc-if value="{{ u.noLogo }}" hint-placeholder-val="{{ true }}">{{ u.icon }}</sc-if></span>
-            <div style="flex:1;min-width:0">{{ u.name }}</div>
-            <div style="font-size:12px;color:{{ u.dueColor }};white-space:nowrap">{{ u.dueLabel }}</div>
-            <div style="min-width:92px;text-align:right">{{ u.amountStr }}</div>
-          </div>
-        </sc-for>
-        </div></sc-if>
-      </section>
       <section style="border:1px solid var(--line2);border-radius:24px;overflow:hidden;background:var(--panel);backdrop-filter:blur(20px);box-shadow:var(--cardsh)">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)">
           <div style="font-weight:500">Qué pagar este mes</div>
@@ -550,7 +508,64 @@ input:focus,select:focus{outline:none;border-color:var(--acc)!important}
         </sc-for>
         <div style="display:flex;justify-content:space-between;padding:12px 16px;color:var(--mut)"><span>Obligaciones fijas pendientes</span><span style="color:var(--fg)">{{ plan.fixedStr }}</span></div>
       </section>
-      
+    </div>
+    </div>
+    <div style="animation:fadeUp .6s cubic-bezier(.2,.8,.2,1) .16s both;display:grid;grid-template-columns:{{ row2Cols }};gap:16px;align-items:start">
+      <section style="border:1px solid var(--line2);border-radius:24px;overflow:hidden;background:var(--panel);backdrop-filter:blur(20px);box-shadow:var(--cardsh)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;padding:4px;border-radius:999px;background:var(--elev);border:1px solid var(--line)">
+            <sc-for list="{{ dashTabs }}" as="o" hint-placeholder-count="2">
+              <button onClick="{{ o.go }}" style="height:32px;padding:0 14px;border-radius:999px;border:0;background:{{ o.bg }};color:{{ o.fg }};cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:{{ o.sh }};transition:background .2s,color .2s">{{ o.label }}<sc-if value="{{ o.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;display:grid;place-items:center">{{ o.badge }}</span></sc-if></button>
+            </sc-for>
+          </div>
+          <button onClick="{{ dashTabMore }}" style="border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px;white-space:nowrap" style-hover="color:var(--fg)">{{ dashTabMoreLabel }}</button>
+        </div>
+        <sc-if value="{{ tabRecent }}" hint-placeholder-val="{{ true }}"><div style="animation:fadeUp .3s cubic-bezier(.2,.8,.2,1) both">
+        <sc-for list="{{ recent }}" as="t" hint-placeholder-count="6">
+          <div onClick="{{ t.open }}" style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line)">
+            <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ t.tint }};color:{{ t.dot }};font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:20px;flex:none;overflow:hidden"><sc-if value="{{ t.hasLogo }}" hint-placeholder-val="{{ false }}"><span role="img" aria-hidden="true" style="width:100%;height:100%;border-radius:50%;display:block;background:#fff url({{ t.logo }}) center/cover no-repeat"></span></sc-if><sc-if value="{{ t.noLogo }}" hint-placeholder-val="{{ true }}">{{ t.icon }}</sc-if></span>
+            <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.desc }}</span><sc-if value="{{ t.isDup }}" hint-placeholder-val="{{ false }}"><button onClick="{{ t.dupFix }}" title="Mismo comercio, monto y fecha que otro movimiento. Tocá para eliminar este." style="flex:none;height:24px;padding:0 10px;border-radius:999px;border:1px solid color-mix(in oklch,var(--amb) 50%,transparent);background:color-mix(in oklch,var(--amb) 14%,transparent);color:var(--amb);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:14px">content_copy</span>¿Duplicado? Eliminar</button></sc-if></div>
+            <div style="color:var(--dim);font-size:12px;white-space:nowrap">{{ t.dateStr }}</div>
+            <div style="min-width:96px;text-align:right;color:{{ t.color }}">{{ t.amountStr }}</div>
+          </div>
+        </sc-for>
+        </div></sc-if>
+        <sc-if value="{{ tabUpcoming }}" hint-placeholder-val="{{ false }}"><div style="animation:fadeUp .3s cubic-bezier(.2,.8,.2,1) both">
+        <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)">
+            <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ u.tint }};color:{{ u.dot }};font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:20px;flex:none;overflow:hidden"><sc-if value="{{ u.hasLogo }}" hint-placeholder-val="{{ false }}"><span role="img" aria-hidden="true" style="width:100%;height:100%;border-radius:50%;display:block;background:#fff url({{ u.logo }}) center/cover no-repeat"></span></sc-if><sc-if value="{{ u.noLogo }}" hint-placeholder-val="{{ true }}">{{ u.icon }}</sc-if></span>
+            <div style="flex:1;min-width:0">{{ u.name }}</div>
+            <div style="font-size:12px;color:{{ u.dueColor }};white-space:nowrap">{{ u.dueLabel }}</div>
+            <div style="min-width:92px;text-align:right">{{ u.amountStr }}</div>
+          </div>
+        </sc-for>
+        </div></sc-if>
+      </section>
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <section style="border:1px solid var(--line2);border-radius:24px;background:var(--panel);backdrop-filter:blur(20px);padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-weight:600;font-size:15px">Distribución del gasto</span><button onClick="{{ go.rep }}" style="border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px" style-hover="color:var(--fg)">Reportes →</button></div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:20px">
+          <div style="width:136px;height:136px;border-radius:50%;background:{{ donutBg }};display:grid;place-items:center;flex:none;box-shadow:0 0 40px -12px var(--acc)">
+            <div style="width:104px;height:104px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="color:var(--mut);font-size:11px">Total</span><span style="font-weight:700;font-size:15px">{{ bento.outStr }}</span></div>
+          </div>
+          <div style="flex:1 1 160px;display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ donutLegend }}" as="c" hint-placeholder-count="5">
+              <div onClick="{{ c.go }}" style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;border-radius:8px;margin:-3px -6px;padding:3px 6px" style-hover="background:var(--hover)"><span style="width:8px;height:8px;border-radius:50%;background:{{ c.dot }};flex:none"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span><span style="color:var(--dim);width:32px;text-align:right">{{ c.pctLabel }}</span><span style="min-width:84px;text-align:right">{{ c.amountStr }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+      <section style="border:1px solid var(--line2);border-radius:24px;background:var(--panel);backdrop-filter:blur(20px);padding:20px;display:flex;flex-direction:column;gap:6px;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:16px">Mis números</span><button onClick="{{ go.rep }}" style="border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px" style-hover="color:var(--fg)">Ver reportes</button></div>
+        <sc-for list="{{ stats }}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:14px;padding:8px 0">
+            <span style="width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sel);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);color:var(--fg);font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:21px;flex:none">{{ k.icon }}</span>
+            <div style="flex:1;min-width:0;font-weight:500;font-size:14px">{{ k.label }}</div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-weight:600;font-size:15px;white-space:nowrap">{{ k.value }}</span><button onClick="{{ k.go }}" style="border:0;background:none;padding:0;color:{{ k.badgeFg }};font-size:11px;cursor:pointer">{{ k.badge }}</button></div>
+          </div>
+        </sc-for>
+      </section>
+      </div>
     </div>
   </div>
 </sc-if>
@@ -790,7 +805,7 @@ input:focus,select:focus{outline:none;border-color:var(--acc)!important}
 <sc-if value="{{ is.debts }}" hint-placeholder-val="{{ false }}">
   <div style="animation:fadeUp .45s cubic-bezier(.2,.8,.2,1) both;display:flex;flex-direction:column;gap:24px">
     <div style="display:flex;flex-direction:column;gap:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font-weight:600;font-size:16px">Tarjetas de crédito</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button onClick="{{ newCardF }}" style="height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);color:var(--fg);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px"><span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:18px">add</span>Agregar tarjeta</button><button onClick="{{ openImport }}" style="height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);color:var(--fg);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;flex:none;white-space:nowrap"><span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:18px">upload_file</span>Importar resumen</button></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font-weight:600;font-size:16px">Tarjetas de crédito</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button onClick="{{ openImport }}" style="height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);color:var(--fg);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;flex:none;white-space:nowrap"><span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:18px">upload_file</span>Importar resumen</button></div></div>
       <sc-if value="{{ cardsEmpty }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:26px 16px;text-align:center;color:var(--mut);border:1px dashed var(--line2);border-radius:24px"><span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:30px;color:var(--dim)">credit_card</span><span style="font-size:14px;max-width:340px;text-wrap:pretty">No tenés tarjetas cargadas. Sumalas para que el plan te diga cuánto pagar de cada una.</span><button onClick="{{ newCardF }}" style="height:40px;padding:0 16px;border-radius:12px;border:0;background:var(--acc);color:var(--onacc);font-weight:600;font-size:13px;cursor:pointer">Agregar tarjeta</button></div></sc-if>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),440px));gap:16px">
         <sc-for list="{{ cards }}" as="c" hint-placeholder-count="2">
@@ -828,6 +843,7 @@ input:focus,select:focus{outline:none;border-color:var(--acc)!important}
             </div>
           </section>
         </sc-for>
+        <sc-if value="{{ cardsAny }}" hint-placeholder-val="{{ true }}"><button onClick="{{ newCardF }}" style="min-height:240px;border-radius:22px;border:1.5px dashed color-mix(in oklch,var(--acc) 45%,var(--line2));background:color-mix(in oklch,var(--acc) 4%,transparent);color:var(--fg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:500;transition:background .2s,border-color .2s" style-hover="border-color:var(--acc);background:color-mix(in oklch,var(--acc) 9%,transparent)"><span style="width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:color-mix(in oklch,var(--acc) 14%,transparent);color:var(--acc);font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:24px">add_card</span>Agregar tarjeta<span style="font-size:12px;color:var(--mut);font-weight:400">Saldo, mínimo y fechas del resumen</span></button></sc-if>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -893,6 +909,70 @@ input:focus,select:focus{outline:none;border-color:var(--acc)!important}
       </sc-for>
       <sc-if value="{{ selDayEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:16px;color:var(--mut)">Sin vencimientos este día.</div></sc-if>
     </section>
+  </div>
+</sc-if>
+
+<sc-if value="{{ is.proj }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Proyección y simulador" style="animation:fadeUp .45s cubic-bezier(.2,.8,.2,1) both;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:20px;align-items:start">
+    <section data-screen-label="¿Me lo puedo permitir?" style="border:1px solid var(--line2);border-radius:24px;background:var(--panel);backdrop-filter:blur(20px);box-shadow:var(--cardsh);padding:22px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:flex-start;gap:10px"><div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font-weight:700;font-size:20px;letter-spacing:-0.02em">¿Me lo puedo permitir?</span><span style="font-size:13px;color:var(--mut);text-wrap:pretty">Probá una compra antes de hacerla y mirá cómo quedan tus próximos meses.</span></div>
+        <button onClick="{{ proj.clear }}" title="Limpiar" style="width:34px;height:34px;border-radius:50%;border:0;background:transparent;color:var(--mut);cursor:pointer;font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:19px;flex:none" style-hover="background:var(--hover)">restart_alt</button></div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--mut)">Importe de la compra
+        <span style="display:flex;align-items:center;gap:8px;height:56px;padding:0 16px;border-radius:16px;border:1px solid var(--line2);background:var(--elev)"><span style="font-size:22px;color:var(--mut)">$</span><input value="{{ proj.amtStr }}" onChange="{{ proj.setAmt }}" inputmode="numeric" placeholder="0" style="flex:1;min-width:0;height:100%;border:0;background:transparent;color:var(--fg);font-size:26px;font-weight:700;letter-spacing:-0.02em"></span></label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--mut)">Qué es (opcional)<input value="{{ proj.desc }}" onChange="{{ proj.setDesc }}" placeholder="Ej. Lavarropas" style="height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:var(--elev);color:var(--fg);font-size:14px"></label>
+      <div style="display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1 1 240px"><span style="font-size:12px;color:var(--mut)">Cuotas</span>
+          <div style="display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--elev);border:1px solid var(--line)"><sc-for list="{{ proj.opts }}" as="o" hint-placeholder-count="6"><button onClick="{{ o.go }}" style="flex:1;min-width:0;height:34px;border-radius:999px;border:0;background:{{ o.bg }};color:{{ o.fg }};font-weight:{{ o.fw }};font-size:14px;cursor:pointer">{{ o.label }}</button></sc-for></div></div>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--mut);flex:0 1 120px">Recargo total
+          <span style="display:flex;align-items:center;gap:6px;height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--line2);background:var(--elev)"><input value="{{ proj.rec }}" onChange="{{ proj.setRec }}" inputmode="decimal" placeholder="0" style="flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font-size:15px"><span style="color:var(--mut)">%</span></span></label>
+      </div>
+      <div style="height:1px;background:var(--line)"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:14px">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--mut)">Cuota mensual</span><span style="font-size:24px;font-weight:700;letter-spacing:-0.02em">{{ proj.cuotaStr }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--mut)">Te queda libre este mes</span><span style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:{{ proj.freeNowColor }}">{{ proj.freeNowStr }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--mut)">{{ proj.worstLabel }}</span><span style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:{{ proj.worstColor }}">{{ proj.worstStr }}</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut)"><span>Cuánto se come de tu libre de este mes</span><span style="color:var(--fg);font-weight:600">{{ proj.pctStr }}</span></div>
+        <div style="height:8px;border-radius:4px;background:var(--elev);overflow:hidden"><div style="height:100%;width:{{ proj.pctW }};background:{{ proj.pctCol }};border-radius:4px;transition:width .3s"></div></div></div>
+      <div style="display:flex;gap:14px;align-items:center;padding:14px;border-radius:18px;background:{{ proj.vBg }};border:1px solid {{ proj.vBorder }}">
+        <sc-if value="{{ proj.vOk }}" hint-placeholder-val="{{ false }}"><bolsi-anim src="assets/bolsi-meta.svg" style="width:56px;height:62px;flex:none;display:block"></bolsi-anim></sc-if>
+        <sc-if value="{{ proj.vWarn }}" hint-placeholder-val="{{ false }}"><bolsi-anim src="assets/bolsi-alerta.svg" style="width:56px;height:62px;flex:none;display:block"></bolsi-anim></sc-if>
+        <sc-if value="{{ proj.vNone }}" hint-placeholder-val="{{ true }}"><bolsi-anim src="assets/bolsi-bienvenida.svg" style="width:56px;height:62px;flex:none;display:block"></bolsi-anim></sc-if>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-weight:700;font-size:16px;color:{{ proj.vColor }}">{{ proj.vTitle }}</span><span style="font-size:13px;color:var(--fg);text-wrap:pretty">{{ proj.vText }}</span>
+          <sc-if value="{{ proj.hasTip }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--mut);text-wrap:pretty">{{ proj.tip }}</span></sc-if></div>
+      </div>
+      <span style="font-size:12px;color:var(--dim);text-wrap:pretty">Total {{ proj.totalStr }}. {{ proj.recNote }} La primera cuota cuenta en el mes de la compra.</span>
+      <sc-if value="{{ proj.canLoad }}" hint-placeholder-val="{{ false }}"><button onClick="{{ proj.load }}" style="height:48px;border-radius:16px;border:0;background:var(--acc);color:var(--onacc);font-weight:600;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 12px 30px -10px var(--acc)" style-hover="filter:brightness(1.08)"><span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:20px">add_card</span>La hice: cargar la compra</button></sc-if>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+      <section data-screen-label="Proyección 12 meses" style="border:1px solid var(--line2);border-radius:24px;background:var(--panel);backdrop-filter:blur(20px);box-shadow:var(--cardsh);padding:20px 16px 14px;display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;padding:0 4px"><span style="font-weight:600;font-size:16px;flex:1 1 auto">Lo que te queda libre cada mes</span>
+          <span style="display:flex;gap:12px;font-size:11px;color:var(--mut);flex-wrap:wrap"><span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--acc)"></span>Con la compra</span><span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;border:1px dashed var(--mut)"></span>Sin la compra</span><span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--pos)"></span>Termina una cuota</span></span></div>
+        <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px">
+          <sc-for list="{{ proj.months }}" as="m" hint-placeholder-count="12">
+            <button onClick="{{ m.go }}" title="{{ m.title }}" style="min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0;border:0;background:{{ m.bg }};border-radius:10px;padding:6px 0 6px;cursor:pointer;color:var(--fg)" style-hover="background:var(--hover)">
+              <div style="height:150px;position:relative;display:flex;align-items:flex-end;justify-content:center">
+                <div style="position:absolute;bottom:0;left:16%;right:16%;height:{{ m.ghostH }};border:1px dashed var(--mut);border-bottom:0;border-radius:5px 5px 0 0;opacity:{{ m.ghostOp }}"></div>
+                <div style="position:relative;width:68%;height:{{ m.posH }};background:{{ m.col }};border-radius:5px 5px 0 0;transition:height .3s,background .3s"></div>
+              </div>
+              <div style="height:1px;background:var(--line2)"></div>
+              <div style="height:40px;display:flex;justify-content:center;align-items:flex-start"><div style="width:68%;height:{{ m.negH }};background:var(--red);border-radius:0 0 5px 5px;transition:height .3s"></div></div>
+              <span style="display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;color:{{ m.lfg }};font-weight:{{ m.lfw }}"><span style="width:5px;height:5px;border-radius:50%;background:{{ m.dot }}"></span>{{ m.label }}<span style="font-size:9.5px;color:var(--dim);font-weight:400">{{ m.sub }}</span></span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section data-screen-label="Detalle del mes proyectado" style="border:1px solid var(--line2);border-radius:24px;background:var(--panel);backdrop-filter:blur(20px);box-shadow:var(--cardsh);padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-weight:600;font-size:16px">{{ proj.selTitle }}</span>
+        <sc-for list="{{ proj.selRows }}" as="r" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:12px;font-size:14px"><span style="color:{{ r.lc }}">{{ r.label }}</span><span style="color:{{ r.color }};white-space:nowrap">{{ r.value }}</span></div></sc-for>
+        <div style="height:1px;background:var(--line)"></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;font-weight:700"><span>Libre</span><span style="color:{{ proj.selFreeColor }}">{{ proj.selFreeStr }}</span></div>
+        <sc-for list="{{ proj.selEnds }}" as="e" hint-placeholder-count="0"><div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;background:color-mix(in oklch,var(--pos) 10%,var(--elev))"><span style="font-family:'Material Symbols Rounded';font-weight:400;line-height:1;font-size:18px;color:var(--pos)">event_available</span><span style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font-weight:600">{{ e.name }}</span><span style="color:var(--mut)">{{ e.note }}</span></span></div></sc-for>
+        <span style="font-size:12px;color:var(--dim);text-wrap:pretty">{{ proj.selNote }}</span>
+      </section>
+    </div>
   </div>
 </sc-if>
 
@@ -1828,10 +1908,10 @@ const CATNAME = {prestamo:'Préstamos',pago_tarjeta:'Pago de tarjeta'}; [...OUT_
 const dot = id => `oklch(0.76 0.15 ${HUE[id] ?? 220})`;
 const tint = id => `oklch(0.76 0.15 ${HUE[id] ?? 220} / .14)`;
 const ICON = {pago_tarjeta:'credit_score',super:'shopping_cart',resto:'restaurant',transp:'directions_car',hogar:'chair',salud:'favorite',ocio:'movie',ropa:'checkroom',servicios:'bolt',alquiler:'apartment',subs:'autorenew',impuestos:'account_balance',otros:'category',sueldo:'payments',freelance:'work',otros_in:'savings',prestamo:'credit_card'};
-const SHORT = {dash:'Inicio',mov:'Movim.',acc:'Cuentas',budget:'Presup.',plan:'Plan',goals:'Metas',inv:'Invers.',shared:'Compart.',debts:'Deudas',cal:'Venc.',rep:'Reportes'};
-const NAVICON = {dash:'space_dashboard',mov:'receipt_long',acc:'account_balance',budget:'donut_large',plan:'task_alt',goals:'flag',inv:'trending_up',shared:'group',debts:'credit_card',cal:'calendar_month',rep:'bar_chart'};
-const NAV = [['dash','Inicio'],['mov','Movimientos'],['acc','Cuentas'],['budget','Presupuesto'],['plan','Plan de pagos'],['goals','Metas de ahorro'],['inv','Inversiones'],['shared','Gastos compartidos'],['debts','Tarjetas y deudas'],['cal','Vencimientos'],['rep','Reportes']];
-const NAVG = [['dia','Día a día','Día a día','home',['dash','mov','acc','budget']],['gplan','Planificación','Planificar','event_note',['plan','goals','inv','shared']],['deudas','Deudas','Deudas','credit_card',['debts','cal']],['analisis','Análisis','Análisis','bar_chart',['rep']]];
+const SHORT = {dash:'Inicio',mov:'Movim.',acc:'Cuentas',budget:'Presup.',plan:'Plan',proj:'Proyec.',goals:'Metas',inv:'Invers.',shared:'Compart.',debts:'Deudas',cal:'Venc.',rep:'Reportes'};
+const NAVICON = {dash:'space_dashboard',mov:'receipt_long',acc:'account_balance',budget:'donut_large',plan:'task_alt',proj:'query_stats',goals:'flag',inv:'trending_up',shared:'group',debts:'credit_card',cal:'calendar_month',rep:'bar_chart'};
+const NAV = [['dash','Inicio'],['mov','Movimientos'],['acc','Cuentas'],['budget','Presupuesto'],['plan','Plan de pagos'],['proj','Proyección'],['goals','Metas de ahorro'],['inv','Inversiones'],['shared','Gastos compartidos'],['debts','Tarjetas y deudas'],['cal','Vencimientos'],['rep','Reportes']];
+const NAVG = [['dia','Día a día','Día a día','home',['dash','mov','acc','budget']],['gplan','Planificación','Planificar','event_note',['plan','proj','goals','inv','shared']],['deudas','Deudas','Deudas','credit_card',['debts','cal']],['analisis','Análisis','Análisis','bar_chart',['rep']]];
 const grpOf = v => (NAVG.find(g=>g[4].includes(v))||NAVG[0])[0];
 const BANK_LIST = [['BBVA','bbva.com.ar'],['Galicia','bancogalicia.com'],['Santander','santander.com.ar'],['ICBC','icbc.com.ar'],['Nación','bna.com.ar'],['Ciudad','bancociudad.com.ar'],['Macro','macro.com.ar'],['Supervielle','supervielle.com.ar'],['Patagonia','bancopatagonia.com.ar'],['Credicoop','bancocredicoop.coop'],['Naranja X','naranjax.com']];
 const ACC_KIND = {banco:['account_balance','Banco',250],billetera:['account_balance_wallet','Billetera virtual',200],efectivo:['payments','Efectivo',150]};
@@ -1871,7 +1951,7 @@ const NOV_TX = [
  ['06','Carga SUBE','transp',15000,'ARS','out'],['07','Farmacity','salud',23500,'ARS','out'],['08','Día','super',42300,'ARS','out'],['09','Cena con amigos','resto',68000,'ARS','out'],
  ['10','Edenor (luz)','servicios',38500,'ARS','out',1,'b3'],['12','Metrogas','servicios',21400,'ARS','out',1,'b4'],['12','Uber','transp',9800,'ARS','out'],['13','Fibertel','servicios',32999,'ARS','out',1,'b5'],
  ['14','Carrefour','super',112600,'ARS','out'],['15','ChatGPT Plus','subs',20,'USD','out',1,'b11'],['15','Cine','ocio',18000,'ARS','out'],['16','Zara','ropa',89000,'ARS','out'],
- ['17','Nafta','transp',45000,'ARS','out'],['18','Rappi','resto',21300,'ARS','out'],['18','Easy','hogar',36700,'ARS','out']
+ ['17','Nafta','transp',45000,'ARS','out'],['18','Rappi','resto',21300,'ARS','out'],['18','Easy','hogar',36700,'ARS','out'],['18','Easy','hogar',36700,'ARS','out']
 ].map((r,i)=>({id:'t'+i,date:`${YM}-${r[0]}`,desc:r[1],cat:r[2],amount:r[3],cur:r[4],type:r[5],rec:!!r[6],billId:r[7]}));
 const SEED_TX = [...MONTHS.slice(0,5).flatMap((ym,k)=>genMonth(ym,k)), ...NOV_TX];
 const SEED_BILLS = [['b1','Alquiler','alquiler',650000,10,1],['b2','Expensas','alquiler',98000,21,0],['b3','Edenor (luz)','servicios',38500,10,1],['b4','Metrogas','servicios',21400,12,1],['b5','Fibertel','servicios',32999,13,1],['b6','AySA (agua)','servicios',14200,24,0],['b7','Monotributo','impuestos',68900,20,0],['b8','ABL CABA','impuestos',18600,26,0],['b9','Netflix','subs',12999,4,1],['b10','Spotify','subs',4999,4,1],['b11','ChatGPT Plus','subs',20,15,1],['b12','Disney+','subs',8999,27,0]]
@@ -1975,7 +2055,7 @@ const BANKS = [[/galicia/i,'Galicia','bancogalicia.com','linear-gradient(140deg,
 const FACES = [['linear-gradient(140deg,oklch(0.55 0.16 292),oklch(0.34 0.1 272))','oklch(0.55 0.16 292)'],['linear-gradient(140deg,oklch(0.62 0.13 170),oklch(0.4 0.1 200))','oklch(0.6 0.13 175)']];
 const STRATS = [['intereses','Evitar intereses','Pagá completa la tarjeta que vence primero.'],['avalancha','Avalancha','Mayor tasa primero. Minimiza el interés total.'],['bola','Bola de nieve','Saldo más chico primero. Cerrás deudas antes.']];
 const RATE_NAMES = {oficial:'Oficial',blue:'Blue',bolsa:'MEP',tarjeta:'Tarjeta',manual:'Manual'};
-const KEY = 'albolsillo.v1';
+const KEY = 'bolsillo.v2';
 const blankForm = () => ({cuotas:1,type:'out',amount:'',cur:'ARS',desc:'',cat:'super',date:`${YM}-${pad(TODAY)}`,rec:false,acc:'mp',split:[]});
 const num = e => parseInt(String(e.target.value).replace(/\D/g,''))||0;
 
@@ -2530,6 +2610,69 @@ class Component extends DCLogic {
         {label:'Interés que igual se genera',value:fd(remainingInt),color:remainingInt>0?'var(--red)':'var(--fg)'},
         {label:'Sobrante',value:fd(leftover),color:'var(--fg)'}]
     };
+    const projV = (() => {
+      const sim = s.sim||{}, OPTS = [1,3,6,9,12,18], N = sim.n||6, A = parseInt(String(sim.amt||'').replace(/\D/g,''))||0;
+      const RC = Math.max(0,parseFloat(String(sim.rec||'').replace(',','.'))||0), total = A*(1+RC/100), q = total/N;
+      const billsM = sum(s.bills.map(b=>ars(b.amount,b.cur))), varIds = budgetsC.filter(b=>b.kind==='var').map(b=>b.id), last3 = MONTHS.slice(-4,-1).map(tot), varM = sum(last3.map(T=>sum(varIds.map(id=>T.by[id]||0))))/3, inc = income;
+      const base = Array.from({length:12},(_,k)=>{ const mi = (mIdx(YM)+k)%12, yr = 2026+Math.floor((mIdx(YM)+k)/12);
+        const ln = s.loans.map(l=>({l,idx:l.n+(l.paid?k:k+1)})).filter(o=>o.idx<=o.l.of);
+        const cq = s.cards.flatMap(c=>(c.cuotas||[]).map(x=>({x,idx:x.n+k}))).filter(o=>o.idx<=o.x.of);
+        const loansA = sum(ln.map(o=>o.l.installment)), cuotasA = sum(cq.map(o=>o.x.amount));
+        const ends = [...ln.filter(o=>o.idx===o.l.of).map(o=>({name:o.l.name,amt:o.l.installment})),...cq.filter(o=>o.idx===o.x.of).map(o=>({name:o.x.name,amt:o.x.amount}))];
+        const free = k===0 ? avail : inc-billsM-loansA-cuotasA-varM;
+        return {k,mi,yr,loansA,cuotasA,free,ends,label:MN[mi][0].toUpperCase()+MN[mi].slice(1),full:MNF[mi]+' '+yr}; });
+      const after = (m,qq,n) => m.free-(m.k<n?qq:0);
+      const buf = inc*0.05, has = A>0;
+      const worstOf = n => { const qq = total/n, ms = base.slice(0,n).filter(m=>m.free>=0); return ms.length ? ms.reduce((w,m)=>after(m,qq,n)<after(w,qq,n)?m:w) : null; };
+      const pre = base.slice(0,N).filter(m=>m.free<0), W = worstOf(N), minA = W?after(W,q,N):0;
+      const lvl = !has?'none':!W?'pre':minA<0?'no':minA<buf?'tight':'ok';
+      const alt = lvl==='no'||lvl==='tight' ? OPTS.filter(n=>n>N).find(n=>{ const w = worstOf(n); return w && after(w,total/n,n)>=buf; }) : null;
+      const preNote = has&&pre.length ? (pre.length===1?pre[0].full:pre.length+' meses').replace(/^./,c=>c.toUpperCase())+(pre.length===1?' ya venía':' ya venían')+' en rojo sin esta compra ('+fd(pre[0].free)+(pre.length>1?' en '+pre[0].full.toLowerCase():'')+'). La cuota lo empeora en '+fd(q)+'.' : '';
+      const verdict = {
+        none:['Probá con una compra','Poné el importe y la cantidad de cuotas. Te mostramos cómo quedan tus próximos 12 meses.','var(--mut)'],
+        ok:['Te alcanza','En el mes más ajustado ('+(W&&W.full.toLowerCase())+') te quedan '+fd(minA)+' libres.','var(--pos)'],
+        tight:['Entra, pero justo','En '+(W&&W.full.toLowerCase())+' te quedarían '+fd(minA)+'. Cualquier gasto imprevisto te deja en rojo.','var(--amb)'],
+        no:['No te alcanza','En '+(W&&W.full.toLowerCase())+' te faltarían '+fd(-minA)+'.','var(--red)'],
+        pre:['Primero ordená tus cuentas','Todos los meses de las cuotas ya vienen en rojo sin esta compra. Revisá el plan de pagos antes de sumar otra.','var(--red)']}[lvl];
+      const tip0 = !has||lvl==='ok'||lvl==='pre' ? '' : alt ? 'Con '+alt+' cuotas de '+fd(total/alt)+' sí entra con margen.' : 'Ni en 18 cuotas entra con margen. Conviene esperar a que terminen otras cuotas o juntar una parte antes.';
+      const tip = [preNote,tip0].filter(Boolean).join(' ');
+      const maxV = Math.max(1,...base.map(m=>Math.max(m.free,after(m,q,N)))), PX = 150;
+      const sel = Math.min(11,s.projSel??0), M = base[sel], mq = has&&M.k<N?q:0, mA = M.free-mq;
+      const colOf = v => v<0?'var(--red)':v<buf?'var(--amb)':'var(--acc)';
+      const rowsSel = M.k===0 ? [
+          {label:'Ingresos del mes',value:fd(income)},{label:'Gastos ya realizados',value:fd(-spent)},
+          {label:'Obligaciones fijas pendientes',value:fd(-pendFixed)},{label:'Reserva gastos variables',value:fd(-reserve)}]
+        : [{label:'Ingresos estimados',value:fd(inc)},{label:'Gastos fijos',value:fd(-billsM)},{label:'Préstamos',value:fd(-M.loansA)},
+           {label:'Cuotas que ya tenés',value:fd(-M.cuotasA)},{label:'Gasto variable (promedio 3 meses)',value:fd(-varM)}];
+      if (mq) rowsSel.push({label:'Esta compra (cuota '+(M.k+1)+'/'+N+')',value:fd(-mq),acc:true});
+      const nextEnds = M.ends.map(e=>({name:e.name,note:'Última cuota. Desde '+MNF[(M.mi+1)%12].toLowerCase()+' se liberan '+fd(e.amt)+' por mes.'}));
+      const pct = base[0].free>0 ? Math.min(100,q/base[0].free*100) : 100;
+      return {
+        amtStr:A?A.toLocaleString('es-AR'):'', rec:sim.rec||'', desc:sim.desc||'',
+        setAmt:e=>{ const v = e.target.value.replace(/\D/g,''); this.setState(st=>({sim:{...(st.sim||{}),amt:v}})); },
+        setRec:e=>{ const v = e.target.value.replace(/[^\d.,]/g,''); this.setState(st=>({sim:{...(st.sim||{}),rec:v}})); },
+        setDesc:e=>{ const v = e.target.value; this.setState(st=>({sim:{...(st.sim||{}),desc:v}})); },
+        opts:OPTS.map(n=>{ const on = n===N; return {label:String(n),go:()=>this.setState(st=>({sim:{...(st.sim||{}),n}})),bg:on?'var(--acc)':'var(--elev)',fg:on?'var(--onacc)':'var(--mut)',fw:on?700:500}; }),
+        has, cuotaStr:has?fd(q):'—', totalStr:fd(total), recNote:RC>0?'Con el recargo pagás '+fd(total-A)+' más que de contado.':'Sin recargo.',
+        freeNowStr:has?fd(base[0].free-q):fd(base[0].free), freeNowColor:has?colOf(base[0].free-q):'var(--fg)',
+        worstStr:has&&W?fd(minA):'—', worstLabel:has&&W?'Mes más ajustado · '+W.full.toLowerCase():'Mes más ajustado', worstColor:has&&W?colOf(minA):'var(--fg)',
+        pctStr:has?(Math.round(pct*10)/10).toLocaleString('es-AR')+'%':'0%', pctW:(has?pct:0)+'%', pctCol:has?colOf(base[0].free-q):'var(--acc)',
+        vTitle:verdict[0], vText:verdict[1], vColor:verdict[2], tip, hasTip:!!tip,
+        vOk:lvl==='ok', vWarn:lvl==='tight'||lvl==='no'||lvl==='pre', vNone:lvl==='none',
+        vBg:'color-mix(in oklch,'+verdict[2]+' 12%,var(--panel))', vBorder:'color-mix(in oklch,'+verdict[2]+' 35%,var(--line2))',
+        canLoad:has&&s.cards.length>0,
+        load:()=>{ const c = s.cards[0]; this.setState({modal:true,menu:false,form:{...blankForm(),amount:String(Math.round(total)),cuotas:N,acc:c?'card:'+c.id:'mp',desc:sim.desc||''}}); },
+        clear:()=>this.setState({sim:{n:6}}),
+        months:base.map(m=>{ const a = has?after(m,q,N):m.free, on = m.k===sel;
+          return {label:m.label,sub:m.k===0?'hoy':String(m.yr).slice(2),title:m.full+' · libre '+fd(a),go:()=>this.setState({projSel:m.k}),
+            bg:on?'var(--sel)':'transparent',lfg:on?'var(--fg)':'var(--mut)',lfw:on?700:500,
+            ghostH:Math.max(0,m.free)/maxV*PX+'px',ghostOp:has&&m.k<N?1:0,
+            posH:Math.max(0,a)/maxV*PX+'px',negH:Math.min(40,Math.max(0,-a)/maxV*PX)+'px',col:colOf(a),dot:m.ends.length?'var(--pos)':'transparent'}; }),
+        selTitle:M.full, selRows:rowsSel.map(r=>({...r,color:r.acc?'var(--acc)':'var(--fg)',lc:r.acc?'var(--acc)':'var(--mut)'})),
+        selFreeStr:fd(mA), selFreeColor:colOf(mA), selEnds:nextEnds, selHasEnds:nextEnds.length>0,
+        selNote:M.k===0?'Este mes usamos lo que ya pasó: ingresos y gastos reales, más lo que falta pagar.':'Estimado con tus ingresos de este mes, tus gastos fijos, las cuotas que siguen y tu gasto variable promedio de los últimos 3 meses.'
+      };
+    })();
     const faceOf = (c,ci) => { const bk = BANKS.find(([re])=>re.test(c.name||'')), fc = FACES[ci%FACES.length], net = /master/i.test(c.name)?'m':/amex|american/i.test(c.name)?'a':'v';
       return {bank:bk?bk[1]:(c.name||'').replace(/visa|mastercard|master|amex/ig,'').trim()||c.name||'Tarjeta',bankLogo:bk?favicon(bk[2]):'',hasBankLogo:!!bk,isVisa:net==='v',isMaster:net==='m',isAmex:net==='a',
         face:bk?bk[3]:fc[0],glow:bk?bk[4]:fc[1],balStr:fd(c.balance||0),dueStr:`${c.day||'—'} nov`,last4:c.last4||'0000',delay:(ci*-2.3)+'s'}; };
@@ -2639,6 +2782,20 @@ class Component extends DCLogic {
     const wave = {cur:wLine, area:wLine+' L'+f1(wcl[0])+','+CH+' L0,'+CH+' Z', prev:wp.length?smooth(wp):'',
       curL:(wcl[0]/CW*100)+'%', curT:(wcl[1]/CH*100)+'%', prevL:wpl?(wpl[0]/CW*100)+'%':'0', prevT:wpl?(wpl[1]/CH*100)+'%':'0',
       prevDisplay:P?'flex':'none', curName:mName.toLowerCase(), prevName:pName.toLowerCase()};
+    const dNow = isCur?Math.min(TODAY,dN):dN, hasProj = isCur && dNow<dN && S.out>0;
+    const varSoFar = sum(S.outs.filter(t=>+t.date.slice(8)<=dNow&&varIds.has(t.cat)).map(t=>ars(t.amount,t.cur)));
+    const projEnd = hasProj ? cc + (pendFixed||0) + varSoFar/Math.max(1,dNow)*(dN-dNow) : cc;
+    const gMax = Math.max(1, ...curCum, ...prevCum, projEnd, S.inc)*1.12;
+    const gp = a => a.map((v,i)=>[i/(dN-1)*CW, CH-v/gMax*CH]);
+    const gc = gp(curCum), gl = gc[gc.length-1], gLine = smooth(gc), endY = CH-projEnd/gMax*CH, incY = CH-S.inc/gMax*CH;
+    const over = S.inc>0 && projEnd>S.inc, mS = mName.slice(0,3).toLowerCase();
+    const evo = {cur:gLine, area:gLine+' L'+f1(gl[0])+','+CH+' L0,'+CH+' Z', prev:prevCum.length?smooth(gp(prevCum)):'',
+      proj:hasProj?'M'+f1(gl[0])+','+f1(gl[1])+' L'+CW+','+f1(endY):'',
+      dotL:(gl[0]/CW*100)+'%', dotT:(gl[1]/CH*100)+'%', endT:(endY/CH*100)+'%', endDisplay:hasProj?'block':'none',
+      incT:(incY/CH*100)+'%', incDisplay:S.inc?'block':'none', incLegend:S.inc?'flex':'none', incStr:fd(S.inc),
+      showProj:hasProj, projStr:fd(projEnd), projColor:!S.inc?'var(--fg)':over?'var(--red)':'var(--pos)',
+      projSub:!S.inc?'cargá tus ingresos para compararlo':over?`${fd(projEnd-S.inc)} más que tus ingresos`:`te quedarían ${fd(S.inc-projEnd)}`,
+      projLegend:hasProj?'flex':'none', x0:'1 '+mS, xMid:hasProj?'Hoy · '+dNow+' '+mS:'', x1:dN+' '+mS, curName:mName.toLowerCase(), prevName:pName.toLowerCase(), prevDisplay:P?'flex':'none'};
     const bal = S.inc-S.out; this._heroTarget = D==='USD'?bal/R:bal;
     const hero = {sym:(bal<0?'−':'')+(D==='USD'?'US$':'$'), num:Math.round(Math.abs(this._heroVal ?? 0)).toLocaleString('es-AR'),
       label:(isCur?'Saldo disponible · ':'Balance de ')+mName.toLowerCase()+' '+s.ym.slice(0,4), inc:fd(S.inc), out:fd(S.out),
@@ -2752,7 +2909,7 @@ class Component extends DCLogic {
         const hide = Object.fromEntries(Object.entries(E).map(([k,v])=>[k,!!v && !forced[k]]));
         const blk = !!s.booting || !!s.loadErr;
         return {emptyCur:blk?{on:false,tips:[]}:emptyCur, firstSteps:blk?{...firstSteps,on:false}:firstSteps, firstName:(s.userName||'').split(' ')[0]||'hola', is:Object.fromEntries(NAV.map(([v])=>[v,!blk && s.view===v && !hide[v] && !(v==='dash'&&showFS&&!mTx)]))};
-      })(), go,
+      })(), go, proj:projV,
       booting:!!s.booting, loadErr:!!s.loadErr && !s.booting, sk4:[1,2,3,4], sk2:[1,2], sk5:[1,2,3,4,5], skCols:isMobile?'repeat(2,minmax(0,1fr))':'repeat(4,minmax(0,1fr))',
       retryLoad:()=>{ this.setState({loadErr:false,booting:true}); setTimeout(()=>this.setState({booting:false}), 900); },
       net:!s.online?{show:true,icon:'wifi_off',fg:'var(--amb)',bg:'color-mix(in oklch,var(--amb) 10%,var(--panel))',border:'color-mix(in oklch,var(--amb) 35%,var(--line2))',img:'assets/bolsi-sinconexion.svg',title:'Sin conexión',
@@ -2782,7 +2939,8 @@ class Component extends DCLogic {
       })(),
       saveErr:{on:!!s.saveErr,k:String(s.saveErr||''),title:`No pudimos guardar “${s.saveErr||''}”`,close:()=>this.setState({saveErr:null}),retry:()=>{ this.setState({saveErr:null}); this.flash('Guardado','gasto'); }},
       expired:!!s.expired, reLogin:()=>this.setState({expired:false,loggedIn:false,authMode:'login'}),
-      plan, upcoming, recent:sorted.filter(t=>t.date.startsWith(s.ym)).slice(0,6).map(txRow),
+      plan, upcoming, recent:(()=>{ const seen={}; return sorted.filter(t=>t.date.startsWith(s.ym)).slice(0,6).map(t=>{ const k=t.date+'|'+t.desc.toLowerCase()+'|'+t.amount+'|'+t.cur, dup=!!seen[k]; seen[k]=1;
+        return {...txRow(t), isDup:dup, dupFix:e=>{e&&e.stopPropagation();this.removeTxs([t.id],'Eliminamos el duplicado');}}; }); })(),
       q:s.q, setQ:e=>this.setState({q:e.target.value}), filterCat:s.filterCat, setFilterCat:e=>this.setState({filterCat:e.target.value}),
       typeOpts:seg(s.filterType,[['all','Todos'],['out','Gastos'],['in','Ingresos']],v=>this.setState({filterType:v})).map(o=>({...o,pbg:o.fg==='var(--fg)'?'var(--acc)':'transparent',pfg:o.fg==='var(--fg)'?'var(--onacc)':'var(--mut)',psh:o.fg==='var(--fg)'?'0 6px 18px -6px var(--acc)':'none'})),
       catChips:[{id:'all',name:'Todas'},...OUT_CATS,...IN_CATS,{id:'prestamo',name:'Préstamos'}].map(c=>{const on=s.filterCat===c.id;return {name:c.name,icon:c.id==='all'?'apps':ICON[c.id],go:()=>this.setState({filterCat:c.id}),
@@ -2798,7 +2956,13 @@ class Component extends DCLogic {
       carPrev:()=>aci>0&&carGo(aci-1), carNext:()=>aci<s.cards.length-1&&carGo(aci+1),
       carPrevOp:aci>0?1:0.25, carNextOp:aci<s.cards.length-1?1:0.25,
       cardDots:s.cards.map((c,i)=>({label:c.name,go:()=>carGo(i),w:i===aci?'22px':'6px',bg:i===aci?'var(--acc)':'var(--line2)'})),
-      ac:(()=>{const c=s.cards[aci]; if(!c) return {payStr:'',tag:'',tagColor:'',due:''}; const p=cardPlan.find(x=>x.name===c.name)||{}; return {payStr:p.payStr||fd(c.min),tag:p.tag||'',tagColor:p.tagColor||'var(--mut)',due:`Vence ${c.day} nov`};})(),
+      ac:(()=>{const c=s.cards[aci]; if(!c) return {payStr:'',tag:'',tagColor:'',due:'',paidPct:'0%',minPct:'0%'}; const p=cardPlan.find(x=>x.name===c.name)||{}, cn=cardsN.find(x=>x.id===c.id)||c, tot=Math.max(1,cn.balance), pd=cn.paid||0, owed=Math.max(0,cn.balance-pd);
+        return {payStr:p.payStr||fd(c.min),tag:p.tag||'',tagColor:p.tagColor||'var(--mut)',due:`Vence ${c.day} nov`,close:`Cierra el ${c.close||'—'}`,
+          paidStr:fd(pd),totalStr:fd(cn.balance),minStr:fd(c.min),paidPct:Math.min(100,pd/tot*100).toFixed(1)+'%',minPct:Math.min(100,c.min/tot*100).toFixed(1)+'%',
+          leftLabel:owed>0?'Falta '+fd(owed):'Resumen pagado',pay:p.payIt||(()=>{}),payLabel:owed>0?'Registrar pago':'Registrar otro pago'};})(),
+      cardSingle:s.cards.length===1&&s.w>=760, cardGrid:s.cards.length===1&&s.w>=760?'auto minmax(0,1fr)':'minmax(0,1fr)',
+      carPad:s.cards.length===1&&s.w>=760?'26px 4px 28px':`26px calc(50% - ${CW_/2}px) 28px`, carWrapW:s.cards.length===1&&s.w>=760?(CW_+8)+'px':'100%',
+      carMulti:s.cards.length>1, carArrows:s.cards.length>1&&s.w>=760, progW:s.cards.length===1&&s.w>=760?'100%':CW_+'px',
       fx:[['oficial','Oficial'],['blue','Blue'],['bolsa','MEP'],['tarjeta','Tarjeta']].map(([k,l])=>{const v=s.fx[k]||{},on=s.rateType===k;
         return {name:l,venta:v.venta?fmt(v.venta,'ARS'):'—',compra:v.compra?fmt(v.compra,'ARS'):'—',border:on?'var(--acc)':'var(--line)',bg:on?'color-mix(in oklch,var(--acc) 14%,transparent)':'var(--elev)',
           checkBg:on?'var(--acc)':'transparent',checkIcon:on?'check':'',go:()=>{this.setState({rateType:k,rate:v.venta?Math.round(v.venta):s.rate});this.fetchRate(k);}};}),
@@ -2820,7 +2984,7 @@ class Component extends DCLogic {
         const st = done?['Terminado','var(--pos)']:l.paid?['Cuota pagada','var(--pos)']:d<0?[`Vencida hace ${-d} d`,'var(--red)']:d===0?['Vence hoy','var(--red)']:d<=7?[`Vence en ${d} d`,'var(--amb)']:[`Vence el ${l.day}`,'var(--mut)'];
         return {...l,...accLogo(l.lender||l.name),instStr:fd(l.installment),balStr:fd(l.balance),pct:(l.n/l.of*100).toFixed(1)+'%',label:`${l.n}/${l.of} cuotas`,status:st[0],stColor:st[1],canPay:!done&&!l.paid,op:done?0.6:1,
           pay:()=>this.openLoanPay(l.id), edit:()=>this.setState({loanForm:{id:l.id,lender:l.lender||'',name:l.name,installment:String(l.installment),of:String(l.of),n:String(l.n),day:String(l.day),tna:l.tna?String(l.tna):'',balance:String(l.balance)}})}; }),
-      cardsEmpty:!s.cards.length, newCardF:()=>this.setState({cardForm:{id:null,bank:'',net:'Visa',last4:'',bal:'',usd:'',min:'',close:'12',day:'25',tna:''}}),
+      cardsEmpty:!s.cards.length, cardsAny:s.cards.length>0, newCardF:()=>this.setState({cardForm:{id:null,bank:'',net:'Visa',last4:'',bal:'',usd:'',min:'',close:'12',day:'25',tna:''}}),
       newLoan:()=>this.setState({loanForm:{id:null,lender:'',name:'',installment:'',of:'',n:'0',day:'10',tna:'',balance:''}}),
       billRows:[...s.bills].sort((a,b)=>a.day-b.day).map(b=>({...lg(b.name),name:b.name,catName:CATNAME[b.cat],day:b.day,dot:dot(b.cat),icon:ICON[b.cat],tint:tint(b.cat),amountStr:fmt(b.amount,b.cur),toggle:()=>this.toggleBill(b.id),
         btnLabel:b.paid?'✓ Pagado':'Marcar pago',btnColor:b.paid?'var(--pos)':'var(--mut)',btnBorder:b.paid?'var(--pos)':'var(--line2)'})),
@@ -2830,12 +2994,13 @@ class Component extends DCLogic {
         {label:`Balance de ${mName.toLowerCase()}`,value:fd(S.inc-S.out),sub:isCur?'Sin contar pagos pendientes':'Ingresos − gastos',color:S.inc-S.out<0?'var(--red)':'var(--pos)'},
         {label:'Tasa de ahorro',value:S.inc?Math.round(saveRate*100)+'%':'—',sub:isCur?'Proyectada a fin de mes':'Del mes',color:'var(--acc)'},
         {label:'Fijo vs variable',value:`${S.out?Math.round(fixedSpent/S.out*100):0}% / ${S.out?100-Math.round(fixedSpent/S.out*100):0}%`,sub:`Del gasto de ${mName.toLowerCase()}`,color:'var(--fg)'}],
-      hero, wave, heroBleed:isMobile?'14px':'28px', heroGap:isMobile?'10px':'28px', heroSize:isMobile?'40px':'64px', heroSymSize:isMobile?'20px':'28px', heroChartH:isMobile?'170px':'230px',
+      hero, wave, evo, heroBleed:isMobile?'14px':'28px', heroGap:isMobile?'10px':'28px', heroSize:isMobile?'40px':'64px', heroSymSize:isMobile?'20px':'28px', heroChartH:isMobile?'170px':'230px',
       stats:[
         {...dk[1], sub:'Proyectado a fin de mes', go:go.mov},
         {...dk[2], sub:'Sueldo y otros ingresos', go:go.mov},
         {...dk[3], label:'Ahorro', sub:'Del ingreso del mes', go:go.rep},
-        {icon:'credit_card', label:'A pagar en tarjetas', sub:'Según tu plan', value:plan.cardsStr, badge:'Ver plan', badgeFg:'var(--acc)', go:go.plan}],
+        (()=>{ const n = obligations.find(o=>!o.paid && o.day>=TODAY); if (!n) return {icon:'event_available', label:'Próximo vencimiento', value:'—', badge:'Todo al día', badgeFg:'var(--pos)', go:go.cal};
+          const r = obRow(n); return {icon:'event', label:'Próximo vencimiento', value:r.amountStr, badge:r.name+' · '+r.dueLabel, badgeFg:r.dueColor||'var(--acc)', go:go.cal}; })()],
       rep:{balLabel:isCur?'Balance del mes':`Balance de ${mName.toLowerCase()}`, bal:fd((S.inc-S.out)*(s.realMode?infF(s.ym):1)), balColor:S.inc-S.out<0?'var(--red)':'var(--fg)',
         saveP:S.inc?Math.round(saveRate*100)+'%':'—', saveDash:(Math.max(0,Math.min(1,saveRate))*326.7).toFixed(1)+' 326.7', saveSub:isCur?'Proyectada a fin de mes':'Del ingreso del mes',
         fixP:(S.out?Math.round(fixedSpent/S.out*100):0)+'%', varP:(S.out?100-Math.round(fixedSpent/S.out*100):0)+'%', fixW:(S.out?fixedSpent/S.out*100:0).toFixed(1)+'%',
