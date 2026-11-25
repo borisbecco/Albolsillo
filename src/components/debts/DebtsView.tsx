@@ -110,6 +110,7 @@ export function DebtsView() {
           <button className={d.addCard} onClick={() => setDebtSheet({ kind: "card", id: null })}>
             <span className="material-symbols-rounded">add_card</span>
             Agregar tarjeta
+            <small>Saldo, mínimo y fechas del resumen</small>
           </button>
         </div>
       </section>

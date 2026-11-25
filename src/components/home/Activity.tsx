@@ -12,23 +12,30 @@ import { CatIcon, TxIcon } from "@/components/tx/parts";
 import { useSummary } from "./useSummary";
 import h from "./dashboard.module.css";
 
-/** Recientes / Próximos vencimientos y "Qué pagar este mes". */
-export function Activity() {
-  const { month, user, setDetailId, setDebtSheet } = useShell();
-  const { transactions, toDisplay } = useData();
-  const { plan, pendingFixed } = useSummary();
+/** Recientes / Próximos vencimientos. Marca posibles duplicados para borrarlos con un toque (con Deshacer). */
+export function RecentPanel() {
+  const { month, setDetailId, setDebtSheet } = useShell();
+  const { transactions, deleteTxs } = useData();
   const [tab, setTab] = useState<"recent" | "upcoming">("recent");
-  const cur = user.display_currency;
   const nowMonth = currentMonth();
   const today = Number(todayAR().slice(8));
 
-  const recent = transactions.filter((t) => t.date.startsWith(month)).slice(0, 6);
+  // Mismo día, descripción (sin mayúsculas), monto y moneda que otro de la lista: el segundo es un posible duplicado.
+  const seen = new Set<string>();
+  const recent = transactions
+    .filter((t) => t.date.startsWith(month))
+    .slice(0, 6)
+    .map((t) => {
+      const k = `${t.date}|${t.description.trim().toLowerCase()}|${t.amount}|${t.currency}`;
+      const dup = seen.has(k);
+      seen.add(k);
+      return { t, dup };
+    });
   const obligations = useObligations(nowMonth);
   const upcoming = obligations.filter((o) => !o.paid && o.day >= today).slice(0, 6);
   const urgent = obligations.filter((o) => !o.paid && o.day - today <= 7).length;
 
   return (
-    <div className={h.row2} style={{ alignItems: "start" }}>
       <section className={h.listPanel}>
         <div className={h.listHead}>
           <div className={h.tabs} role="tablist">
@@ -46,10 +53,31 @@ export function Activity() {
         </div>
         {tab === "recent" ? (
           <div className={h.fade} key="recent">
-            {recent.map((t) => (
-              <button key={t.id} className={h.item} onClick={() => setDetailId(t.id)}>
+            {recent.map(({ t, dup }) => (
+              <div
+                key={t.id}
+                className={h.item}
+                role="button"
+                tabIndex={0}
+                onClick={() => setDetailId(t.id)}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setDetailId(t.id))}
+              >
                 <TxIcon categoryId={t.category_id} domain={t.merchant_domain} />
-                <span className={h.itemName}>{t.description}</span>
+                <span className={h.itemName}>
+                  <span className={h.itemText}>{t.description}</span>
+                  {dup && (
+                    <button
+                      className={h.dupPill}
+                      title="Mismo comercio, monto y fecha que otro movimiento. Tocá para eliminar este."
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void deleteTxs([t.id]);
+                      }}
+                    >
+                      <span className="material-symbols-rounded">content_copy</span>¿Duplicado? Eliminar
+                    </button>
+                  )}
+                </span>
                 <span className={h.itemDate}>
                   {Number(t.date.slice(8))} {MONTH_SHORT[Number(t.date.slice(5, 7)) - 1]}
                 </span>
@@ -57,7 +85,7 @@ export function Activity() {
                   {t.type === "in" ? "+" : "−"}
                   {formatMoney(Number(t.amount), t.currency)}
                 </span>
-              </button>
+              </div>
             ))}
             {!recent.length && <div className={h.emptyList}>Sin movimientos en este mes.</div>}
           </div>
@@ -80,7 +108,16 @@ export function Activity() {
           </div>
         )}
       </section>
+  );
+}
 
+/** "Qué pagar este mes": lo que dice el plan para cada tarjeta y los fijos pendientes. */
+export function PayPanel() {
+  const { user, setDebtSheet } = useShell();
+  const { toDisplay } = useData();
+  const { plan, pendingFixed } = useSummary();
+  const cur = user.display_currency;
+  return (
       <section className={h.listPanel}>
         <div className={h.listHead}>
           <strong>Qué pagar este mes</strong>
@@ -103,6 +140,5 @@ export function Activity() {
           <strong>{formatMoney(toDisplay(pendingFixed, "ARS"), cur)}</strong>
         </div>
       </section>
-    </div>
   );
 }

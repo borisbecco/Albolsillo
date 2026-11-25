@@ -109,27 +109,43 @@
 }
 
 .addCard {
-  min-height: 220px;
+  min-height: 240px;
   border-radius: 22px;
-  border: 1.5px dashed var(--line2);
-  background: transparent;
-  color: var(--mut);
+  border: 1.5px dashed color-mix(in oklch, var(--acc) 45%, var(--line2));
+  background: color-mix(in oklch, var(--acc) 4%, transparent);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: 10px;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .addCard:hover {
   border-color: var(--acc);
-  color: var(--fg);
+  background: color-mix(in oklch, var(--acc) 9%, transparent);
 }
 
 .addCard span:first-child {
-  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklch, var(--acc) 14%, transparent);
+  color: var(--acc);
+  font-size: 24px;
+}
+
+.addCard small {
+  font-size: 12px;
+  color: var(--mut);
+  font-weight: 400;
 }
 
 .list {

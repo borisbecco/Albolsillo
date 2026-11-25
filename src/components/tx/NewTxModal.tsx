@@ -24,23 +24,28 @@ export function NewTxModal() {
 
 function Form() {
   const router = useRouter();
-  const { closeNewTx, flash, setAccountFormOpen, user } = useShell();
+  const { closeNewTx, flash, setAccountFormOpen, user, newTxPrefill } = useShell();
   const { accounts, cards, people, createTx, addShared } = useData();
   const isMobile = useIsMobile();
   const amountRef = useRef<HTMLInputElement>(null);
 
   const [type, setType] = useState<"in" | "out">("out");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(newTxPrefill?.amount ?? "");
   const [currency, setCurrency] = useState<Currency>("ARS");
-  const [desc, setDesc] = useState("");
-  const [cat, setCat] = useState(DEFAULT_CATEGORY.out);
+  const [desc, setDesc] = useState(newTxPrefill?.description ?? "");
+  // Precargado desde el simulador: la categoría sugerida por el nombre, o Otros (no Supermercado).
+  const [cat, setCat] = useState(() => {
+    if (!newTxPrefill) return DEFAULT_CATEGORY.out;
+    const g = newTxPrefill.description ? guessCategory(newTxPrefill.description) : null;
+    return g && pickableCategories("out").some((c) => c.id === g) ? g : "otros";
+  });
   const [catTouched, setCatTouched] = useState(false);
   const [date, setDate] = useState(todayAR);
   const [recurring, setRecurring] = useState(false);
-  const [source, setSource] = useState<string | null>(null);
+  const [source, setSource] = useState<string | null>(newTxPrefill?.source ?? null);
   const [err, setErr] = useState("");
   const [split, setSplit] = useState<string[]>([]);
-  const [cuotas, setCuotas] = useState(1);
+  const [cuotas, setCuotas] = useState(newTxPrefill?.cuotas ?? 1);
 
   useEffect(() => {
     if (!isMobile) amountRef.current?.focus();

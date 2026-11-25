@@ -37,7 +37,7 @@ export function CardFace({ name, bank, network, balance, usd, last4, dueDay, ind
         {network === "amex" && <span className={c.amex}>AMEX</span>}
       </div>
       <div className={c.spacer} />
-      <div className={c.label}>Saldo del resumen</div>
+      <div className={c.label}>Saldo a pagar</div>
       <div className={c.balance}>{formatMoney(balance, "ARS")}</div>
       {!!usd && <div className={c.usd}>+ {formatMoney(usd, "USD")}</div>}
       <div className={c.bottom}>

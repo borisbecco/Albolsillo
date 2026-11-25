@@ -1,6 +1,6 @@
 // Navegación: 4 secciones con sus vistas (README del handoff → "Navegación: 4 secciones").
 
-export type ViewId = "dash" | "mov" | "acc" | "budget" | "plan" | "goals" | "inv" | "shared" | "debts" | "cal" | "rep";
+export type ViewId = "dash" | "mov" | "acc" | "budget" | "plan" | "proj" | "goals" | "inv" | "shared" | "debts" | "cal" | "rep";
 export type GroupId = "dia" | "gplan" | "deudas" | "analisis";
 
 export type View = { id: ViewId; label: string; icon: string; href: string };
@@ -12,6 +12,7 @@ export const VIEWS: Record<ViewId, View> = {
   acc: { id: "acc", label: "Cuentas", icon: "account_balance", href: "/cuentas" },
   budget: { id: "budget", label: "Presupuesto", icon: "donut_large", href: "/presupuesto" },
   plan: { id: "plan", label: "Plan de pagos", icon: "task_alt", href: "/plan" },
+  proj: { id: "proj", label: "Proyección", icon: "query_stats", href: "/proyeccion" },
   goals: { id: "goals", label: "Metas de ahorro", icon: "flag", href: "/metas" },
   inv: { id: "inv", label: "Inversiones", icon: "trending_up", href: "/inversiones" },
   shared: { id: "shared", label: "Gastos compartidos", icon: "group", href: "/compartidos" },
@@ -22,7 +23,7 @@ export const VIEWS: Record<ViewId, View> = {
 
 export const GROUPS: Group[] = [
   { id: "dia", label: "Día a día", short: "Día a día", icon: "home", views: ["dash", "mov", "acc", "budget"] },
-  { id: "gplan", label: "Planificación", short: "Planificar", icon: "event_note", views: ["plan", "goals", "inv", "shared"] },
+  { id: "gplan", label: "Planificación", short: "Planificar", icon: "event_note", views: ["plan", "proj", "goals", "inv", "shared"] },
   { id: "deudas", label: "Deudas", short: "Deudas", icon: "credit_card", views: ["debts", "cal"] },
   { id: "analisis", label: "Análisis", short: "Análisis", icon: "bar_chart", views: ["rep"] },
 ];

@@ -1,0 +1,520 @@
+/* Proyección y simulador (handoff v11 › Proyección) */
+
+.wrap {
+  animation: fadeUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  border: 1px solid var(--line2);
+  border-radius: 24px;
+  background: var(--panel);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--cardsh);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.head > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--mut);
+}
+
+.clear {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.clear:hover {
+  background: var(--hover);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mut);
+  min-width: 0;
+}
+
+.amountBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  color: var(--mut);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.amountBox input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.amountBox:focus-within,
+.input:focus,
+.pctBox:focus-within {
+  border-color: var(--acc);
+}
+
+.input {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.row > .field:first-child {
+  flex: 1 1 260px;
+}
+
+.seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--elev);
+  border: 1px solid var(--line);
+}
+
+.seg button {
+  flex: 1;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mut);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.seg button[aria-pressed="true"] {
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 700;
+}
+
+.pctBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  width: 110px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line2);
+  background: var(--elev);
+  color: var(--mut);
+}
+
+.pctBox input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+}
+
+.sep {
+  height: 1px;
+  background: var(--line2);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.figures div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.figures span {
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.figures strong {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meterHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.meterHead strong {
+  color: var(--fg);
+}
+
+.meterTrack {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--elev);
+  overflow: hidden;
+}
+
+.meterTrack div {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s, background 0.3s;
+}
+
+.verdict {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line2);
+}
+
+.verdictText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.verdictText strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.verdictText > span {
+  font-size: 13px;
+  color: var(--fg);
+  text-wrap: pretty;
+}
+
+.verdictText .tip {
+  color: var(--mut);
+}
+
+.foot {
+  font-size: 12px;
+  color: var(--dim);
+  text-wrap: pretty;
+}
+
+.load {
+  height: 48px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--acc);
+  color: var(--onacc);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.load:hover {
+  filter: brightness(1.08);
+}
+
+/* 12 meses */
+.chartHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: baseline;
+  padding: 0 4px;
+}
+
+.chartHead > strong {
+  flex: 1 1 auto;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.keys {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--mut);
+  flex-wrap: wrap;
+}
+
+.keys span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.keys i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.keys .ghostKey {
+  border: 1px dashed var(--mut);
+}
+
+.keys .dotKey {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pos);
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.bar {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  color: var(--fg);
+}
+
+.bar:hover {
+  background: var(--hover);
+}
+
+.bar[aria-pressed="true"] {
+  background: var(--sel);
+}
+
+.barTop {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.ghost {
+  position: absolute;
+  bottom: 0;
+  left: 16%;
+  right: 16%;
+  border: 1px dashed var(--mut);
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+}
+
+.pos {
+  position: relative;
+  width: 68%;
+  border-radius: 5px 5px 0 0;
+  transition: height 0.3s, background 0.3s;
+}
+
+.axis {
+  height: 1px;
+  background: var(--line2);
+}
+
+.barBottom {
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.neg {
+  width: 68%;
+  background: var(--red);
+  border-radius: 0 0 5px 5px;
+  transition: height 0.3s;
+}
+
+.barLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-size: 11px;
+  color: var(--mut);
+}
+
+.bar[aria-pressed="true"] .barLabel {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.barLabel i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.barLabel small {
+  font-size: 9.5px;
+  color: var(--dim);
+  font-weight: 400;
+}
+
+/* Detalle del mes */
+.selTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.selRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.selRow span:first-child {
+  color: var(--mut);
+}
+
+.selRow span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.selFree {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ends {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in oklch, var(--pos) 10%, transparent);
+}
+
+.ends > .material-symbols-rounded {
+  color: var(--pos);
+  font-size: 20px;
+}
+
+.ends > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.ends > span:last-child span {
+  color: var(--mut);
+}
+
+.note {
+  font-size: 12px;
+  color: var(--dim);
+  text-wrap: pretty;
+}
+
+@media (max-width: 759px) {
+  .panel {
+    padding: 18px;
+  }
+  .figures {
+    grid-template-columns: 1fr 1fr;
+  }
+  .figures div:last-child {
+    grid-column: 1 / -1;
+  }
+}

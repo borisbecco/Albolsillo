@@ -7,10 +7,13 @@ import { VIEWS } from "@/lib/nav";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { useSummary } from "./useSummary";
+import { pctChange } from "@/lib/plan";
+import { currentMonth, todayAR } from "@/lib/month";
+import { dueInfo, useObligations } from "@/components/debts/obligations";
 import h from "./dashboard.module.css";
 
-/** "Distribución del gasto" (los números del mes están arriba, en Inicio). */
-export function Numbers() {
+/** "Distribución del gasto". */
+export function DistPanel() {
   const { user, month } = useShell();
   const { toDisplay, transactions } = useData();
   const { S } = useSummary();
@@ -74,6 +77,82 @@ export function Numbers() {
           <span className={h.otrosBtn}>Categorizar</span>
         </Link>
       )}
+    </section>
+  );
+}
+
+const GOOD = { bg: "color-mix(in oklch, var(--pos) 18%, transparent)", fg: "var(--pos)" };
+const BAD = { bg: "color-mix(in oklch, var(--red) 18%, transparent)", fg: "var(--red)" };
+const NEU = { bg: "var(--sel)", fg: "var(--mut)" };
+
+/** "Mis números": gasto proyectado, ingresos, ahorro y el próximo vencimiento. */
+export function StatsPanel() {
+  const { user } = useShell();
+  const { toDisplay } = useData();
+  const { S, P, isCurrent, projectedOut, saveRate, prevSaveRate } = useSummary();
+  const cur = user.display_currency;
+  const fmt = (n: number) => formatMoney(toDisplay(n, "ARS"), cur);
+  const nowMonth = currentMonth();
+  const today = Number(todayAR().slice(8));
+  const next = useObligations(nowMonth).find((o) => !o.paid && o.day >= today);
+  const nextDue = next ? dueInfo(nowMonth, next.day, next.paid) : null;
+
+  const stats = [
+    {
+      icon: "trending_down",
+      label: "Gasto del mes",
+      sub: isCurrent ? "Proyectado a fin de mes" : "Del mes",
+      value: fmt(projectedOut),
+      badge: P ? pctChange(projectedOut, P.out) : "—",
+      tone: !P ? NEU : projectedOut <= P.out ? GOOD : BAD,
+      href: VIEWS.mov.href,
+    },
+    {
+      icon: "payments",
+      label: "Ingresos",
+      sub: "Sueldo y otros ingresos",
+      value: fmt(S.inc),
+      badge: P ? pctChange(S.inc, P.inc) : "—",
+      tone: !P ? NEU : S.inc >= P.inc ? GOOD : BAD,
+      href: VIEWS.mov.href,
+    },
+    {
+      icon: "savings",
+      label: "Ahorro",
+      sub: "Del ingreso del mes",
+      value: S.inc ? `${Math.round(saveRate * 100)}%` : "—",
+      badge: P && S.inc ? `${saveRate >= prevSaveRate ? "+" : "−"}${Math.abs((saveRate - prevSaveRate) * 100).toFixed(1).replace(".", ",")} pts` : "—",
+      tone: !P || !S.inc ? NEU : saveRate >= prevSaveRate ? GOOD : BAD,
+      href: VIEWS.rep.href,
+    },
+    next && nextDue
+      ? { icon: "event", label: "Próximo vencimiento", sub: `${next.name} · ${nextDue.label}`, value: formatMoney(toDisplay(next.amount, next.currency), cur), badge: "Ver", tone: { bg: "transparent", fg: nextDue.color }, href: VIEWS.cal.href }
+      : { icon: "event_available", label: "Próximo vencimiento", sub: "Nada más este mes", value: "—", badge: "Todo al día", tone: { bg: "transparent", fg: "var(--pos)" }, href: VIEWS.cal.href },
+  ];
+
+  return (
+    <section className={h.panel}>
+      <div className={h.blockHead}>
+        <span className={h.blockTitle}>Mis números</span>
+        <Link href={VIEWS.rep.href} className={h.more}>
+          Ver reportes
+        </Link>
+      </div>
+      {stats.map((k) => (
+        <div key={k.label} className={h.stat}>
+          <span className={`${h.statIcon} material-symbols-rounded`}>{k.icon}</span>
+          <div className={h.statText}>
+            <strong>{k.label}</strong>
+            <span>{k.sub}</span>
+          </div>
+          <div className={h.statValue}>
+            <strong>{k.value}</strong>
+            <Link href={k.href} className={h.badge} style={{ background: k.tone.bg, color: k.tone.fg }}>
+              {k.badge}
+            </Link>
+          </div>
+        </div>
+      ))}
     </section>
   );
 }

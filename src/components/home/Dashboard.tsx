@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/money";
 import { VIEWS } from "@/lib/nav";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
-import { Activity } from "./Activity";
+import { PayPanel, RecentPanel } from "./Activity";
 import { CardsCarousel } from "./CardsCarousel";
 import { FirstSteps, useFirstSteps } from "./FirstSteps";
 import { FxCard } from "./FxCard";
@@ -13,7 +13,7 @@ import { DetectedBanner } from "@/components/auto/DetectedBanner";
 import { Hero } from "./Hero";
 import { SalaryBanner } from "./SalaryBanner";
 import { RecurringBanner } from "./RecurringBanner";
-import { Numbers } from "./Numbers";
+import { DistPanel, StatsPanel } from "./Numbers";
 import { useSummary } from "./useSummary";
 import h from "./dashboard.module.css";
 
@@ -31,6 +31,7 @@ export function Home() {
   );
 }
 
+/** Orden del handoff v11: saldo y evolución → Mis tarjetas | Dólar + Qué pagar → Recientes | Distribución + Mis números. */
 function Dashboard() {
   const { user } = useShell();
   const { toDisplay } = useData();
@@ -41,18 +42,26 @@ function Dashboard() {
       <SalaryBanner />
       <RecurringBanner />
       <Hero />
-      <div className={h.row2} style={{ alignItems: "center" }}>
-        <CardsCarousel />
-        <FxCard />
-      </div>
       {plan.short && (
         <Link href={VIEWS.plan.href} className={h.shortAlert} role="alert">
           <span className="material-symbols-rounded">warning</span>
           El dinero libre no alcanza para cubrir los mínimos de tarjetas (faltan {formatMoney(toDisplay(plan.shortBy, "ARS"), user.display_currency)}). Revisá el plan de pagos.
         </Link>
       )}
-      <Activity />
-      <Numbers />
+      <div className={h.row2}>
+        <CardsCarousel />
+        <div className={h.stack}>
+          <FxCard />
+          <PayPanel />
+        </div>
+      </div>
+      <div className={h.row2}>
+        <RecentPanel />
+        <div className={h.stack}>
+          <DistPanel />
+          <StatsPanel />
+        </div>
+      </div>
     </div>
   );
 }

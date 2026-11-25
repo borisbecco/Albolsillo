@@ -7,6 +7,9 @@ import { currentMonth, navigableMonths } from "@/lib/month";
 
 export type BolsiPose = "bienvenida" | "ingreso" | "gasto" | "meta" | "alerta" | "errorguardar" | "cargando";
 export type AutoSheet = null | "sources" | "forward" | "waiting" | "detected";
+/** Valores iniciales de Nuevo movimiento: monto como se tipea ("1.200.000"), cuenta o "card:<id>", cuotas. */
+export type NewTxPrefill = { amount?: string; description?: string; source?: string; cuotas?: number };
+
 export type ToastAction = { label: string; fn: () => void };
 export type Toast = { id: number; message: string; pose: BolsiPose; action?: ToastAction };
 
@@ -31,6 +34,9 @@ type Shell = {
   setProfileOpen: (v: boolean) => void;
   newTxOpen: boolean;
   openNewTx: () => void;
+  /** Abre Nuevo movimiento ya completo (p. ej. desde el simulador de Proyección). */
+  openNewTxWith: (p: NewTxPrefill) => void;
+  newTxPrefill: NewTxPrefill | null;
   closeNewTx: () => void;
   detailId: string | null;
   setDetailId: (id: string | null) => void;
@@ -119,6 +125,7 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
   }, [months]);
 
   const [newTxOpen, setNewTxOpen] = useState(false);
+  const [newTxPrefill, setNewTxPrefill] = useState<NewTxPrefill | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [accountFormOpen, setAccountFormOpen] = useState(false);
   const [movAccount, setMovAccount] = useState<string | null>(null);
@@ -137,8 +144,19 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
     setDetailId(null);
     setProfileOpen(false);
+    setNewTxPrefill(null);
     setNewTxOpen(true);
   }, [isPastMonth, flash]);
+  const openNewTxWith = useCallback(
+    (p: NewTxPrefill) => {
+      if (isPastMonth) return flash("En un mes pasado no se puede cargar nada.");
+      setDetailId(null);
+      setProfileOpen(false);
+      setNewTxPrefill(p);
+      setNewTxOpen(true);
+    },
+    [isPastMonth, flash],
+  );
   const closeNewTx = useCallback(() => setNewTxOpen(false), []);
 
   const value: Shell = {
@@ -158,6 +176,8 @@ export function ShellProvider({ initialUser, children }: { initialUser: UserDto;
     setProfileOpen,
     newTxOpen,
     openNewTx,
+    openNewTxWith,
+    newTxPrefill,
     closeNewTx,
     detailId,
     setDetailId,
