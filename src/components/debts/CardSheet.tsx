@@ -140,6 +140,15 @@ export function CardSheet({ id, onClose }: { id: string | null; onClose: () => v
                   </option>
                 ))}
               </optgroup>
+              <optgroup label="Tarjetas">
+                {sortedEntities("tarjeta")
+                  .filter((e) => !["Visa", "Mastercard"].includes(e.name))
+                  .map((e) => (
+                    <option key={e.name} value={e.name}>
+                      {e.name}
+                    </option>
+                  ))}
+              </optgroup>
               <option value="Otra">Otra</option>
             </select>
           </label>

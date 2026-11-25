@@ -1,17 +1,20 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { AR_ENTITIES, entityDomain, norm, type Entity } from "@/lib/entities";
+import { AR_ENTITIES, entityDomain, norm, type Entity, type EntityKind } from "@/lib/entities";
 import { Logo } from "@/components/shell/Logo";
 import d from "./debts.module.css";
 
-const SORTED = [...AR_ENTITIES].sort((a, b) => (a.kind === b.kind ? a.name.localeCompare(b.name, "es") : a.kind === "banco" ? -1 : 1));
+const RANK: Record<EntityKind, number> = { banco: 0, billetera: 1, tarjeta: 2 };
+const GROUP: Record<EntityKind, string> = { banco: "Bancos", billetera: "Billeteras", tarjeta: "Tarjetas" };
+const ALL = [...AR_ENTITIES].sort((a, b) => RANK[a.kind] - RANK[b.kind] || a.name.localeCompare(b.name, "es"));
 
 /**
  * Buscador de banco o billetera. Elegís de la lista (con logo) o escribís uno que no está.
  * `onChange` recibe el nombre elegido o escrito ("" si se borra).
  */
-export function EntityCombo({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function EntityCombo({ value, onChange, kinds }: { value: string; onChange: (v: string) => void; kinds?: readonly EntityKind[] }) {
+  const SORTED = useMemo(() => (kinds ? ALL.filter((e) => kinds.includes(e.kind)) : ALL), [kinds]);
   const [q, setQ] = useState(value);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -22,7 +25,7 @@ export function EntityCombo({ value, onChange }: { value: string; onChange: (v: 
     // Con el nombre ya elegido mostramos todo (para cambiarlo fácil).
     if (!nq || SORTED.some((e) => e.name === q)) return SORTED;
     return SORTED.filter((e) => norm(e.name).includes(nq) || e.match.test(q));
-  }, [q]);
+  }, [q, SORTED]);
   const free = q.trim() && !SORTED.some((e) => norm(e.name) === norm(q)) ? q.trim() : null;
   const options: (Entity | string)[] = free ? [...list, free] : list;
 
@@ -98,7 +101,7 @@ export function EntityCombo({ value, onChange }: { value: string; onChange: (v: 
             const prevKind = i > 0 && typeof options[i - 1] !== "string" ? (options[i - 1] as Entity).kind : null;
             return (
               <div key={isFree ? "__free" : name}>
-                {!isFree && o.kind !== prevKind && <span className={d.comboGroup}>{o.kind === "banco" ? "Bancos" : "Billeteras"}</span>}
+                {!isFree && o.kind !== prevKind && <span className={d.comboGroup}>{GROUP[o.kind]}</span>}
                 <button
                   type="button"
                   role="option"

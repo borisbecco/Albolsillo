@@ -43,6 +43,7 @@ export function SourcesSheet() {
   const [address, setAddress] = useState<string | null>(null);
   const [conf, setConf] = useState<{ code: string | null; link: string | null; last_received_at: string | null } | null>(null);
   const [shareHelp, setShareHelp] = useState(false);
+  const [allWallets, setAllWallets] = useState(false);
   const [uploading, setUploading] = useState(false);
   const installEvt = useRef<InstallEvent | null>(null);
   const close = useCallback(() => setAutoSheet(null), [setAutoSheet]);
@@ -190,12 +191,17 @@ export function SourcesSheet() {
                 <>
                   <span className={a.small}>Reconocemos mails de</span>
                   <div className={a.chips}>
-                    {data.wallets.map((w) => (
+                    {(allWallets ? data.wallets : data.wallets.slice(0, 12)).map((w) => (
                       <span key={w.name} className={a.chip}>
                         <Logo domain={w.domain} icon="account_balance" size={20} />
                         {w.name}
                       </span>
                     ))}
+                    {data.wallets.length > 12 && (
+                      <button className={a.chip} onClick={() => setAllWallets(!allWallets)} style={{ cursor: "pointer" }}>
+                        {allWallets ? "Ver menos" : `+${data.wallets.length - 12} más`}
+                      </button>
+                    )}
                   </div>
                 </>
               )}

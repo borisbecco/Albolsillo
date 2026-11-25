@@ -1,6 +1,6 @@
 // Bancos y billeteras de Argentina (lista AR_ENTITIES del prototipo): nombre, dominio del logo, tipo y cómo reconocerlo.
 
-export type EntityKind = "banco" | "billetera";
+export type EntityKind = "banco" | "billetera" | "tarjeta";
 export type Entity = {
   name: string;
   domain: string;
@@ -118,12 +118,40 @@ export const AR_ENTITIES: Entity[] = [
     /ciudad\s*wallet/i,
   ),
   E("Tap", "tap.com.ar", "billetera", /\btap\b/i),
+  // Bancos que faltaban
+  E("Banco Piano", "bancopiano.com.ar", "banco", /piano/i),
+  E("Banco Voii", "voii.com.ar", "banco", /voii/i),
+  E("Banco CMF", "cmfb.com.ar", "banco", /\bcmf\b/i),
+  E("Banco Meridian", "bancomeridian.com", "banco", /meridian/i),
+  // Billeteras, exchanges y cuentas para cobrar en dólares
+  E("N1u", "n1u.app", "billetera", /\bn1u\b/i),
+  E("DolarApp", "dolarapp.com", "billetera", /d[oó]lar\s*app/i),
+  E("Satoshi Tango", "satoshitango.com", "billetera", /satoshi\s*tango/i),
+  E("Vibrant", "vibrantapp.com", "billetera", /vibrant/i),
+  E("Bitso", "bitso.com", "billetera", /bitso/i),
+  E("Binance", "binance.com", "billetera", /binance/i),
+  E("Takenos", "takenos.com", "billetera", /takenos/i),
+  E("Payoneer", "payoneer.com", "billetera", /payoneer/i),
+  E("PayPal", "paypal.com", "billetera", /paypal/i),
+  E("Wise", "wise.com", "billetera", /\bwise\b/i),
+  E("Deel", "deel.com", "billetera", /\bdeel\b/i),
+  // Tarjetas (emisoras y redes): para el emisor de una tarjeta y para reconocer sus mails
+  E("Cencosud", "tarjetacencosud.com.ar", "tarjeta", /cencosud/i),
+  E("American Express", "americanexpress.com.ar", "tarjeta", /american\s*express|\bamex\b/i),
+  E("Visa", "visa.com.ar", "tarjeta", /\bvisa\b/i),
+  E("Mastercard", "mastercard.com.ar", "tarjeta", /master\s*card/i),
+  E("Cabal", "cabal.coop", "tarjeta", /\bcabal\b/i),
+  E("Tarjeta Shopping", "tarjetashopping.com.ar", "tarjeta", /shopping/i),
+  E("Tarjeta Nevada", "tarjetanevada.com.ar", "tarjeta", /nevada/i),
+  E("Favacard", "favacard.com.ar", "tarjeta", /fava/i),
 ];
 
 /** Billeteras primero (más específicas: "Cuenta DNI" antes que "Provincia"). */
 const ORDERED = [
   ...AR_ENTITIES.filter((e) => e.kind === "billetera"),
   ...AR_ENTITIES.filter((e) => e.kind === "banco"),
+  // Tarjetas al final: "Visa Galicia" es Galicia.
+  ...AR_ENTITIES.filter((e) => e.kind === "tarjeta"),
 ];
 
 /** Marcas que no están en la lista pero tienen logo. */

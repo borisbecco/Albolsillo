@@ -67,7 +67,7 @@ export const POST = handle(async (req: Request) => {
     let newAccount = null;
     if (b.salary_bank) {
       newAccount = await db.account.create({
-        data: { userId, name: b.salary_bank, kind: findEntity(b.salary_bank)?.kind ?? "banco", currency: b.salary_currency, balance: "0" },
+        data: { userId, name: b.salary_bank, kind: findEntity(b.salary_bank)?.kind === "billetera" ? "billetera" : "banco", currency: b.salary_currency, balance: "0" },
       });
       salaryAccountId = newAccount.id;
     } else if (salaryAccountId) {

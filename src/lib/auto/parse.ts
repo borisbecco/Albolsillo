@@ -3,41 +3,68 @@
 // Los formatos reales cambian seguido: los parsers por billetera prueban primero sus frases y,
 // si no encuentran nada, cae en el genérico (el usuario siempre confirma antes de sumar).
 
-import { norm } from "@/lib/entities";
+import { AR_ENTITIES, norm, type Entity } from "@/lib/entities";
 
 export type Parsed = { amount: number; currency: "ARS" | "USD"; merchant: string | null; date: string | null };
 
-/** Billeteras y bancos que reconocemos por el remitente (payment_senders). */
-export type Sender = { wallet: string; domain: string; from: RegExp; phrases?: RegExp[] };
+/** Bancos, billeteras y tarjetas que reconocemos por el remitente (payment_senders). */
+export type Sender = { wallet: string; domain: string; kind: Entity["kind"]; from: RegExp; words: string[]; match: RegExp; phrases?: RegExp[] };
 
-export const PAYMENT_SENDERS: Sender[] = [
-  {
-    wallet: "Mercado Pago",
-    domain: "mercadopago.com.ar",
-    from: /mercadopago\.com|mercadolibre\.com/i,
-    phrases: [/(?:pagaste|tu pago|pago aprobado)[^$]{0,80}?(?:a|en)\s+([^\n$]{2,50}?)\s+(?:por|de)\s/i],
-  },
-  { wallet: "Ualá", domain: "uala.com.ar", from: /uala\.com/i, phrases: [/(?:compra|pago)\s+(?:en|a)\s+([^\n$]{2,50}?)\s+(?:por|de)\s/i] },
-  { wallet: "Naranja X", domain: "naranjax.com", from: /naranjax\.com|naranja\.com/i },
-  { wallet: "MODO", domain: "modo.com.ar", from: /modo\.com\.ar/i },
-  { wallet: "Personal Pay", domain: "personalpay.com.ar", from: /personalpay\.com/i },
-  { wallet: "Brubank", domain: "brubank.com", from: /brubank\.com/i },
-  { wallet: "Galicia", domain: "bancogalicia.com", from: /bancogalicia\.com|galicia\.com\.ar/i },
-  { wallet: "Santander", domain: "santander.com.ar", from: /santander\.com\.ar/i },
-  { wallet: "BBVA", domain: "bbva.com.ar", from: /bbva\.com\.ar/i },
-  { wallet: "Lemon", domain: "lemon.me", from: /lemon\.me/i },
-  { wallet: "Prex", domain: "prexcard.com.ar", from: /prex/i },
-  { wallet: "Cuenta DNI", domain: "cuentadni.com.ar", from: /cuentadni|bancoprovincia\.com/i },
-];
+// Palabras con las que aparece cada entidad en la dirección del remitente (además de la raíz del dominio).
+const ALIASES: Record<string, string[]> = {
+  "Mercado Pago": ["mercadopago", "mercadolibre"],
+  "Naranja X": ["naranjax", "naranja"],
+  Galicia: ["bancogalicia", "galicia"],
+  Macro: ["macro", "bancomacro"],
+  "Banco Provincia": ["bancoprovincia", "bapro"],
+  Prex: ["prexcard", "prex"],
+  Cencosud: ["tarjetacencosud", "cencosud"],
+  "American Express": ["americanexpress", "amex", "aexp"],
+  Visa: ["visa", "prismamediosdepago"],
+};
+
+// Frases propias de algunos avisos (si no aparecen, se usa el lector genérico).
+const PHRASES: Record<string, RegExp[]> = {
+  "Mercado Pago": [/(?:pagaste|tu pago|pago aprobado)[^$]{0,80}?(?:a|en)\s+([^\n$]{2,50}?)\s+(?:por|de)\s/i],
+  Ualá: [/(?:compra|pago)\s+(?:en|a)\s+([^\n$]{2,50}?)\s+(?:por|de)\s/i],
+};
+
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Billeteras primero: un comprobante de Mercado Pago que menciona "Visa" es de Mercado Pago.
+const ORDER: Entity["kind"][] = ["billetera", "banco", "tarjeta"];
+const seen = new Set<string>();
+
+// Billeteras de un banco con el mismo dominio (BNA+, Mi Banco Ciudad Wallet): los mails son del banco.
+const bankDomains = new Set(AR_ENTITIES.filter((e) => e.kind === "banco").map((e) => e.domain));
+
+export const PAYMENT_SENDERS: Sender[] = ORDER.flatMap((kind) => AR_ENTITIES.filter((e) => e.kind === kind))
+  .filter((e) => e.kind === "banco" || !bankDomains.has(e.domain))
+  .map((e) => {
+    // Palabras sin repetir (BNA+ y Banco Nación comparten bna.com.ar: queda la primera).
+    const words = (ALIASES[e.name] ?? [e.domain.split(".")[0]]).filter((w) => !seen.has(w));
+    words.forEach((w) => seen.add(w));
+    return { e, words };
+  })
+  .filter(({ words }) => words.length > 0)
+  .map(({ e, words }) => ({
+    wallet: e.name,
+    domain: e.domain,
+    kind: e.kind,
+    words,
+    // La palabra como parte del dominio: info@mercadopago.com, avisos@mails.bancogalicia.com.ar.
+    from: new RegExp(`[@.\\-](?:${words.map(esc).join("|")})[.\\-]`, "i"),
+    // En el texto de un comprobante: los nombres cortos (MODO, Tap, Visa…) solo tal cual, para no confundirlos con palabras comunes.
+    match: e.name.replace(/[^\p{L}\d]/gu, "").length <= 4 ? new RegExp(`(?<![\\p{L}\\d])${esc(e.name)}(?![\\p{L}\\d])`, "u") : e.match,
+    phrases: PHRASES[e.name],
+  }));
 
 export const senderFor = (from: string) => PAYMENT_SENDERS.find((s) => s.from.test(from)) ?? null;
 
 /**
- * Filtro para pegar en Gmail: from:(mercadopago OR uala OR ...). Va por nombre y no por dominio completo:
+ * Filtro para pegar en Gmail: from:(mercadopago OR uala OR ...). Va por palabra y no por dominio completo:
  * Mercado Pago escribe desde @mercadopago.com (sin .ar) y los bancos usan subdominios (mails.bancogalicia.com.ar).
  */
-const FILTER_WORDS = ["mercadopago", "uala", "naranjax", "modo", "personalpay", "brubank", "bancogalicia", "santander", "bbva", "lemon", "prex", "cuentadni", "bancoprovincia"];
-export const GMAIL_FILTER = `from:(${FILTER_WORDS.join(" OR ")})`;
+export const GMAIL_FILTER = `from:(${PAYMENT_SENDERS.flatMap((s) => s.words).join(" OR ")})`;
 
 /** "1.234,56" / "1234.56" / "1,234.56" → número. */
 export function parseArNumber(raw: string): number {
@@ -112,5 +139,5 @@ export function parseNotice(text: string, sender: Sender | null, fallbackYear = 
   return { ...money, merchant: findMerchant(clean, sender?.phrases), date: findDate(clean, fallbackYear) };
 }
 
-/** La billetera de un comprobante, por lo que dice el texto. */
-export const walletFromText = (text: string) => PAYMENT_SENDERS.find((s) => new RegExp(s.wallet.replace(/\s+/g, "\\s*"), "i").test(text)) ?? null;
+/** La billetera, banco o tarjeta de un comprobante, por lo que dice el texto. */
+export const walletFromText = (text: string) => PAYMENT_SENDERS.find((s) => s.match.test(text)) ?? null;

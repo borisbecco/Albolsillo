@@ -11,7 +11,7 @@ import type { UserDto } from "@/lib/auth/session";
 import { CardFace } from "@/components/cards/CardFace";
 import { EntityCombo } from "@/components/debts/EntityCombo";
 import { Logo } from "@/components/shell/Logo";
-import { entityDomain, norm } from "@/lib/entities";
+import { entityDomain, norm, type EntityKind } from "@/lib/entities";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import o from "./onboarding.module.css";
@@ -37,6 +37,7 @@ const digits = (v: string, max: number) => v.replace(/\D/g, "").slice(0, max);
 const dayOk = (v: string) => Number(v) >= 1 && Number(v) <= 31;
 const fromDec = (v: string | null) => (v && Number(v) ? toInput(v) : "");
 const newKey = () => crypto.randomUUID();
+const SALARY_KINDS: EntityKind[] = ["banco", "billetera"];
 
 /** Categoría de un gasto fijo por su nombre (solo de gastos fijos; si no, Servicios). */
 function billCategory(name: string) {
@@ -257,7 +258,7 @@ export function OnboardingView() {
                     ))}
                   </div>
                 )}
-                <EntityCombo key={salaryAcc ?? "nuevo"} value={salaryAcc ? "" : salaryBank} onChange={pickSalaryBank} />
+                <EntityCombo key={salaryAcc ?? "nuevo"} value={salaryAcc ? "" : salaryBank} onChange={pickSalaryBank} kinds={SALARY_KINDS} />
                 <span className={o.depositHint}>
                   {salaryBank && !salaryAcc
                     ? `Creamos la cuenta ${salaryBank} con saldo $ 0. Después cargá su saldo en Cuentas.`
