@@ -27,6 +27,7 @@ import { SESSION_EXPIRED_EVENT } from "@/lib/api-client";
 import { ImportModal } from "@/components/import/ImportModal";
 import { ProfilePanel } from "./ProfilePanel";
 import { initials, useShell } from "./ShellContext";
+import { enter, indicatorStyle, useIndicator, type Dir } from "./motion";
 import s from "./shell.module.css";
 
 const Icon = ({ name, className }: { name: string; className?: string }) => (
@@ -123,6 +124,42 @@ export function AppShell({ children }: { children: ReactNode }) {
     return VIEWS[last && g.views.includes(last) ? last : g.views[0]].href;
   };
 
+  // La pestaña se marca apenas la tocás, sin esperar a que cargue la vista.
+  const [pending, setPending] = useState<ViewId | null>(null);
+  const [seenView, setSeenView] = useState(view);
+  if (seenView !== view) {
+    setSeenView(view);
+    setPending(null);
+  }
+  const active = pending ?? view;
+  const activeGroup = groupOf(active);
+  const dir = useRef<Dir>({ x: 0, y: 1 });
+  const go = (to: ViewId) => {
+    if (to === view) return;
+    const g = groupOf(view);
+    // Pestaña de la misma sección: entra desde el costado; otra sección: desde abajo.
+    dir.current = g.views.includes(to) ? { x: Math.sign(g.views.indexOf(to) - g.views.indexOf(view)), y: 0 } : { x: 0, y: 1 };
+    setPending(to);
+  };
+  const [subRef, subBox] = useIndicator<HTMLElement>(active, activeGroup.id);
+  const [sideRef, sideBox] = useIndicator<HTMLElement>(activeGroup.id);
+
+  // Al cambiar de vista: arriba de todo y entrada con dirección. Al cambiar de mes, se desliza.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const shown = useRef({ view, month });
+  useEffect(() => {
+    const prev = shown.current;
+    shown.current = { view, month };
+    if (prev.view !== view) {
+      scrollRef.current?.scrollTo({ top: 0 });
+      enter(pageRef.current, dir.current);
+      dir.current = { x: 0, y: 1 };
+    } else if (prev.month !== month) {
+      enter(pageRef.current, { x: month > prev.month ? 1 : -1, y: 0 });
+    }
+  }, [view, month]);
+
   const mIdx = months.indexOf(month);
   const toggleTheme = () => updatePrefs({ theme: user.theme === "dark" ? "light" : "dark" });
 
@@ -201,7 +238,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className={s.frame}>
-      <aside className={s.sidebar} aria-label="Secciones">
+      <aside className={s.sidebar} aria-label="Secciones" ref={sideRef}>
+        <span className={s.sideInd} style={indicatorStyle(sideBox)} aria-hidden />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/isotipo.svg" alt="Albolsillo" className={s.isotipo} />
         <nav style={{ display: "contents" }}>
@@ -210,10 +248,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={g.id}
               href={hrefOfGroup(g.id)}
               className={s.sideItem}
-              aria-current={g.id === group.id ? "page" : undefined}
+              aria-current={g.id === activeGroup.id ? "page" : undefined}
               title={`${g.label} (${i + 1})`}
+              onClick={() => go(viewFromPath(hrefOfGroup(g.id)))}
             >
-              <Icon name={g.icon} className={s.sideIcon} />
+              <span className={`${s.icon} ${s.sideIcon}`} data-ind={g.id} aria-hidden>
+                {g.icon}
+              </span>
               <span className={s.sideLabel}>{g.short}</span>
             </Link>
           ))}
@@ -232,7 +273,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className={s.main}>
         <header className={s.header}>
-          {view === "dash" ? (
+          {active === "dash" ? (
             <div className={s.greet} title={user.email}>
               <span className={s.ring}>
                 <span className={s.ringInner}>{ini[0]}</span>
@@ -246,7 +287,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/brand/isotipo.svg" alt="Albolsillo" className={s.mobLogo} />
-              <h1 className={s.title}>{VIEWS[view].label}</h1>
+              <h1 className={s.title}>{VIEWS[active].label}</h1>
             </>
           )}
 
@@ -294,19 +335,24 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <NetBanner />
-        <div className={s.scroll}>
+        <div className={s.scroll} ref={scrollRef}>
           <div className={s.content}>
-            {group.views.length > 1 && (
-              <nav className={s.subnav} aria-label={group.label}>
-                {group.views.map((v) => (
-                  <Link key={v} href={VIEWS[v].href} className={s.pill} aria-current={v === view ? "page" : undefined}>
-                    <Icon name={VIEWS[v].icon} />
-                    {VIEWS[v].label}
+            {activeGroup.views.length > 1 && (
+              <nav key={activeGroup.id} ref={subRef} className={s.subnav} aria-label={activeGroup.label}>
+                <span className={s.pillInd} style={indicatorStyle(subBox)} aria-hidden />
+                {activeGroup.views.map((v) => (
+                  <Link key={v} href={VIEWS[v].href} className={s.pill} data-ind={v} aria-current={v === active ? "page" : undefined} onClick={() => go(v)}>
+                    <span className={s.pillIn}>
+                      <Icon name={VIEWS[v].icon} />
+                      {VIEWS[v].label}
+                    </span>
                   </Link>
                 ))}
               </nav>
             )}
-            {children}
+            <div className={s.page} ref={pageRef}>
+              {children}
+            </div>
           </div>
         </div>
       </main>
@@ -318,7 +364,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className={s.bottomNav} aria-label="Secciones">
         {[GROUPS[0], GROUPS[1], null, GROUPS[2], GROUPS[3]].map((g) =>
           g ? (
-            <Link key={g.id} href={hrefOfGroup(g.id)} className={s.bottomItem} aria-current={g.id === group.id ? "page" : undefined}>
+            <Link key={g.id} href={hrefOfGroup(g.id)} className={s.bottomItem} aria-current={g.id === activeGroup.id ? "page" : undefined} onClick={() => go(viewFromPath(hrefOfGroup(g.id)))}>
               <Icon name={g.icon} className={s.bottomIcon} />
               <span>{g.short}</span>
             </Link>

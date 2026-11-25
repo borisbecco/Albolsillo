@@ -21,6 +21,8 @@ export const CATEGORIES: Category[] = [
   { id: "hogar", name: "Hogar", type: "out", kind: "var", icon: "chair", hue: 70, budget: 80000 },
   { id: "salud", name: "Salud", type: "out", kind: "var", icon: "favorite", hue: 350, budget: 60000 },
   { id: "ocio", name: "Ocio", type: "out", kind: "var", icon: "movie", hue: 295, budget: 100000 },
+  // Viajes: sin límite sugerido (es un gasto ocasional; no suma a la reserva del mes salvo que le pongas uno).
+  { id: "viajes", name: "Viajes", type: "out", kind: "var", icon: "flight", hue: 55, budget: null },
   { id: "ropa", name: "Ropa", type: "out", kind: "var", icon: "checkroom", hue: 200, budget: 70000 },
   { id: "servicios", name: "Servicios", type: "out", kind: "fix", icon: "bolt", hue: 100, budget: 150000 },
   { id: "alquiler", name: "Alquiler y expensas", type: "out", kind: "fix", icon: "apartment", hue: 20, budget: 750000 },

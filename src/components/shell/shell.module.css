@@ -569,3 +569,68 @@
 .toastAction:hover {
   background: var(--hover);
 }
+
+/* ─── Movimiento de la navegación ─── */
+
+.sidebar {
+  position: relative;
+}
+
+/* Indicador que se desliza entre secciones y pestañas */
+.sideInd,
+.pillInd {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  background: var(--acc);
+  transition:
+    transform 0.34s cubic-bezier(0.3, 1.25, 0.5, 1),
+    width 0.34s cubic-bezier(0.3, 1.25, 0.5, 1),
+    height 0.34s,
+    opacity 0.2s;
+}
+
+.sideInd {
+  border-radius: 11px;
+  box-shadow: 0 8px 22px -8px var(--acc);
+}
+
+.sideItem[aria-current="page"] .sideIcon {
+  background: transparent;
+  box-shadow: none;
+}
+
+.subnav {
+  position: relative;
+}
+
+/* Por encima del fondo de las pastillas y por debajo de su texto */
+.pillInd {
+  z-index: 1;
+  border-radius: var(--r-pill);
+  box-shadow: 0 8px 22px -10px var(--acc);
+}
+
+.pillIn {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.bottomIcon {
+  transition:
+    width 0.28s cubic-bezier(0.3, 1.4, 0.5, 1),
+    height 0.28s cubic-bezier(0.3, 1.4, 0.5, 1),
+    background 0.2s,
+    color 0.2s;
+}

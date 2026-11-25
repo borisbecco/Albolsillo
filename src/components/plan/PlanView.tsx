@@ -63,6 +63,7 @@ export function PlanView() {
       ["Ya gastado", C.out, "var(--dim)", "none"],
       ["Fijos pendientes", pendingFixed, "var(--deep)", "none"],
       ["Reserva variable", reserve, "color-mix(in oklch, var(--acc2) 55%, transparent)", "none"],
+      ["Ya pagado a tarjetas", plan.paid, "color-mix(in oklch, var(--acc) 55%, transparent)", "none"],
       ["Tarjetas", plan.cardsTotal, "var(--acc)", "0 0 16px -2px var(--acc)"],
       ["Sobrante", plan.leftover, "var(--pos)", "0 0 14px -4px var(--pos)"],
     ] as const
@@ -80,7 +81,7 @@ export function PlanView() {
         <div className={p.heroTop}>
           <div className={p.heroMain}>
             <span>Para tarjetas este mes</span>
-            <strong style={{ color: plan.short ? "var(--red)" : "var(--fg)" }}>{fmt(Math.max(0, plan.available))}</strong>
+            <strong style={{ color: plan.short || plan.over > 0 ? "var(--red)" : "var(--fg)" }}>{fmt(Math.max(0, plan.available))}</strong>
           </div>
           <div className={p.badges}>
             <div className={p.badge} data-tone="pos">
@@ -117,6 +118,12 @@ export function PlanView() {
           <div className={p.short} role="alert">
             <span className="material-symbols-rounded">warning</span>
             Faltan {fmt(plan.shortBy)} para cubrir los mínimos
+          </div>
+        )}
+        {plan.over > 0 && (
+          <div className={p.short} role="alert">
+            <span className="material-symbols-rounded">info</span>
+            Los mínimos ya están pagos, pero este mes los gastos y la reserva superan lo que entra en {fmt(plan.over)}. No queda para adelantar pagos.
           </div>
         )}
       </section>
@@ -174,7 +181,8 @@ export function PlanView() {
             <div className={p.cards}>
               {plan.rows.map((r, i) => {
                 const c = cards.find((x) => x.id === r.id)!;
-                const cover = r.done ? 1 : r.balance > 0 ? Math.min(1, r.pay / r.balance) : 1;
+                // Cuánto del resumen queda cubierto: lo ya pagado más lo que se propone pagar.
+                const cover = r.done ? 1 : r.balance + r.paid > 0 ? Math.min(1, (r.paid + r.pay) / (r.balance + r.paid)) : 1;
                 const start = c.cycle_start ?? `${month}-01`;
                 const buys = transactions
                   .filter((t) => t.card_id === c.id && t.type === "out" && t.date >= start && (t.installment_number ?? 1) === 1)
@@ -303,12 +311,14 @@ export function PlanView() {
         <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={52} height={57} />
         <div>
           <strong style={{ color: plan.short ? "var(--red)" : plan.leftover > 0 ? "var(--pos)" : "var(--fg)" }}>
-            {plan.short ? "No alcanza para los mínimos" : plan.leftover > 0 ? `Te sobran ${fmt(plan.leftover)}` : "Todo va a tarjetas"}
+            {plan.short ? "No alcanza para los mínimos" : plan.over > 0 ? "Mínimos cubiertos" : plan.leftover > 0 ? `Te sobran ${fmt(plan.leftover)}` : "Todo va a tarjetas"}
           </strong>
           <span>
             {plan.short
               ? "Recortá gastos variables o usá ahorros para no entrar en mora."
-              : plan.leftover > 0
+              : plan.over > 0
+                ? "Ya pagaste los mínimos. Para adelantar más y pagar menos interés, recortá gastos variables."
+                : plan.leftover > 0
                 ? "Después de pagar todo. Podés apartarlo para una meta de ahorro."
                 : "Este mes no queda sobrante."}
           </span>

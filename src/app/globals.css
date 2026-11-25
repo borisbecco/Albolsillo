@@ -175,3 +175,15 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Respuesta al toque: lo que se presiona se achica un poco (scale se suma a cualquier transform) */
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):active,
+a:active,
+[role="button"]:active {
+  scale: 0.97;
+}

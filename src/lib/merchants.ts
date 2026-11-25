@@ -7,6 +7,7 @@ const CATEGORY_RULES: [RegExp, string][] = [
   [/gimnasio|\bgym\b|prepaga|obra social/i, "salud"],
   [/coto|\bd[ií]a\b|carrefour|jumbo|disco|vea\b|chino/i, "super"],
   [/rappi|pedidosya|starbucks|caf[eé]|mostaza|mc ?donald|restaurant/i, "resto"],
+  [/despegar|aerol[ií]neas|flybondi|jetsmart|latam|airbnb|booking|hotel|hostel|almundo|turismo|buquebus|pasaje/i, "viajes"],
   [/uber|cabify|shell|ypf|axion|nafta|sube|peaje|didi/i, "transp"],
   [/netflix|spotify|disney|hbo|youtube|chatgpt|openai|icloud/i, "subs"],
   [/farmacity|farmacia|osde|swiss|m[eé]dic/i, "salud"],

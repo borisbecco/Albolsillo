@@ -49,7 +49,7 @@ export type PlanRow = PlanCard & {
   pay: number;
   extra: number;
   left: number;
-  tag: "Pago total" | "Parcial" | "Mínimo" | "Pagado";
+  tag: "Pago total" | "Parcial" | "Mínimo" | "Mínimo cubierto" | "Pagado";
   /** Lo que ya se pagó de este resumen. */
   paid: number;
   /** El resumen ya está cubierto. */
@@ -68,9 +68,13 @@ export type Plan = {
   rows: PlanRow[];
   cardsTotal: number;
   leftover: number;
-  /** No alcanza para los mínimos. */
+  /** No alcanza para los mínimos (que todavía falta pagar). */
   short: boolean;
   shortBy: number;
+  /** Con los mínimos ya cubiertos, cuánto se pasan los gastos (y la reserva) de lo que entra. */
+  over: number;
+  /** Lo ya pagado a tarjetas este ciclo. */
+  paid: number;
 };
 
 /**
@@ -113,14 +117,16 @@ export function computePlan(input: PlanInput): Plan {
     const left = c.balance - pay;
     const monthly = c.tna / 100 / 12;
     const full = left <= 0.005;
+    // Lo pagado ya cubre el mínimo y este mes no alcanza para adelantar más.
+    const minCovered = !full && extra <= 0 && min <= 0.005 && c.paid > 0;
     return {
       ...c,
       done: false,
       pay,
       extra,
       left,
-      tag: full ? "Pago total" : extra > 0 ? "Parcial" : "Mínimo",
-      tagColor: full ? "var(--pos)" : extra > 0 ? "var(--amb)" : "var(--red)",
+      tag: full ? "Pago total" : extra > 0 ? "Parcial" : minCovered ? "Mínimo cubierto" : "Mínimo",
+      tagColor: full ? "var(--pos)" : extra > 0 || minCovered ? "var(--amb)" : "var(--red)",
       nextInterest: left * monthly,
       avoidedInterest: full ? c.balance * monthly : extra * monthly,
     };
@@ -132,8 +138,11 @@ export function computePlan(input: PlanInput): Plan {
     rows,
     cardsTotal: rows.reduce((s, r) => s + r.pay, 0),
     leftover: Math.max(0, rest),
-    short: available < mins,
+    // "Faltan para los mínimos" solo si queda algún mínimo por pagar; si no, es que se gastó de más.
+    short: mins > 0.005 && available < mins,
     shortBy: Math.max(0, mins - available),
+    over: mins > 0.005 ? 0 : Math.max(0, -available),
+    paid: paidTotal,
   };
 }
 
