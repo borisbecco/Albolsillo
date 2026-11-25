@@ -1,5 +1,7 @@
 # Handoff: Albolsillo
 
+> **Novedades de esta versión:** ver `CAMBIOS.md`.
+
 App web para manejar las finanzas personales en Argentina: gastos e ingresos en pesos y dólares, tarjetas de crédito, gastos fijos, presupuesto, metas de ahorro, inversiones y gastos compartidos. Incluye IPC y dólar al día. Está pensada para desktop y mobile.
 
 ## Sobre los archivos
@@ -76,6 +78,121 @@ Regla general: **nunca se pierde lo cargado**. Lo que no llega al servidor queda
 - **Alertas**: cierres y vencimientos próximos, presupuestos excedidos, avisos del navegador y del mail, y la anticipación del aviso (1, 3 o 7 días).
 - **Perfil**: nombre, email, cambiar contraseña, tema (oscuro/claro), mostrar montos en ARS o USD, cotización del dólar (Oficial, Blue, MEP, Tarjeta, Manual), estrategia de pago, rehacer el onboarding, cerrar sesión y eliminar la cuenta (con confirmación).
 
+## Carga automática de gastos
+No existe hoy una API pública para leer los movimientos de las billeteras (Mercado Pago, Ualá, Naranja X, etc.). Las finanzas abiertas del BCRA (Decreto 353/2025) todavía no están operativas y se esperan para 2027 en adelante. Por eso la v1 usa fuentes que funcionan en la app web:
+
+| Fuente | Cómo funciona | Plataforma |
+|---|---|---|
+| **Reenvío de mails** | Cada usuario reenvía con un filtro de su mail los avisos de pago a su dirección personal (`albolsillo.entrada+<código>@gmail.com`). El backend lee esa casilla única por IMAP y extrae monto, comercio, fecha y billetera. No usa OAuth ni pide acceso a la cuenta del usuario | Todas, con cualquier proveedor |
+| **Compartir comprobante** | La PWA instalada se registra como Web Share Target y recibe la imagen o el PDF desde el menú Compartir de la billetera. También se puede subir el archivo a mano | Android con la PWA instalada; en iOS, solo subir el archivo |
+| **Importar resumen** | Lo que ya existe (CSV o PDF) | Todas |
+| **Notificaciones** | Queda para una app Android (la web envuelta con Capacitor más un módulo nativo `NotificationListenerService`). En la UI aparece como "Próximamente en Android" | Solo Android nativo |
+
+Reglas:
+- **Nada se suma sin confirmar.** Todo lo detectado entra a la bandeja **Gastos detectados**. El usuario marca, ajusta la categoría y la cuenta, y confirma. Lo que no marca queda en la bandeja.
+- **Duplicados**: si ya existe un movimiento con el mismo monto en ±2 días y una descripción parecida, se marca "Posible duplicado" y viene desmarcado.
+- **Cuenta sugerida**: según la billetera del remitente (un mail de Mercado Pago va a la cuenta Mercado Pago del usuario si existe).
+- **Categoría sugerida**: según el comercio, con las mismas reglas que el resumen importado.
+- **Entradas**: aviso en Inicio ("Detectamos N gastos nuevos"), botón **Carga automática** en Movimientos (con contador) y Perfil → Carga automática.
+- **Guía de reenvío**: dirección con Copiar, 3 pasos (agregar la dirección en Gmail, pegar el código de confirmación que muestra la app, crear el filtro con la lista de remitentes) y "Listo, ya lo configuré". Después, Bolsi "cargando" hasta que llega el primer mail.
+- **Por qué no OAuth**: leer Gmail con OAuth exige una auditoría anual paga (CASA). La app es de uso personal, así que se eligió el reenvío, que es gratis. Si algún día se abre al público, se puede sumar la conexión directa.
+
+## Registro por invitación
+- El registro pide un **código de invitación** (`XXXX-XXXX`). Si se entra por el link `/registro?invite=CODIGO`, viene completo.
+- Cada usuario tiene **5 invitaciones**. Se mandan desde Perfil › Invitaciones con el email de la persona: se manda un mail con el link y además se copia al portapapeles para pasarlo por WhatsApp.
+- Cada código sirve una sola vez y vence a los 14 días. Estados: Pendiente, Se unió, Anulada. Las pendientes se pueden anular o volver a copiar.
+- El primer usuario (vos) se crea desde el backend, sin código.
+
+## Pagos de tarjeta
+- **Compras con tarjeta**: se cargan como gasto eligiendo la tarjeta en "Pagado con". Cuentan como gasto del mes y no tocan el saldo de las cuentas. En Plan, cada tarjeta muestra "Compras nuevas este mes" (van al próximo resumen).
+- **Pago del resumen**: Plan › Registrar pago (o tocar la tarjeta en "Qué pagar este mes"). Atajos Recomendado / Mínimo / Total, monto y cuenta de origen.
+  - Crea un movimiento `type: card_payment` que **no** suma a gastos ni a reportes (las compras ya se contaron).
+  - Resta de la cuenta y suma a `paid` del ciclo de esa tarjeta.
+  - El plan se recalcula: lo disponible para tarjetas descuenta lo ya pagado, los mínimos pendientes se reducen y la tarjeta pasa a "Pagado" cuando cubre el saldo. El vencimiento queda tachado en el calendario.
+  - Borrar el movimiento revierte todo.
+
+## Alta y edición de tarjetas
+- En Tarjetas y deudas: **Agregar tarjeta** (también en el estado vacío) y **lápiz** en cada tarjeta para editar o eliminar (con Deshacer).
+- Campos: banco o billetera (lista `AR_ENTITIES`), red (Visa / Mastercard / Amex), últimos 4, TNA, saldo en pesos, saldo en dólares, mínimo, días de cierre y vencimiento. El nombre se arma como "Red + Banco".
+- Ya no hace falta repetir la configuración inicial para sumar una tarjeta.
+
+## Ingresos en pesos o dólares (configuración inicial)
+- El sueldo y "Otros ingresos mensuales" tienen cada uno un selector **$ / US$** (antes el sueldo era solo en pesos y los otros ingresos solo en dólares).
+- Los otros ingresos se guardan como ingreso fijo mensual en la moneda elegida.
+
+## Compras con tarjeta
+- En Nuevo movimiento, "Pagado con" muestra las cuentas y, debajo, el grupo **Tarjeta de crédito** (antes las tarjetas quedaban ocultas al final de una fila con scroll).
+- Al elegir una tarjeta se pide **Cuotas** (1 pago, 3, 6, 9, 12, 18).
+  - En 1 pago: un gasto por el total.
+  - En cuotas: un gasto por la cuota del mes (`Lavarropas (cuota 1/6)`) y la compra se agrega a las cuotas de la tarjeta. Al **cargar cada resumen nuevo**, la cuota siguiente se crea sola como gasto.
+- La compra **no** modifica el saldo del resumen vigente ni descuenta de ninguna cuenta. Suma en "Compras nuevas este mes" de la tarjeta.
+- **No hay doble conteo**: la compra es gasto; el pago del resumen (`card_payment`) no lo es.
+
+## Dólares en tarjetas
+- Cada tarjeta tiene **saldo en pesos** y **saldo en dólares** (`usd`). La tarjeta muestra "+ US$ X" debajo del saldo.
+- Compras en US$ con tarjeta: van al saldo en dólares, en un pago (no se ofrecen cuotas). Para el plan y los reportes se convierten al dólar del día.
+- Pagar: si la tarjeta tiene saldo en dólares, la hoja muestra las pestañas Pesos / Dólares. En Dólares solo aparecen cuentas en US$ y se registra `paid_usd`.
+- El plan suma ambos saldos (dólares × cotización) para calcular cuánto pagar.
+- "Cargar resumen nuevo" pide también el saldo en dólares y reinicia `paid` y `paid_usd`.
+
+## Borrar compras en cuotas
+- Borrar la **cuota 1** borra la compra y cancela las cuotas que faltan (sale de las cuotas de la tarjeta).
+- Borrar una cuota posterior (creada al cargar el resumen) borra solo esa.
+- En ambos casos hay Deshacer.
+
+## Ciclo de la tarjeta
+- **Cargar resumen nuevo** (Tarjetas y deudas): saldo, mínimo, día de cierre y de vencimiento.
+- Al guardar: `cycle_paid` vuelve a 0, las cuotas sin interés avanzan una (las terminadas desaparecen) y el plan se recalcula.
+- Cuando el resumen ya está pagado, la tarjeta lo indica e invita a cargar el próximo.
+- Importar el PDF del resumen (flujo existente) debería hacer lo mismo además de importar los consumos.
+
+## Préstamos
+- **Agregar / editar** (Tarjetas y deudas › Préstamos): entidad (lista de bancos y billeteras u "Otra"), nombre, cuota, día de vencimiento, cuotas totales y ya pagadas, TNA opcional y saldo restante. Si el saldo queda vacío, se estima como cuota × cuotas que faltan.
+- **Pagar cuota**: monto (prellenado) y cuenta de origen. Crea un gasto en la categoría Préstamos, resta de la cuenta, suma una cuota y baja el saldo. Con la última cuota, el préstamo queda "Terminado".
+- Estados en la lista: Cuota pagada, Vence en N d, Vence hoy, Vencida, Terminado.
+- Al empezar un mes nuevo, la cuota vuelve a quedar pendiente.
+- La cuota pendiente entra en el plan (Pagos fijos pendientes), en Vencimientos y en Alertas, como ya pasaba.
+- Eliminar préstamo, con Deshacer.
+
+## Logos
+- Guardados en `prototipo/assets/logos/<dominio>.png` (128 × 128, 83 archivos). La app usa `favicon(dominio)` → `assets/logos/<dominio>.png`.
+- Algunos vienen de un favicon de 16 px y se ven algo borrosos (ICBC, Macro, Ciudad, Patagonia, Día, YPF, AGIP, Ticketek). Conviene reemplazarlos por los logos oficiales en SVG.
+
+## Eliminar movimientos
+- Tachito en cada fila de Movimientos (antes había que abrir el detalle).
+- **Seleccionar**: casillas y barra flotante con Eliminar.
+- Todo borrado muestra **Deshacer** durante 6 segundos. En el backend conviene un borrado lógico (`deleted_at`) con purga a las 24 h, para que deshacer sea un simple `restore`.
+
+## Ayuda y recorrido guiado
+- **Ayuda** (botón ? en el encabezado): preguntas frecuentes en 6 temas, con buscador sin tildes. El tema de la pantalla actual aparece primero con la marca "Esta pantalla". Los textos están en `HELP`, dentro del prototipo.
+- **Recorrido guiado**: 7 pasos (`TOUR` en el prototipo). Cada paso indica la pantalla y el elemento a resaltar (`data-tour`). Arranca solo al terminar la configuración inicial y se repite desde Ayuda. Se guarda `tour_done_at` en el usuario para no repetirlo.
+- Si el elemento de un paso no está en pantalla (por ejemplo, Inicio sin movimientos), la explicación aparece centrada sin resaltado.
+
+## Términos y privacidad
+Hoja con dos pestañas, abierta desde los links del registro y desde Perfil. El texto está en el prototipo y sirve como versión final para uso entre conocidos. Compromisos que el backend tiene que cumplir:
+- Borrar el mail reenviado y el comprobante después de leerlos (salvo que el comprobante quede adjunto a un movimiento).
+- Al eliminar la cuenta, borrar todo en 30 días, incluidos los backups.
+- Casilla `privacidad@albolsillo.app` operativa.
+- Avisar por mail antes de cambiar los términos.
+
+## Categorías aprendidas
+- Si en la bandeja de gastos detectados se cambia la categoría, aparece "Usar siempre «Categoría» para Comercio" (marcado por defecto). Al confirmar, se guarda la regla.
+- Las reglas se aplican a lo que llega después y a lo que sigue pendiente en la bandeja. Esos gastos muestran el sello "Categoría aprendida".
+- Se ven y se borran en Carga automática › Categorías aprendidas. La clave es el nombre del comercio normalizado (minúsculas, sin tildes).
+
+## Avisos de gastos detectados
+- **Campana de Alertas**: "N gastos detectados para revisar" aparece primero; al tocarlo se abre la bandeja.
+- **Notificación**: si el usuario activó las notificaciones del navegador, el backend manda un push (Web Push) cuando llegan gastos nuevos. Al tocarlo se abre la bandeja.
+- **Aviso en Inicio**: el que ya existía.
+
+## App instalable (PWA)
+Archivos en `prototipo/`: `manifest.webmanifest`, `sw.js` (de referencia) e íconos en `assets/brand/` (`icon-180`, `icon-192`, `icon-512`, `icon-maskable-512`).
+- El manifest declara `share_target`: con la app instalada en Android, Albolsillo aparece en el menú Compartir y recibe el comprobante en `POST /share`.
+- El service worker sube ese archivo a `/api/detected/share` y abre la bandeja, guarda la app en caché para abrir sin conexión y muestra los push.
+- La pantalla de carga la arma Android con `name`, `background_color` y el ícono.
+- "Instalar en Android" (en Fuentes) usa el evento `beforeinstallprompt` cuando el navegador lo ofrece; si no, muestra los pasos.
+- Requiere HTTPS y que el manifest y `sw.js` estén en la raíz del dominio.
+
 ## Validaciones y textos de error
 - Login: "Ingresá tu email" / "Ingresá tu contraseña".
 - Registro: "Contanos cómo te llamás" / "Revisá el email" / "La contraseña necesita al menos 8 caracteres" / "Aceptá los términos para seguir".
@@ -117,7 +234,7 @@ La app tiene tema **oscuro** (predeterminado) y **claro**, aplicados con `data-t
 - **Espaciado**: gaps de 4, 6, 8, 10, 12, 14, 16, 20, 24 y 28 px. Padding de tarjeta: 18–24 px.
 
 ## Archivos
-- `prototipo/Albolsillo.dc.html`: la app completa (26 pantallas y estados).
+- `prototipo/Albolsillo.dc.html`: la app completa (29 pantallas y estados).
 - `prototipo/Albolsillo Mapa.dc.html`: mapa de pantallas.
 - `prototipo/Albolsillo Mails.dc.html`: vista previa de los 4 mails.
 - `prototipo/emails/*.html`: los mails listos para enviar.
