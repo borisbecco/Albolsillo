@@ -8,10 +8,11 @@ import { guessCategory } from "@/lib/merchants";
 import { formatMoney, maskAmountEvent, maskAmountInput, parseAmount, toDecimal, type Currency } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
-import { sourceOptions, splitSource, todayAR } from "./parts";
+import { sourceOptions, splitSource } from "./parts";
 import { Logo } from "@/components/shell/Logo";
 import { useIsMobile } from "./useIsMobile";
 import s from "./tx.module.css";
+import { todayAR } from "@/lib/month";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "⌫"];
 

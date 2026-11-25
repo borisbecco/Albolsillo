@@ -5,12 +5,11 @@ import { useState } from "react";
 import { cardFace, type BankId } from "@/lib/banks";
 import { CATEGORIES } from "@/lib/categories";
 import { formatMoney } from "@/lib/money";
-import { MONTH_FULL, addMonths, currentMonth } from "@/lib/month";
+import { MONTH_FULL, addMonths, currentMonth, todayAR } from "@/lib/month";
 import { VIEWS } from "@/lib/nav";
 import { monthTotals } from "@/lib/plan";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
-import { todayAR } from "@/components/tx/parts";
 import n from "./month.module.css";
 import { Bolsi } from "@/components/bolsi/Bolsi";
 

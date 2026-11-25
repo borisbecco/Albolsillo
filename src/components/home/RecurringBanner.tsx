@@ -6,9 +6,9 @@ import { pendingRecurring } from "@/lib/recurring";
 import { CATEGORY_BY_ID, catColor, catTint } from "@/lib/categories";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
-import { todayAR } from "@/components/tx/parts";
 import a from "@/components/auto/auto.module.css";
 import h from "./dashboard.module.css";
+import { todayAR } from "@/lib/month";
 
 const skipKey = (month: string) => `ab-recurrentes-${month}`;
 const readSkipped = (month: string): string[] => {

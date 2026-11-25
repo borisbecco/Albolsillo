@@ -1,26 +1,18 @@
-import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { ApiError, handle } from "@/lib/http";
 import { appUrl, sendDailySummary, sendDueNotice } from "@/lib/mail";
-import { buildNotice, todayAR, unsubscribeToken } from "@/lib/notify";
+import { buildNotice, unsubscribeToken } from "@/lib/notify";
 import { pushToUser } from "@/lib/push";
+import { todayAR } from "@/lib/month";
+import { cronAuthorized } from "@/lib/cron";
 
 // POST /cron/alerts: job diario (8:00 de Argentina = 11:00 UTC). Lo llama el Cron de Railway con
 // "Authorization: Bearer $CRON_SECRET". Manda los avisos de vencimiento por mail y push.
 
 const STRATEGY = { intereses: "Evitar intereses", avalancha: "Avalancha", bola: "Bola de nieve" } as Record<string, string>;
 
-function authorized(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const got = req.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
-  if (!secret || secret.length < 16) return false;
-  const a = Buffer.from(got);
-  const b = Buffer.from(secret);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
 export const POST = handle(async (req: Request) => {
-  if (!authorized(req)) throw new ApiError(401, "unauthorized", "No autorizado.");
+  if (!cronAuthorized(req)) throw new ApiError(401, "unauthorized", "No autorizado.");
   const today = new URL(req.url).searchParams.get("today") ?? todayAR();
 
   const users = await prisma.user.findMany({

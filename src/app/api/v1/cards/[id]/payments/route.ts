@@ -4,7 +4,7 @@ import { requireUserId } from "@/lib/auth/session";
 import { accountDto, cardDto, txDto } from "@/lib/dto";
 import { CardPaymentInput } from "@/lib/cards";
 import { applyToBalance, toDate } from "@/lib/transactions";
-import { todayAR } from "@/lib/notify";
+import { todayAR } from "@/lib/month";
 
 type Ctx = { params: Promise<{ id: string }> };
 

@@ -3,12 +3,11 @@
 import { useMemo } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { formatMoney } from "@/lib/money";
-import { currentMonth } from "@/lib/month";
+import { currentMonth, todayAR } from "@/lib/month";
 import { monthTotals } from "@/lib/plan";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { useObligations } from "@/components/debts/obligations";
-import { todayAR } from "@/components/tx/parts";
 
 export type Alert = { key: string; icon: string; title: string; sub: string; color: string; order: number; open?: "detected" };
 

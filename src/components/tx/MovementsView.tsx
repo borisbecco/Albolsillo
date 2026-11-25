@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { CATEGORIES, CATEGORY_BY_ID, catColor } from "@/lib/categories";
 import { formatMoney } from "@/lib/money";
-import { MONTH_FULL, MONTH_SHORT } from "@/lib/month";
+import { MONTH_FULL, MONTH_SHORT, todayAR } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import { useData, type Tx } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
 import { ACCOUNT_KINDS } from "@/components/accounts/kinds";
 import { ExportMenu } from "./ExportMenu";
-import { TxIcon, todayAR } from "./parts";
+import { TxIcon } from "./parts";
 import m from "./movements.module.css";
 import { Bolsi } from "@/components/bolsi/Bolsi";
 

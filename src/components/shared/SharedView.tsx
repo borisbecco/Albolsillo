@@ -4,14 +4,13 @@ import { useState, type FormEvent } from "react";
 import { isValidEmail } from "@/lib/auth/validate";
 import { pickableCategories } from "@/lib/categories";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal } from "@/lib/money";
-import { MONTH_SHORT } from "@/lib/month";
+import { MONTH_SHORT, todayAR } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import { balances } from "@/lib/shared";
 import type { PersonDto } from "@/lib/dto";
 import { useData } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
-import { todayAR } from "@/components/tx/parts";
 import s from "./shared.module.css";
 
 /** Color estable por persona (a partir del id). */

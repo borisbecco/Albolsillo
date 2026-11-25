@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { CATEGORIES, CATEGORY_BY_ID } from "@/lib/categories";
 import { computePlan } from "@/lib/plan";
 import { monthRange } from "@/lib/transactions";
+import { todayAR } from "@/lib/month";
 
 // Avisos de vencimientos: qué avisarle a cada usuario hoy (mail y push).
 
@@ -26,8 +27,6 @@ export type Notice = {
   budgetAlerts: { name: string; spent: number; limit: number }[];
 };
 
-/** Fecha de hoy en Argentina (YYYY-MM-DD). */
-export const todayAR = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(d);
 
 /** Calcula los avisos del día de un usuario. Devuelve null si no hay nada que avisar. */
 export async function buildNotice(userId: string, today = todayAR()): Promise<Notice | null> {

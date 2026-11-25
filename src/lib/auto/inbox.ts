@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { pushToUser } from "@/lib/push";
-import { todayAR } from "@/lib/notify";
 import { createDetected } from "./detected";
 import { parseNotice, senderFor } from "./parse";
+import { todayAR } from "@/lib/month";
 
 // Casilla de entrada única (Gmail por IMAP con contraseña de aplicación): cada usuario reenvía sus
 // avisos a albolsillo.entrada+<código>@gmail.com. Un job cada 5 minutos lee los no leídos,

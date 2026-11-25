@@ -11,7 +11,7 @@ import type { LoanDto } from "@/lib/loans";
 import type { DetectedDto } from "@/lib/auto/detected";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
-import { currentMonth } from "@/lib/month";
+import { currentMonth, todayAR } from "@/lib/month";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import { demoData } from "@/lib/demo";
 
@@ -698,7 +698,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       try {
         const res = await api<{ transaction: TxDto; account: AccountDto | null }>(`/bills/${billId}/pay`, {
           method: "POST",
-          body: JSON.stringify({ month, today: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()) }),
+          body: JSON.stringify({ month, today: todayAR() }),
         });
         setBillPayments((l) => [...l.filter((p) => !(p.bill_id === billId && p.month === month)), { bill_id: billId, month, transaction_id: res.transaction.id }]);
         setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
@@ -991,7 +991,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       try {
         const res = await api<{ loan: LoanDto; transaction: TxDto; account: AccountDto | null }>(`/loans/${id}/pay`, {
           method: "POST",
-          body: JSON.stringify({ month, ...opts, today: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()) }),
+          body: JSON.stringify({ month, ...opts, today: todayAR() }),
         });
         setLoans((list) => list.map((x) => (x.id === id ? res.loan : x)));
         setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
@@ -1259,12 +1259,12 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   // (el resumen de Inicio aparece con 3 de los "Primeros pasos", Movimientos necesita gastos del mes
   // y el plan una tarjeta), las pantallas muestran un caso de ejemplo. Solo en memoria; al terminar
   // el recorrido vuelven los datos reales.
-  const tourMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()).slice(0, 7);
+  const tourMonth = todayAR().slice(0, 7);
   const txThisMonth = transactions.some((t) => t.date.startsWith(tourMonth));
   const firstStepsDone = [txThisMonth, accounts.length > 0, cards.length > 0 || bills.length > 0, budgets.some((b) => b.month === tourMonth), goals.length > 0].filter(Boolean).length;
   const realIsEnough = txThisMonth && cards.length > 0 && firstStepsDone >= 3;
   const demo = tourStep !== null && !realIsEnough;
-  const demoSet = useMemo(() => (demo ? demoData(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date())) : null), [demo]);
+  const demoSet = useMemo(() => (demo ? demoData(todayAR()) : null), [demo]);
   const shown: Data = demoSet ? { ...value, ...demoSet, demo: true } : { ...value, demo: false };
 
   return <Ctx.Provider value={shown}>{children}</Ctx.Provider>;

@@ -4,9 +4,9 @@ import { useState } from "react";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
-import { todayAR } from "@/components/tx/parts";
 import a from "@/components/auto/auto.module.css";
 import h from "./dashboard.module.css";
+import { todayAR } from "@/lib/month";
 
 type Income = { id: "sueldo" | "otros_in"; title: string; amount: number; currency: Currency; day: number; accountId: string | null; description: string };
 

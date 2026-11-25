@@ -4,15 +4,13 @@ import { useEffect, useState } from "react";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput } from "@/lib/money";
 import { findEntity } from "@/lib/entities";
 import { EntityCombo } from "./EntityCombo";
-import { MONTH_FULL, currentMonth } from "@/lib/month";
-import { todayAR } from "@/components/tx/parts";
+import { MONTH_FULL, currentMonth, todayAR } from "@/lib/month";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
 import d from "./debts.module.css";
+import { dayOk, digits } from "@/lib/inputs";
 
-const digits = (v: string, max: number) => v.replace(/\D/g, "").slice(0, max);
-const dayOk = (v: string) => Number(v) >= 1 && Number(v) <= 31;
 
 /** Alta o edición de un préstamo (id null = nuevo). */
 export function LoanSheet({ id, onClose }: { id: string | null; onClose: () => void }) {

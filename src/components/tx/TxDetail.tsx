@@ -5,9 +5,10 @@ import { CATEGORIES, CATEGORY_BY_ID } from "@/lib/categories";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from "@/lib/money";
 import { useData, type Tx } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
-import { CatIcon, sourceKey, sourceOptions, splitSource, todayAR } from "./parts";
+import { CatIcon, sourceKey, sourceOptions, splitSource } from "./parts";
 import s from "./tx.module.css";
 import { Bolsi } from "@/components/bolsi/Bolsi";
+import { todayAR } from "@/lib/month";
 
 export function TxDetail() {
   const { detailId } = useShell();

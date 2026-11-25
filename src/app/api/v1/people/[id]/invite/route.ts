@@ -4,7 +4,7 @@ import { ApiError, clientIp, handle, readBody } from "@/lib/http";
 import { requireUserId } from "@/lib/auth/session";
 import { personDto } from "@/lib/dto";
 import { isValidEmail, normalizeEmail } from "@/lib/auth/validate";
-import { invitePerson } from "@/lib/invite";
+import { invitePerson } from "@/lib/shared-invite";
 import { rateLimit } from "@/lib/rate-limit";
 
 type Ctx = { params: Promise<{ id: string }> };

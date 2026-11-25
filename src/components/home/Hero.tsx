@@ -2,12 +2,11 @@
 
 import { useMemo } from "react";
 import { formatMoney } from "@/lib/money";
-import { MONTH_FULL } from "@/lib/month";
+import { MONTH_FULL, todayAR } from "@/lib/month";
 import { dailyVariableSpend, pctChange } from "@/lib/plan";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { daysInMonth } from "@/components/debts/obligations";
-import { todayAR } from "@/components/tx/parts";
 import { useSummary } from "./useSummary";
 import h from "./dashboard.module.css";
 

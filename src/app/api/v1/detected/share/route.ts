@@ -3,10 +3,10 @@ import { tmpdir } from "node:os";
 import { prisma } from "@/lib/db";
 import { ApiError, handle } from "@/lib/http";
 import { requireUserId } from "@/lib/auth/session";
-import { todayAR } from "@/lib/notify";
 import { createDetected, detectedDto } from "@/lib/auto/detected";
 import { parseNotice, walletFromText } from "@/lib/auto/parse";
 import { rateLimit } from "@/lib/rate-limit";
+import { todayAR } from "@/lib/month";
 
 const MAX = 8 * 1024 * 1024;
 

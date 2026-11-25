@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { formatMoney, maskAmountEvent, parseAmount, toDecimal } from "@/lib/money";
-import { MONTH_FULL } from "@/lib/month";
+import { MONTH_FULL, todayAR } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import type { InvestmentDto } from "@/lib/savings";
 import { useData } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
-import { todayAR } from "@/components/tx/parts";
 import s from "./savings.module.css";
 
 const KIND = {

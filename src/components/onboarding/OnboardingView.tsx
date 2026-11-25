@@ -13,6 +13,7 @@ import { DepositPicker, depositPayload, type Deposit } from "./DepositPicker";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import o from "./onboarding.module.css";
+import { dayOk, digits } from "@/lib/inputs";
 
 const STEPS = ["Ingresos", "Tarjetas", "Gastos fijos", "Estrategia"];
 const TITLES = ["¿Cuánto cobrás por mes?", "Tus tarjetas de crédito", "Gastos fijos del mes", "¿Cómo querés pagar tus deudas?"];
@@ -31,8 +32,6 @@ const STRATEGIES: [UserDto["pay_strategy"], string, string][] = [
 type CardRow = { key: string; id?: string; name: string; balance: string; min: string; due: string; tna: string; last4: string };
 type BillRow = { key: string; id?: string; name: string; amount: string; due: string; category: string; currency: "ARS" | "USD" };
 
-const digits = (v: string, max: number) => v.replace(/\D/g, "").slice(0, max);
-const dayOk = (v: string) => Number(v) >= 1 && Number(v) <= 31;
 const fromDec = (v: string | null) => (v && Number(v) ? toInput(v) : "");
 const newKey = () => crypto.randomUUID();
 

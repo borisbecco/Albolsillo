@@ -4,11 +4,11 @@ import { ApiError, handle, readBody } from "@/lib/http";
 import { requireUserId } from "@/lib/auth/session";
 import { cardDto, installmentDto, txDto } from "@/lib/dto";
 import { closeCycle } from "@/lib/cards";
-import { todayAR } from "@/lib/notify";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import type { ParsedRow } from "@/lib/import/statement";
 import { merchantDomain } from "@/lib/merchants";
 import { toDate } from "@/lib/transactions";
+import { todayAR } from "@/lib/month";
 
 type Ctx = { params: Promise<{ id: string }> };
 

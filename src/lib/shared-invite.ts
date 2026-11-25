@@ -6,6 +6,8 @@ import { randomToken } from "@/lib/auth/session";
 import { MONTH_SHORT } from "@/lib/month";
 import { balances, sharedDto } from "@/lib/shared";
 
+// Invitaciones a gastos compartidos (las invitaciones a la app están en invites.ts).
+
 /** Marca el contacto como invitado, le genera un token y le manda el mail "invitacion". */
 export async function invitePerson(userId: string, personId: string, email: string) {
   const [user, person] = await Promise.all([

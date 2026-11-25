@@ -9,9 +9,8 @@ import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
 import d from "./debts.module.css";
+import { dayOk, digits } from "@/lib/inputs";
 
-const digits = (v: string, max: number) => v.replace(/\D/g, "").slice(0, max);
-const dayOk = (v: string) => Number(v) >= 1 && Number(v) <= 31;
 
 const NETWORKS = [
   ["visa", "Visa"],

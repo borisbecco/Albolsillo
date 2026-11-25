@@ -4,7 +4,7 @@ import { requireUserId } from "@/lib/auth/session";
 import { cardDto, installmentDto, txDto } from "@/lib/dto";
 import { StatementInput, closeCycle } from "@/lib/cards";
 import { signedToken } from "@/lib/tx-delete";
-import { todayAR } from "@/lib/notify";
+import { todayAR } from "@/lib/month";
 
 type Ctx = { params: Promise<{ id: string }> };
 

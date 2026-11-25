@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { catColor } from "@/lib/categories";
 import { formatMoney } from "@/lib/money";
-import { MONTH_FULL } from "@/lib/month";
+import { MONTH_FULL, todayAR } from "@/lib/month";
 import { EMPTY } from "@/lib/nav";
 import { useData } from "@/components/data/DataContext";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useShell } from "@/components/shell/ShellContext";
-import { CatIcon, todayAR } from "@/components/tx/parts";
+import { CatIcon } from "@/components/tx/parts";
 import { daysInMonth, dueInfo, useObligations, type Obligation } from "./obligations";
 import c from "./calendar.module.css";
 

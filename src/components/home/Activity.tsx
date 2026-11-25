@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney } from "@/lib/money";
-import { MONTH_SHORT, currentMonth } from "@/lib/month";
+import { MONTH_SHORT, currentMonth, todayAR } from "@/lib/month";
 import { VIEWS } from "@/lib/nav";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { dueInfo, useObligations } from "@/components/debts/obligations";
-import { CatIcon, TxIcon, todayAR } from "@/components/tx/parts";
+import { CatIcon, TxIcon } from "@/components/tx/parts";
 import { useSummary } from "./useSummary";
 import h from "./dashboard.module.css";
 

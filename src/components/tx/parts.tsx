@@ -54,10 +54,6 @@ export function CatIcon({ id, size = 40, className }: { id: string; size?: numbe
 }
 
 /** Hoy en Argentina, YYYY-MM-DD. */
-export function todayAR() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
-}
-
 /** Logo del comercio si lo tenemos; si no, el ícono de la categoría. */
 export function TxIcon({ categoryId, domain, size = 40 }: { categoryId: string; domain: string | null; size?: number }) {
   return logoUrl(domain) ? <Logo domain={domain} icon="storefront" size={size} /> : <CatIcon id={categoryId} size={size} />;

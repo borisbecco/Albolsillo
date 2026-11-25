@@ -5,9 +5,8 @@ import { maskAmountEvent, parseAmount, toDecimal } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
 import t from "@/components/tx/tx.module.css";
 import d from "./debts.module.css";
+import { dayOk, digits } from "@/lib/inputs";
 
-const digits = (v: string) => v.replace(/\D/g, "").slice(0, 2);
-const dayOk = (v: string) => Number(v) >= 1 && Number(v) <= 31;
 
 /** Cargar el resumen nuevo de una tarjeta: cierra el ciclo. */
 export function StatementSheet({ id, onClose }: { id: string; onClose: () => void }) {

@@ -4,7 +4,7 @@ import { ApiError, handle, readBody } from "@/lib/http";
 import { requireUserId } from "@/lib/auth/session";
 import { personDto } from "@/lib/dto";
 import { isValidEmail, normalizeEmail } from "@/lib/auth/validate";
-import { invitePerson } from "@/lib/invite";
+import { invitePerson } from "@/lib/shared-invite";
 
 const Create = z.object({
   name: z.string().trim().min(1, "Poné un nombre").max(60),

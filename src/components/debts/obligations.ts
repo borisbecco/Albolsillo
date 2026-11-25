@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { BankId } from "@/lib/banks";
 import type { Currency } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
-import { todayAR } from "@/components/tx/parts";
+import { todayAR } from "@/lib/month";
 
 export type Obligation = {
   key: string;
