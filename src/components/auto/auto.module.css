@@ -612,3 +612,24 @@
     bottom: calc(-20px - env(safe-area-inset-bottom));
   }
 }
+
+/* Confirmar el reenvío con el link que manda Gmail */
+.confirmLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  height: 40px;
+  margin-top: 8px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: var(--onacc);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.confirmLink .material-symbols-rounded {
+  font-size: 18px;
+}

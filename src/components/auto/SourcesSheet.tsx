@@ -317,15 +317,22 @@ export function SourcesSheet() {
               <span className={a.num}>2</span>
               <div className={a.cardText}>
                 <strong>Confirmá con el código</strong>
-                <span>Gmail nos manda un código a esa dirección. Te lo mostramos acá para que lo pegues en Gmail.</span>
-                {code ? (
+                <span>Gmail nos manda un código a esa dirección. Te lo mostramos acá para que lo pegues en Gmail, o confirmalo directo con el botón.</span>
+                {code && (
                   <div className={a.copyRow}>
                     <strong className={`mono ${a.code}`}>{code}</strong>
                     <button className={a.copy} onClick={async () => flash((await copy(conf!.code!)) ? "Código copiado" : conf!.code!)}>
                       <span className="material-symbols-rounded">content_copy</span>Copiar
                     </button>
                   </div>
-                ) : (
+                )}
+                {conf?.link && (
+                  <a className={a.confirmLink} href={conf.link} target="_blank" rel="noopener noreferrer">
+                    <span className="material-symbols-rounded">open_in_new</span>
+                    Confirmar en Gmail
+                  </a>
+                )}
+                {code || conf?.link ? null : (
                   <div className={a.waiting}>
                     <span className={a.spinner} />
                     Esperando el código de Gmail…
