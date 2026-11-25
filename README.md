@@ -51,6 +51,8 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
    Lee los mails no leídos, crea los gastos detectados y borra los mails.
 
 ## Desarrollo
+- `npm test` corre las pruebas de `tests/` (montos, plan de pagos, recurrentes, lectura de avisos y casilla de reenvío)
+  con el corredor de Node, sin base ni servidor. Corrélas antes de subir cambios en `src/lib`.
 - Sin `RESEND_API_KEY`, los mails se escriben en la consola. Con `MAIL_DUMP_DIR=/una/carpeta` también se guardan como HTML.
 - El registro es **solo por invitación** (código `XXXX-XXXX`). Cada usuario tiene 5 desde Perfil › Invitaciones. Para desarrollo o pruebas, `REGISTRATION_OPEN=1` permite registrarse sin código (no lo pongas en Railway).
 - Carga automática sin Gmail: con `INBOX_DEV_ENDPOINT=1`, `POST /api/v1/dev/inbound-mail` recibe un mail crudo

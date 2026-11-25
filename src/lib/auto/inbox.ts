@@ -22,6 +22,18 @@ type Mail = {
 
 const GMAIL_CONFIRM = /forwarding-noreply@google\.com/i;
 
+/** Código y link del mail de confirmación de reenvío de Gmail. */
+export function gmailConfirmation(subject: string, body: string) {
+  // Gmail pone el número en el asunto: "(#123456789) Confirmación de reenvío de Gmail…"; si no, se busca en el cuerpo.
+  const code =
+    subject.match(/#\s?(\d{6,12})/)?.[1] ??
+    body.match(/(?:c[oó]digo de confirmaci[oó]n|confirmation code)\D{0,30}(\d{6,12})/i)?.[1] ??
+    body.match(/(?<![\d/=_-])(\d{9})(?![\d/=_-])/)?.[1] ??
+    null;
+  const link = body.match(/https:\/\/mail(?:-settings)?\.google\.com\/mail\/[^\s"'<>]+/i)?.[0] ?? null;
+  return { code, link };
+}
+
 const headerText = (v: unknown): string =>
   Array.isArray(v) ? v.map(headerText).join(" ") : v && typeof v === "object" && "text" in v ? String((v as { text: string }).text) : v ? String(v) : "";
 
@@ -58,13 +70,7 @@ export async function handleMail(mail: Mail): Promise<HandleResult> {
 
   // Confirmación de Gmail: se guarda el código para mostrarlo en la guía (no se confirma solo).
   if (GMAIL_CONFIRM.test(from)) {
-    // Gmail pone el número en el asunto: "(#123456789) Confirmación de reenvío de Gmail…"; si no, se busca en el cuerpo.
-    const c =
-      (mail.subject ?? "").match(/#\s?(\d{6,12})/)?.[1] ??
-      body.match(/(?:c[oó]digo de confirmaci[oó]n|confirmation code)\D{0,30}(\d{6,12})/i)?.[1] ??
-      body.match(/(?<![\d/=_-])(\d{9})(?![\d/=_-])/)?.[1] ??
-      null;
-    const link = body.match(/https:\/\/mail(?:-settings)?\.google\.com\/mail\/[^\s"'<>]+/i)?.[0] ?? null;
+    const { code: c, link } = gmailConfirmation(mail.subject ?? "", body);
     await prisma.expenseSource.update({ where: { id: source.id }, data: { confirmationCode: c, confirmationLink: link } });
     return { kind: "confirmation", userId: source.userId };
   }
