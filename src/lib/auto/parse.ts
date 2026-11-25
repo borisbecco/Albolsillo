@@ -32,8 +32,12 @@ export const PAYMENT_SENDERS: Sender[] = [
 
 export const senderFor = (from: string) => PAYMENT_SENDERS.find((s) => s.from.test(from)) ?? null;
 
-/** Filtro para pegar en Gmail: from:(dominio1 OR dominio2 ...). */
-export const GMAIL_FILTER = `from:(${[...new Set(PAYMENT_SENDERS.slice(0, 8).map((s) => s.domain))].join(" OR ")})`;
+/**
+ * Filtro para pegar en Gmail: from:(mercadopago OR uala OR ...). Va por nombre y no por dominio completo:
+ * Mercado Pago escribe desde @mercadopago.com (sin .ar) y los bancos usan subdominios (mails.bancogalicia.com.ar).
+ */
+const FILTER_WORDS = ["mercadopago", "uala", "naranjax", "modo", "personalpay", "brubank", "bancogalicia", "santander", "bbva", "lemon", "prex", "cuentadni", "bancoprovincia"];
+export const GMAIL_FILTER = `from:(${FILTER_WORDS.join(" OR ")})`;
 
 /** "1.234,56" / "1234.56" / "1,234.56" → número. */
 export function parseArNumber(raw: string): number {
