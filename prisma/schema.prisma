@@ -63,6 +63,7 @@ enum Bank {
   patagonia
   credicoop
   naranjax
+  cencosud
 }
 
 enum CardNetwork {

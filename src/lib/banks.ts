@@ -1,6 +1,6 @@
 // Los 11 bancos (MARCA.md): detección por nombre, degradado de la tarjeta y color de brillo.
 
-export type BankId = "galicia" | "bbva" | "santander" | "icbc" | "nacion" | "ciudad" | "macro" | "supervielle" | "patagonia" | "credicoop" | "naranjax";
+export type BankId = "galicia" | "bbva" | "santander" | "icbc" | "nacion" | "ciudad" | "macro" | "supervielle" | "patagonia" | "credicoop" | "naranjax" | "cencosud";
 export type Network = "visa" | "master" | "amex";
 
 type Bank = { id: BankId; name: string; match: RegExp; face: string; glow: string };
@@ -18,6 +18,7 @@ export const BANKS: Bank[] = [
   { id: "credicoop", name: "Credicoop", match: /credicoop/i, face: g("oklch(0.6 0.12 175)", "oklch(0.38 0.09 190)"), glow: "oklch(0.56 0.12 175)" },
   { id: "santander", name: "Santander", match: /santander/i, face: g("oklch(0.64 0.21 28)", "oklch(0.42 0.17 22)"), glow: "oklch(0.6 0.2 27)" },
   { id: "macro", name: "Macro", match: /macro/i, face: g("oklch(0.5 0.13 245)", "oklch(0.32 0.1 250)"), glow: "oklch(0.5 0.13 245)" },
+  { id: "cencosud", name: "Cencosud", match: /cencosud|cencopay/i, face: g("oklch(0.46 0.21 272)", "oklch(0.3 0.17 270) 60%", "oklch(0.58 0.2 0)"), glow: "oklch(0.5 0.21 272)" },
   { id: "naranjax", name: "Naranja X", match: /naranja/i, face: g("oklch(0.75 0.18 50)", "oklch(0.55 0.2 20)"), glow: "oklch(0.68 0.19 40)" },
 ];
 

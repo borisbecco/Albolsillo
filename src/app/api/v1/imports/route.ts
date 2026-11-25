@@ -53,7 +53,7 @@ export const POST = handle(async (req: Request) => {
     period: parsed.period,
     status: "parsed" as const,
     rowsTotal: rows.length,
-    rows: { rows, summary: { close_date: parsed.close_date, due_date: parsed.due_date, balance_ars: parsed.balance_ars, balance_usd: parsed.balance_usd, min_payment: parsed.min_payment } },
+    rows: { rows, summary: { close_date: parsed.close_date, next_close_date: parsed.next_close_date, due_date: parsed.due_date, balance_ars: parsed.balance_ars, balance_usd: parsed.balance_usd, min_payment: parsed.min_payment } },
   };
   const imp = previous
     ? await prisma.import.update({ where: { id: previous.id }, data: { ...data$, cardId, deletedAt: null } })

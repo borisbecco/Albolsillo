@@ -19,7 +19,7 @@ const Body = z.object({
   update_card: z.boolean().default(true),
 });
 
-type Stored = { rows: (ParsedRow & { duplicate: boolean })[]; summary: { due_date: string | null; close_date: string | null; balance_ars: string | null; balance_usd?: string | null; min_payment: string | null } };
+type Stored = { rows: (ParsedRow & { duplicate: boolean })[]; summary: { due_date: string | null; close_date: string | null; next_close_date?: string | null; balance_ars: string | null; balance_usd?: string | null; min_payment: string | null } };
 
 // POST /imports/:id/confirm: crea los movimientos elegidos (imported = true) y actualiza las cuotas.
 export const POST = handle(async (req: Request, { params }: Ctx) => {
@@ -67,7 +67,11 @@ export const POST = handle(async (req: Request, { params }: Ctx) => {
 
       let card = await db.card.findUniqueOrThrow({ where: { id: imp.cardId } });
       const s = stored.summary;
-      if (b.update_card && (s.balance_ars || s.min_payment || s.due_date)) {
+      // Si la tarjeta ya tiene este mismo resumen (cargado a mano), no se vuelve a cerrar el ciclo:
+      // eso pondría en cero lo ya pagado. Solo se suman los movimientos.
+      const sameStatement =
+        !!s.balance_ars && card.balance.toFixed(2) === Number(s.balance_ars).toFixed(2) && (!s.min_payment || card.minPayment.toFixed(2) === Number(s.min_payment).toFixed(2));
+      if (b.update_card && !sameStatement && (s.balance_ars || s.min_payment || s.due_date)) {
         // Resumen nuevo: igual que cargarlo a mano (cierra el ciclo y suma las cuotas de lo cargado en la app).
         const more = await closeCycle(
           db,
@@ -77,7 +81,8 @@ export const POST = handle(async (req: Request, { params }: Ctx) => {
             balanceUsd: s.balance_usd ?? card.balanceUsd.toFixed(2),
             minimum: s.min_payment ?? card.minPayment.toFixed(2),
             dueDay: s.due_date ? Number(s.due_date.slice(8)) : card.dueDay,
-            closeDay: s.close_date ? Number(s.close_date.slice(8)) : card.closeDay,
+            // Las compras nuevas entran en el próximo resumen: queda su día de cierre si el resumen lo informa.
+            closeDay: s.next_close_date ? Number(s.next_close_date.slice(8)) : s.close_date ? Number(s.close_date.slice(8)) : card.closeDay,
             today: todayAR(),
           },
           { onlyAppInstallments: true },
