@@ -42,7 +42,7 @@ const STRATS: { id: Strategy; label: string; prio: string; icon: string; how: st
 
 export function PlanView() {
   const { user, updatePrefs, flash, setDebtSheet } = useShell();
-  const { cards, bills, loans, transactions, toDisplay, payBill } = useData();
+  const { cards, bills, loans, transactions, toDisplay, payBill, installments } = useData();
   const { plan, interest, income, C, pendingFixed, pendingBills, pendingLoans, reserve, toArs } = useSummary();
   const cur = user.display_currency;
   const fmt = (n: number) => formatMoney(toDisplay(n, "ARS"), cur);
@@ -184,6 +184,11 @@ export function PlanView() {
                 const c = cards.find((x) => x.id === r.id)!;
                 // Cuánto del resumen queda cubierto: lo ya pagado más lo que se propone pagar.
                 const cover = r.done ? 1 : r.balance + r.paid > 0 ? Math.min(1, (r.paid + r.pay) / (r.balance + r.paid)) : 1;
+                // Desglose: resumen, pagado, lo que falta, mínimo y cuotas que vienen en los próximos resúmenes.
+                const statement = r.done ? r.balance : r.balance + r.paid;
+                const left = r.done ? 0 : r.balance;
+                const minimum = Number(c.min_payment);
+                const future = installments.filter((q) => q.card_id === c.id && q.of > q.n).reduce((s, q) => s + (q.of - q.n) * Number(q.amount), 0);
                 const start = c.cycle_start ?? `${month}-01`;
                 const buys = transactions
                   .filter((t) => t.card_id === c.id && t.type === "out" && t.date >= start && (t.installment_number ?? 1) === 1)
@@ -205,7 +210,7 @@ export function PlanView() {
                       <span className={p.idx}>{i + 1}</span>
                       <div className={p.payPill}>
                         <span>
-                          <small>Pagar</small>
+                          <small>Pagar este mes</small>
                           <strong>{fmt(r.pay)}</strong>
                         </span>
                         <span className={p.tag} style={{ color: r.tagColor, background: `color-mix(in oklch, ${r.tagColor} 18%, transparent)` }}>
@@ -219,15 +224,48 @@ export function PlanView() {
                       </div>
                       <span>{r.done ? "Pagado" : cover >= 1 ? "Saldo completo" : `Cubre ${Math.round(cover * 100)}%`}</span>
                     </div>
-                    <div className={p.note}>
-                      {r.done
-                        ? `Pagaste el total: ${fmt(r.paid)}`
-                        : r.tag === "Pago total"
-                          ? `Pagás el total y evitás ~${fmt(r.avoidedInterest)} de intereses`
-                          : `Quedan ${fmt(r.left)} → ~${fmt(r.nextInterest)} de intereses el próximo mes`}
-                      {!r.done && r.paid > 0 && ` · ya pagaste ${fmt(r.paid)}`}
-                      {` · vence ${c.due_day} ${mShort} · mínimo ${fmt(Number(c.min_payment))}`}
-                    </div>
+                    <dl className={p.breakdown}>
+                      <div>
+                        <dt>Saldo del resumen</dt>
+                        <dd>{fmt(statement)}</dd>
+                      </div>
+                      <div>
+                        <dt>Pagaste</dt>
+                        <dd>{fmt(r.paid)}</dd>
+                      </div>
+                      <div>
+                        <dt>Te falta</dt>
+                        <dd style={{ color: left > 0 ? "var(--fg)" : "var(--pos)" }}>{fmt(left)}</dd>
+                      </div>
+                      <div>
+                        <dt>Mínimo · vence {c.due_day} {mShort}</dt>
+                        <dd style={{ color: r.paid >= minimum ? "var(--pos)" : "var(--fg)" }}>
+                          {fmt(minimum)}
+                          {r.paid >= minimum && minimum > 0 ? " ✓" : ""}
+                        </dd>
+                      </div>
+                      {future > 0 && (
+                        <>
+                          <div>
+                            <dt>Cuotas en próximos resúmenes</dt>
+                            <dd>{fmt(future)}</dd>
+                          </div>
+                          <div>
+                            <dt>Deuda total</dt>
+                            <dd>{fmt(left + future)}</dd>
+                          </div>
+                        </>
+                      )}
+                    </dl>
+                    {!r.done && (
+                      <div className={p.note}>
+                        {r.tag === "Pago total"
+                          ? `Pagando ${fmt(r.pay)} cancelás el resumen y evitás ~${fmt(r.avoidedInterest)} de intereses.`
+                          : r.pay > 0
+                            ? `Después de pagar ${fmt(r.pay)} quedan ${fmt(r.left)} → ~${fmt(r.nextInterest)} de intereses el mes que viene.`
+                            : `Este mes no queda plata libre para adelantar: quedan ${fmt(r.left)} → ~${fmt(r.nextInterest)} de intereses el mes que viene.`}
+                      </div>
+                    )}
                     {buys > 0 && (
                       <div className={p.note}>
                         Compras nuevas este mes: {fmt(buys)}. Entran en el resumen que cierra el {c.close_day}.

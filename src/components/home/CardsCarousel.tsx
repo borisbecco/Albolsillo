@@ -112,12 +112,17 @@ export function CardsCarousel() {
       )}
       <div className={h.chips}>
         <span className={h.chipStrong}>
-          <span>Pagar</span>
+          <span>Pagar este mes</span>
           <strong>{formatMoney(toDisplay(row?.pay ?? Number(c.min_payment), "ARS"), user.display_currency)}</strong>
         </span>
         {row && (
           <span className={h.chip} style={{ color: row.tagColor, fontWeight: 600 }}>
             {row.tag}
+          </span>
+        )}
+        {row && row.paid > 0 && (
+          <span className={h.chip}>
+            Pagaste {formatMoney(toDisplay(row.paid, "ARS"), user.display_currency)} · falta {formatMoney(toDisplay(row.done ? 0 : row.balance, "ARS"), user.display_currency)}
           </span>
         )}
         <span className={h.chip}>

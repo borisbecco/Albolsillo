@@ -993,3 +993,259 @@ select.salaryInput {
   color: var(--mut);
   font-size: 14px;
 }
+
+/* ─── Inicio: disponible, indicadores y evolución del mes ─── */
+
+.heroCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.heroSub {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.kpis {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 var(--gutter);
+  margin-top: 10px;
+}
+
+.kpi {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "icon label" "value value" "sub sub";
+  align-items: center;
+  gap: 4px 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--fg);
+  text-decoration: none;
+  min-width: 0;
+}
+
+a.kpi:hover {
+  border-color: color-mix(in oklch, var(--acc) 45%, var(--line2));
+}
+
+.kpiIcon {
+  grid-area: icon;
+  font-size: 18px;
+  color: var(--mut);
+}
+
+.kpiLabel {
+  grid-area: label;
+  font-size: 13px;
+  color: var(--mut);
+}
+
+.kpiValue {
+  grid-area: value;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpiSub {
+  grid-area: sub;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evo {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 var(--gutter);
+  margin-top: 8px;
+}
+
+.evoHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--mut);
+}
+
+.evoHead > strong {
+  font-size: 15px;
+  color: var(--fg);
+}
+
+/* Más bajo que antes, con ejes: lo importante es el acumulado y la proyección */
+.evo .chart {
+  overflow: visible;
+  height: 170px;
+  margin: 4px 0 18px 56px;
+  width: auto;
+}
+
+.yTick {
+  position: absolute;
+  left: -56px;
+  width: 50px;
+  transform: translateY(-50%);
+  text-align: right;
+  font-size: 11px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.gridLine {
+  stroke: color-mix(in oklch, var(--line2) 80%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.xTick {
+  position: absolute;
+  bottom: -18px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.projLine {
+  fill: none;
+  stroke: var(--acc);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+  opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.incomeRule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1.5px dashed color-mix(in oklch, var(--pos) 70%, transparent);
+}
+
+.incomeRule span {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 11px;
+  color: var(--pos);
+}
+
+.dashKey {
+  background: repeating-linear-gradient(90deg, var(--acc) 0 4px, transparent 4px 7px) !important;
+  opacity: 0.8;
+}
+
+@media (max-width: 899px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 759px) {
+  .kpiValue {
+    font-size: 18px;
+  }
+  .evo .chart {
+    height: 140px;
+    margin-left: 48px;
+  }
+  .yTick {
+    left: -48px;
+    width: 44px;
+  }
+}
+
+/* Distribución del gasto (ancho completo) */
+.distPanel .donutRow {
+  align-items: center;
+}
+
+.legendCols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 24px;
+}
+
+.otrosHint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklch, var(--amb) 35%, var(--line2));
+  background: color-mix(in oklch, var(--amb) 9%, var(--panel));
+  color: var(--fg);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.otrosHint > .material-symbols-rounded {
+  color: var(--amb);
+  font-size: 20px;
+}
+
+.otrosHint > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.otrosBtn {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--amb);
+  color: #1a1206;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+@media (max-width: 759px) {
+  .legendCols {
+    grid-template-columns: 1fr;
+  }
+  .otrosHint {
+    flex-wrap: wrap;
+  }
+}
+
+/* Monitores grandes: textos secundarios un poco más grandes */
+@media (min-width: 1500px) {
+  .heroSub,
+  .kpiLabel,
+  .evoHead {
+    font-size: 14px;
+  }
+  .kpiSub,
+  .legend,
+  .xTick,
+  .yTick {
+    font-size: 13px;
+  }
+  .kpiValue {
+    font-size: 24px;
+  }
+  .evo .chart {
+    height: 190px;
+  }
+}

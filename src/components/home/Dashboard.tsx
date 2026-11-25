@@ -45,7 +45,6 @@ function Dashboard() {
         <CardsCarousel />
         <FxCard />
       </div>
-      <Numbers />
       {plan.short && (
         <Link href={VIEWS.plan.href} className={h.shortAlert} role="alert">
           <span className="material-symbols-rounded">warning</span>
@@ -53,6 +52,7 @@ function Dashboard() {
         </Link>
       )}
       <Activity />
+      <Numbers />
     </div>
   );
 }

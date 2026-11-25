@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CATEGORIES, CATEGORY_BY_ID, catColor } from "@/lib/categories";
 import { formatMoney } from "@/lib/money";
 import { MONTH_FULL, MONTH_SHORT, todayAR } from "@/lib/month";
@@ -30,6 +30,12 @@ export function MovementsView() {
   const [q, setQ] = useState("");
   const [type, setType] = useState<TypeFilter>("all");
   const [cat, setCat] = useState("all");
+  // Desde la distribución de Inicio: /movimientos?cat=otros abre filtrado por esa categoría.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("cat");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (c && CATEGORY_BY_ID[c]) setCat(c);
+  }, []);
   const [selMode, setSelMode] = useState(false);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const toggleSel = (id: string) =>
