@@ -112,6 +112,24 @@ export function undoToken(userId: string, ids: string[]) {
   return `${payload}.${sign(payload)}`;
 }
 
+/** Token firmado con datos propios (p. ej. cómo estaba una tarjeta antes de cerrar el ciclo). */
+export function signedToken(userId: string, kind: string, data: unknown) {
+  const payload = Buffer.from(JSON.stringify({ u: userId, k: kind, d: data, exp: Date.now() + UNDO_TTL })).toString("base64url");
+  return `${payload}.${sign(payload)}`;
+}
+
+export function readSignedToken<T>(userId: string, kind: string, token: string): T {
+  const [payload, sig] = token.split(".");
+  const bad = () => new ApiError(422, "undo_invalid", "Ya no se puede deshacer.");
+  if (!payload || !sig) throw bad();
+  const a = Buffer.from(sig);
+  const b = Buffer.from(sign(payload));
+  if (a.length !== b.length || !timingSafeEqual(a, b)) throw bad();
+  const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as { u: string; k: string; d: T; exp: number };
+  if (data.u !== userId || data.k !== kind || data.exp < Date.now()) throw bad();
+  return data.d;
+}
+
 export function readUndoToken(userId: string, token: string): string[] {
   const [payload, sig] = token.split(".");
   const bad = () => new ApiError(422, "undo_invalid", "Ya no se puede deshacer.");

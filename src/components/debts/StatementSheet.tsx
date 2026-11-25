@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { maskAmountEvent, parseAmount, toDecimal } from "@/lib/money";
 import { useData } from "@/components/data/DataContext";
-import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
 import d from "./debts.module.css";
 
@@ -12,7 +11,6 @@ const dayOk = (v: string) => Number(v) >= 1 && Number(v) <= 31;
 
 /** Cargar el resumen nuevo de una tarjeta: cierra el ciclo. */
 export function StatementSheet({ id, onClose }: { id: string; onClose: () => void }) {
-  const { flash } = useShell();
   const { cards, loadStatement } = useData();
   const card = cards.find((c) => c.id === id);
   const [bal, setBal] = useState("");
@@ -44,8 +42,8 @@ export function StatementSheet({ id, onClose }: { id: string; onClose: () => voi
     });
     setBusy(false);
     if (n === null) return;
+    // El aviso (con Deshacer) lo muestra loadStatement.
     onClose();
-    flash(n ? `Resumen de ${card.name} cargado. Sumamos ${n} ${n === 1 ? "cuota" : "cuotas"} como gasto` : `Resumen de ${card.name} cargado`, "gasto");
   };
 
   const set = (fn: (v: string) => void) => (v: string) => {

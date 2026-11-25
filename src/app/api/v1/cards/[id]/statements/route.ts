@@ -3,6 +3,7 @@ import { ApiError, handle, readBody } from "@/lib/http";
 import { requireUserId } from "@/lib/auth/session";
 import { cardDto, installmentDto, txDto } from "@/lib/dto";
 import { StatementInput, closeCycle } from "@/lib/cards";
+import { signedToken } from "@/lib/tx-delete";
 import { todayAR } from "@/lib/notify";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -39,5 +40,6 @@ export const POST = handle(async (req: Request, { params }: Ctx) => {
     card: cardDto(result.updated),
     transactions: result.created.map(txDto),
     installments: result.installments.map(installmentDto),
+    undo_token: signedToken(userId, `stmt:${id}`, result.created.snapshot),
   });
 });

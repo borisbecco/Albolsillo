@@ -1052,20 +1052,38 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const loadStatement = useCallback(
     async (cardId: string, st: StatementDraft) => {
       try {
-        const res = await api<{ card: CardDto; transactions: TxDto[]; installments: InstallmentDto[] }>(`/cards/${cardId}/statements`, {
+        const res = await api<{ card: CardDto; transactions: TxDto[]; installments: InstallmentDto[]; undo_token: string }>(`/cards/${cardId}/statements`, {
           method: "POST",
           body: JSON.stringify(st),
         });
         setCards((l) => l.map((c) => (c.id === cardId ? res.card : c)));
         setInstallments((l) => [...l.filter((q) => q.card_id !== cardId), ...res.installments]);
         if (res.transactions.length) setTransactions((l) => sortTx([...res.transactions.map((t) => ({ ...t, status: "synced" as const })), ...l]));
-        return res.transactions.length;
+        const n = res.transactions.length;
+        flash(n ? `Resumen de ${res.card.name} cargado. Sumamos ${n} ${n === 1 ? "cuota" : "cuotas"} como gasto` : `Resumen de ${res.card.name} cargado`, "gasto", {
+          label: "Deshacer",
+          fn: async () => {
+            try {
+              const r = await api<{ card: CardDto; installments: InstallmentDto[]; removed: string[] }>(`/cards/${cardId}/statements/undo`, {
+                method: "POST",
+                body: JSON.stringify({ undo_token: res.undo_token }),
+              });
+              setCards((l) => l.map((c) => (c.id === cardId ? r.card : c)));
+              setInstallments((l) => [...l.filter((q) => q.card_id !== cardId), ...r.installments]);
+              setTransactions((l) => l.filter((t) => !r.removed.includes(t.id)));
+              flash("Listo, volvimos al resumen anterior");
+            } catch (e) {
+              fail(e, "No pudimos deshacerlo.");
+            }
+          },
+        });
+        return n;
       } catch (e) {
         fail(e, "No pudimos guardar el resumen. Probá de nuevo.");
         return null;
       }
     },
-    [fail],
+    [fail, flash],
   );
 
   // ─── Carga automática: gastos detectados ───
