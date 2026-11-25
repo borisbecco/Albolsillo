@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import n from "./month.module.css";
+import { Bolsi, preloadBolsi } from "@/components/bolsi/Bolsi";
 
 /** Modal bloqueante "Tu sesión venció". Los cambios pendientes quedan en el dispositivo. */
 export function SessionExpiredModal() {
@@ -15,8 +16,7 @@ export function SessionExpiredModal() {
   return (
     <div className={n.backdrop} style={{ zIndex: 50, alignItems: "center" }}>
       <div className={`${n.modal} ${n.expired}`} role="alertdialog" aria-modal="true" aria-label="Tu sesión venció">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/bolsi/bolsi-sesion.svg" alt="" width={88} height={96} />
+        <Bolsi pose="sesion" width={88} height={96} />
         <strong>Tu sesión venció</strong>
         <span>
           Por seguridad cerramos la sesión después de 30 días sin entrar. Volvé a ingresar para seguir; no perdés nada de lo que cargaste
@@ -67,6 +67,7 @@ export function NetBanner() {
   }, [online]);
 
   // Las poses de Bolsi de estos estados se precargan para que se vean aunque se corte la conexión.
+  useEffect(() => preloadBolsi(["sinconexion", "cargando", "errorguardar", "sesion", "gasto", "ingreso", "meta", "alerta", "bienvenida", "errorcarga"]), []);
   const preload = (
     <span hidden aria-hidden>
       {["sinconexion", "cargando", "errorguardar", "sesion", "gasto", "ingreso", "meta", "alerta", "bienvenida", "errorcarga"].map((p) => (
@@ -82,8 +83,7 @@ export function NetBanner() {
     <>
     {preload}
     <div className={n.net} role="status" style={{ background: `color-mix(in oklch, ${color} 10%, var(--panel))`, borderColor: `color-mix(in oklch, ${color} 35%, var(--line2))` }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={off ? "/bolsi/bolsi-sinconexion.svg" : "/bolsi/bolsi-cargando.svg"} alt="" />
+      <Bolsi key={off ? "off" : "sync"} pose={off ? "sinconexion" : "cargando"} />
       <span>
         <strong>{off ? "Sin conexión" : "Sincronizando"}</strong>
         <small>

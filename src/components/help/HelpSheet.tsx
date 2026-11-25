@@ -8,6 +8,7 @@ import { norm } from "@/lib/entities";
 import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
 import h from "./help.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 /** Ayuda: preguntas frecuentes en 6 temas, con buscador sin tildes y el tema de la pantalla actual primero. */
 export function HelpSheet() {
@@ -44,8 +45,7 @@ export function HelpSheet() {
         </label>
         {!nq && (
           <div className={h.tourCard}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={44} height={48} />
+            <Bolsi pose="bienvenida" width={44} height={48} />
             <span className={h.tourText}>
               <strong>Recorrido guiado</strong>
               <span>Te muestro cómo funciona la app en {TOUR.length} pasos.</span>

@@ -7,6 +7,7 @@ import { currentMonth } from "@/lib/month";
 import { AppShell } from "@/components/shell/AppShell";
 import { ShellProvider, applyTheme } from "@/components/shell/ShellContext";
 import { DataProvider, type Bootstrap } from "@/components/data/DataContext";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 const MIN_LOADING_MS = 900; // para que la pantalla de carga no parpadee
 
@@ -53,8 +54,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
     return (
       <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: 24 }}>
         <section role="alert" className="card" style={{ maxWidth: 420, display: "grid", gap: 12, justifyItems: "center", textAlign: "center", padding: 32 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/bolsi/bolsi-errorcarga.svg" alt="" width={96} height={104} />
+          <Bolsi pose="errorcarga" width={96} height={104} />
           <h1 style={{ fontSize: 20 }}>No pudimos cargar tus datos</h1>
           <p style={{ margin: 0, color: "var(--mut)" }}>
             Revisá tu conexión y probá de nuevo. Si sigue pasando, escribinos a ayuda@albolsillo.app.
@@ -76,8 +76,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   if (!data) {
     return (
       <main aria-busy="true" aria-label="Cargando" style={{ minHeight: "100dvh", display: "grid", placeItems: "center" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/bolsi/bolsi-cargando.svg" alt="" width={96} height={104} />
+        <Bolsi pose="cargando" width={96} height={104} />
       </main>
     );
   }

@@ -524,7 +524,7 @@
   animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.saveErr img {
+.saveErr [data-bolsi] {
   width: 48px;
   height: 53px;
   flex: none;

@@ -7,6 +7,7 @@ import { useData, type Tx } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { CatIcon, sourceKey, sourceOptions, splitSource, todayAR } from "./parts";
 import s from "./tx.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 export function TxDetail() {
   const { detailId } = useShell();
@@ -197,8 +198,7 @@ export function SaveErrorBar() {
   if (!failed) return null;
   return (
     <div className={s.saveErr} role="alert">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/bolsi/bolsi-errorguardar.svg" alt="" />
+      <Bolsi pose="errorguardar" />
       <span className={s.saveErrText}>
         <strong>No pudimos guardar “{failed.description}”</strong>
         <span>Lo dejamos guardado en este dispositivo.</span>

@@ -45,7 +45,7 @@
   background: color-mix(in oklch, var(--acc) 10%, var(--panel));
 }
 
-.tourCard img {
+.tourCard [data-bolsi] {
   flex: none;
 }
 
@@ -206,7 +206,7 @@
   gap: 12px;
 }
 
-.tourTop img {
+.tourTop [data-bolsi] {
   flex: none;
 }
 

@@ -12,6 +12,7 @@ import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import { todayAR } from "@/components/tx/parts";
 import n from "./month.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 const LATER_KEY = "ab-nm-later";
 type Mode = "keep" | "infl" | "spent";
@@ -86,8 +87,7 @@ export function NewMonthModal({ onClose }: { onClose: () => void }) {
     <div className={n.backdrop}>
       <div className={n.modal} role="dialog" aria-modal="true" aria-label="Nuevo mes">
         <div className={n.hero}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={84} height={92} />
+          <Bolsi pose="bienvenida" width={84} height={92} />
           <span className={n.kicker}>1 de {next.toLowerCase()}</span>
           <strong>Arrancó {next.toLowerCase()}</strong>
           <span className={n.lead}>Cerramos {prevName} y dejamos listo el mes nuevo. Revisá estos tres pasos.</span>

@@ -29,6 +29,7 @@ import { ProfilePanel } from "./ProfilePanel";
 import { initials, useShell } from "./ShellContext";
 import { enter, indicatorStyle, useIndicator, type Dir } from "./motion";
 import s from "./shell.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 const Icon = ({ name, className }: { name: string; className?: string }) => (
   <span className={`${s.icon} ${className ?? ""}`} aria-hidden>
@@ -203,8 +204,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const toast$ = toast && (
     <div key={toast.id} className={s.toast} role="status">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/bolsi/bolsi-${toast.pose}.svg`} alt="" />
+      <Bolsi pose={toast.pose} />
       {toast.message}
       {toast.action && (
         <button

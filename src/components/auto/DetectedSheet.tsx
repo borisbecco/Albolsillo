@@ -9,6 +9,7 @@ import { useShell } from "@/components/shell/ShellContext";
 import { TxIcon } from "@/components/tx/parts";
 import t from "@/components/tx/tx.module.css";
 import a from "./auto.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 type Edit = { on: boolean; category_id: string; account_id: string | null; catEdited: boolean; learn: boolean };
 
@@ -141,8 +142,7 @@ export function DetectedSheet() {
           </>
         ) : (
           <div className={a.wait}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={96} height={105} />
+            <Bolsi pose="bienvenida" width={96} height={105} />
             <strong>Estás al día</strong>
             <span>Cuando llegue un aviso de pago reenviado o compartas un comprobante, lo vas a ver acá.</span>
           </div>

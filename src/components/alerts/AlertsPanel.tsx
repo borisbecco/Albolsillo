@@ -5,6 +5,7 @@ import { useShell } from "@/components/shell/ShellContext";
 import { useAlerts } from "./useAlerts";
 import { usePush } from "./usePush";
 import a from "./alerts.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 /** Panel de la campana: alertas activas, anticipación y avisos por mail. */
 export function AlertsPanel() {
@@ -73,8 +74,7 @@ export function AlertsPanel() {
           ))}
           {!alerts.length && (
             <div className={a.empty}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={72} height={79} />
+              <Bolsi pose="bienvenida" width={72} height={79} />
               <span>Nada urgente en estos días. Bolsi te banca.</span>
             </div>
           )}

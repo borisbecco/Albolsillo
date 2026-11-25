@@ -6,6 +6,7 @@ import { TOUR } from "@/lib/help";
 import { VIEWS } from "@/lib/nav";
 import { useShell } from "@/components/shell/ShellContext";
 import h from "./help.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 type Rect = { top: number; left: number; width: number; height: number };
 
@@ -106,8 +107,7 @@ export function Tour() {
       )}
       <div className={h.tourBox} style={box} role="dialog" aria-label="Recorrido guiado">
         <div className={h.tourTop}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/bolsi/bolsi-${step.bolsi}.svg`} alt="" width={52} height={57} />
+          <Bolsi key={step.bolsi} pose={step.bolsi} width={52} height={57} />
           <div className={h.tourCopy}>
             <span className={h.tourStep}>
               PASO {i + 1} DE {TOUR.length}

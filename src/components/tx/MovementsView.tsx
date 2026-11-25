@@ -12,6 +12,7 @@ import { ACCOUNT_KINDS } from "@/components/accounts/kinds";
 import { ExportMenu } from "./ExportMenu";
 import { TxIcon, todayAR } from "./parts";
 import m from "./movements.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 const WD = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 type TypeFilter = "all" | "out" | "in";
@@ -322,13 +323,7 @@ export function MovementsView() {
         ))}
         {!groups.length && (
           <div className={m.noResults}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/bolsi/bolsi-bienvenida.svg"
-              alt=""
-              width={72}
-              height={79}
-            />
+            <Bolsi pose="bienvenida" width={72} height={79} />
             <span>No hay movimientos con estos filtros.</span>
           </div>
         )}

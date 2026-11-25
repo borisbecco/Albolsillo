@@ -8,6 +8,7 @@ import { Logo } from "@/components/shell/Logo";
 import { useShell } from "@/components/shell/ShellContext";
 import t from "@/components/tx/tx.module.css";
 import a from "./auto.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 type Source = { id: string; kind: "forward" | "share"; address: string | null; status: "pending" | "active"; last_received_at: string | null };
 type SourcesRes = { sources: Source[]; wallets: { name: string; domain: string }[]; gmail_filter: string; android_waitlist: boolean };
@@ -368,8 +369,7 @@ export function SourcesSheet() {
 
         {step === "waiting" && (
           <div className={a.wait}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/bolsi/bolsi-cargando.svg" alt="" width={96} height={105} />
+            <Bolsi pose="cargando" width={96} height={105} />
             <strong>Esperando tus mails</strong>
             <span>Apenas llegue un aviso de pago reenviado, lo vas a ver en Gastos detectados.</span>
           </div>

@@ -5,6 +5,7 @@ import { VIEWS } from "@/lib/nav";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import f from "./firststeps.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 type Step = { done: boolean; icon: string; title: string; sub: string; go: () => void };
 
@@ -60,8 +61,7 @@ export function FirstSteps() {
   return (
     <section className={f.box}>
       <div className={f.head}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={60} height={66} className={f.bolsi} />
+        <Bolsi pose="bienvenida" width={60} height={66} className={f.bolsi} />
         <div className={f.headText}>
           <h2>Hola, {firstName}. Arranquemos.</h2>
           <p>Con estos pasos Albolsillo ya puede armarte el plan del mes.</p>

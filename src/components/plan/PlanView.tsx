@@ -14,6 +14,7 @@ import { dueInfo } from "@/components/debts/obligations";
 import { useSummary } from "@/components/home/useSummary";
 import { CatIcon } from "@/components/tx/parts";
 import p from "./plan.module.css";
+import { Bolsi } from "@/components/bolsi/Bolsi";
 
 const STRATS: { id: Strategy; label: string; prio: string; icon: string; how: string }[] = [
   {
@@ -307,8 +308,7 @@ export function PlanView() {
       </section>
 
       <section className={p.leftover}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/bolsi/bolsi-bienvenida.svg" alt="" width={52} height={57} />
+        <Bolsi pose="bienvenida" width={52} height={57} />
         <div>
           <strong style={{ color: plan.short ? "var(--red)" : plan.leftover > 0 ? "var(--pos)" : "var(--fg)" }}>
             {plan.short ? "No alcanza para los mínimos" : plan.over > 0 ? "Mínimos cubiertos" : plan.leftover > 0 ? `Te sobran ${fmt(plan.leftover)}` : "Todo va a tarjetas"}
