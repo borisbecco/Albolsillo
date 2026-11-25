@@ -27,10 +27,13 @@ const headerText = (v: unknown): string =>
 
 /** Código del + en la dirección a la que llegó (Delivered-To, X-Original-To o To). */
 export function addressCode(mail: Mail): string | null {
-  const local = (process.env.INBOX_ADDRESS ?? "albolsillo.entrada@gmail.com").split("@")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(`${local}\\+([a-z0-9]{6})@`, "i");
+  // Gmail ignora puntos y mayúsculas en la parte local: se comparan sin ellos.
+  const local = (process.env.INBOX_ADDRESS ?? "albolsillo.entrada@gmail.com").split("@")[0].replace(/\./g, "").toLowerCase();
   const where = [mail.headers.get("delivered-to"), mail.headers.get("x-original-to"), mail.headers.get("x-forwarded-to"), mail.to].map(headerText).join(" ");
-  return where.match(re)?.[1]?.toLowerCase() ?? null;
+  for (const m of where.matchAll(/([a-z0-9.]+)\+([a-z0-9]{6})@(?:gmail|googlemail)\.com/gi)) {
+    if (m[1].replace(/\./g, "").toLowerCase() === local) return m[2].toLowerCase();
+  }
+  return null;
 }
 
 const htmlToText = (html: string) =>
@@ -88,7 +91,7 @@ export async function handleMail(mail: Mail): Promise<HandleResult> {
   return { kind: created ? "detected" : "duplicate", userId: source.userId };
 }
 
-/** Lee los mails no leídos de la casilla, los procesa, los borra y avisa por push. */
+/** Lee los mails de la casilla, los procesa, los borra y avisa por push. */
 export async function runInbox() {
   const user = process.env.INBOX_USER ?? process.env.INBOX_ADDRESS;
   const pass = process.env.INBOX_APP_PASSWORD;
@@ -102,7 +105,8 @@ export async function runInbox() {
   await client.connect();
   const lock = await client.getMailboxLock("INBOX");
   try {
-    const uids = (await client.search({ seen: false }, { uid: true })) || [];
+    // Todo lo que haya en la bandeja (se borra después de procesar): también lo que alguien abrió a mano.
+    const uids = (await client.search({ all: true }, { uid: true })) || [];
     for (const uid of uids.slice(0, 200)) {
       const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
       if (!msg || !msg.source) continue;
