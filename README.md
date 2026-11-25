@@ -58,6 +58,7 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
   (no se sube a git: tiene datos personales). `-- --dev` hace backup de la de desarrollo.
 - **Restaurar:** `npm run db:restore -- backups/<archivo> --confirm=<host>` borra la base de `DATABASE_URL` y carga el
   backup. No corre si `PROD_DATABASE_URL` no está definida, y para restaurar producción pide además `--prod`.
+- **Cuentas creadas:** `npm run db:users` lista las cuentas de producción (solo lectura; `-- --full` muestra los emails completos).
 - Para una base de desarrollo nueva: `npx prisma migrate deploy` y después restaurar un backup de producción.
 
 ## Desarrollo

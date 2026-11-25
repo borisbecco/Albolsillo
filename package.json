@@ -15,7 +15,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:backup": "node --env-file=.env scripts/db-backup.mjs",
-    "db:restore": "node --env-file=.env scripts/db-restore.mjs"
+    "db:restore": "node --env-file=.env scripts/db-restore.mjs",
+    "db:users": "node --env-file=.env scripts/db-users.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
