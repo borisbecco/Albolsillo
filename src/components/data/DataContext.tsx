@@ -156,8 +156,10 @@ type Data = {
   /** Inflación mensual (%) por mes, de la API de IPC. */
   ipc: IpcRow[];
   shared: SharedDto[];
-  addPerson: (name: string, email: string | null) => Promise<PersonDto | null>;
-  invitePerson: (id: string, email?: string) => Promise<boolean>;
+  /** mailSent/link: si se invitó (con email), si salió el mail y el link para pasarlo a mano. */
+  addPerson: (name: string, email: string | null) => Promise<{ person: PersonDto; mailSent: boolean | null; link: string | null } | null>;
+  /** null si falló; si no, si salió el mail y el link para pasarlo a mano. */
+  invitePerson: (id: string, email?: string) => Promise<{ mailSent: boolean; link: string } | null>;
   deletePerson: (id: string) => Promise<boolean>;
   addShared: (d: SharedDraft) => Promise<boolean>;
   deleteShared: (id: string) => Promise<boolean>;
@@ -828,9 +830,9 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const addPerson = useCallback(
     async (name: string, email: string | null) => {
       try {
-        const res = await api<{ person: PersonDto }>("/people", { method: "POST", body: JSON.stringify({ name, email }) });
+        const res = await api<{ person: PersonDto; mail_sent: boolean | null; link: string | null }>("/people", { method: "POST", body: JSON.stringify({ name, email }) });
         setPeople((l) => [...l, res.person]);
-        return res.person;
+        return { person: res.person, mailSent: res.mail_sent, link: res.link };
       } catch (e) {
         fail(e, "No pudimos agregar el contacto. Probá de nuevo.");
         return null;
@@ -842,12 +844,12 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const invitePerson = useCallback(
     async (id: string, email?: string) => {
       try {
-        const res = await api<{ person: PersonDto }>(`/people/${id}/invite`, { method: "POST", body: JSON.stringify(email ? { email } : {}) });
+        const res = await api<{ person: PersonDto; mail_sent: boolean; link: string }>(`/people/${id}/invite`, { method: "POST", body: JSON.stringify(email ? { email } : {}) });
         setPeople((l) => l.map((p) => (p.id === id ? res.person : p)));
-        return true;
+        return { mailSent: res.mail_sent, link: res.link };
       } catch (e) {
         fail(e, "No pudimos mandar la invitación. Probá de nuevo.");
-        return false;
+        return null;
       }
     },
     [fail],

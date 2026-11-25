@@ -25,6 +25,13 @@ const TAG: Record<PersonDto["status"], { label: string; bg: string; fg: string }
   contact: { label: "Contacto", bg: "var(--sel)", fg: "var(--mut)" },
 };
 
+/** Aviso tras invitar: si no salió el mail (sin mails configurados), se copia el link para pasarlo por WhatsApp. */
+async function inviteNotice(name: string, r: { mailSent: boolean | null; link: string | null }, sent: string) {
+  if (r.mailSent || !r.link) return sent;
+  const copied = await navigator.clipboard?.writeText(r.link).then(() => true).catch(() => false);
+  return copied ? `Copiamos el link de ${name}: pasáselo por WhatsApp (no se mandó mail)` : `Pasale este link a ${name}: ${r.link}`;
+}
+
 export function SharedView() {
   const { forced, flash } = useShell();
   const { people, shared, rate, settle, invitePerson } = useData();
@@ -91,7 +98,8 @@ export function SharedView() {
                         className={s.linkBtn}
                         onClick={async () => {
                           if (p.status === "invited" && p.email) {
-                            if (await invitePerson(p.id)) flash(`Reenviamos la invitación a ${p.email}`);
+                            const r = await invitePerson(p.id);
+                            if (r) flash(await inviteNotice(p.name, r, `Reenviamos la invitación a ${p.email}`));
                           } else {
                             setInviteFor(inviteFor === p.id ? null : p.id);
                             setInviteEmail(p.email ?? "");
@@ -121,9 +129,10 @@ export function SharedView() {
                     onSubmit={async (e) => {
                       e.preventDefault();
                       if (!isValidEmail(inviteEmail)) return flash("Revisá el email");
-                      if (await invitePerson(p.id, inviteEmail.trim())) {
+                      const r = await invitePerson(p.id, inviteEmail.trim());
+                      if (r) {
                         setInviteFor(null);
-                        flash(`Le mandamos una invitación a ${p.name}`);
+                        flash(await inviteNotice(p.name, r, `Le mandamos una invitación a ${p.name}`));
                       }
                     }}
                   >
@@ -214,10 +223,11 @@ function AddPerson() {
     if (!name.trim()) return flash("Poné un nombre");
     if (email.trim() && !isValidEmail(email)) return flash("Revisá el email");
     setBusy(true);
-    const p = await addPerson(name.trim(), email.trim() || null);
+    const r = await addPerson(name.trim(), email.trim() || null);
     setBusy(false);
-    if (p) {
-      flash(email.trim() ? `Agregamos a ${p.name} y le mandamos una invitación` : `Agregamos a ${p.name} a tus contactos`);
+    if (r) {
+      const p = r.person;
+      flash(email.trim() ? await inviteNotice(p.name, r, `Agregamos a ${p.name} y le mandamos una invitación`) : `Agregamos a ${p.name} a tus contactos`);
       setName("");
       setEmail("");
     }

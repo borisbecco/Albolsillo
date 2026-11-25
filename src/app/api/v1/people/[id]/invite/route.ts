@@ -23,6 +23,6 @@ export const POST = handle(async (req: Request, { params }: Ctx) => {
   if (!person) throw new ApiError(404, "not_found", "No encontramos ese contacto.");
   const email = b.email ?? person.email;
   if (!email) throw new ApiError(400, "validation", "Ingresá el email para invitar.");
-  const updated = await invitePerson(userId, id, email);
-  return Response.json({ person: personDto(updated) });
+  const r = await invitePerson(userId, id, email);
+  return Response.json({ person: personDto(r.person), mail_sent: r.mailSent, link: r.link });
 });

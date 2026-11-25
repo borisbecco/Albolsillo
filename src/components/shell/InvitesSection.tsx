@@ -47,11 +47,21 @@ export function InvitesSection() {
     setBusy(true);
     setErr("");
     try {
-      const r = await api<List & { code: string; link: string }>("/invites", { method: "POST", body: JSON.stringify({ email: em }) });
+      const r = await api<List & { code: string; link: string; mail_sent: boolean }>("/invites", { method: "POST", body: JSON.stringify({ email: em }) });
       setData({ invites: r.invites, remaining: r.remaining, quota: r.quota });
       setEmail("");
       const copied = await copy(r.link);
-      flash(copied ? "Le mandamos un mail y copiamos el link para que se lo pases" : `Le mandamos un mail. Código: ${r.code}`, "ingreso");
+      // Sin mails configurados no se manda nada: se avisa para que lo pase por WhatsApp.
+      flash(
+        r.mail_sent
+          ? copied
+            ? "Le mandamos un mail y copiamos el link por si se lo querés pasar"
+            : `Le mandamos un mail. Código: ${r.code}`
+          : copied
+            ? "Copiamos el link: pasáselo por WhatsApp (no se mandó mail)"
+            : `Pasale este código: ${r.code} (no se mandó mail)`,
+        "ingreso",
+      );
     } catch (e) {
       setErr(e instanceof ApiClientError ? e.message : "No pudimos mandar la invitación.");
     } finally {

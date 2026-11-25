@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { ApiError } from "@/lib/http";
-import { sendInvite } from "@/lib/mail";
+import { appUrl, sendInvite } from "@/lib/mail";
 import { activeInviteFor, createInvite } from "@/lib/invites";
 import { randomToken } from "@/lib/auth/session";
 import { MONTH_SHORT } from "@/lib/month";
@@ -32,7 +32,7 @@ export async function invitePerson(userId: string, personId: string, email: stri
   // Desde el lado del invitado: lo que el usuario dice que le deben, el invitado lo debe.
   const balance = balances(list)[personId] ?? 0;
 
-  await sendInvite({
+  const mailSent = await sendInvite({
     to: email,
     inviterName: user.name,
     inviterEmail: user.email,
@@ -45,6 +45,6 @@ export async function invitePerson(userId: string, personId: string, email: stri
       dateLabel: `${Number(e.date.slice(8))} ${MONTH_SHORT[Number(e.date.slice(5, 7)) - 1]}`,
       share: Number(e.total) / e.participants.length,
     })),
-  });
-  return updated;
+  }).catch(() => false);
+  return { person: updated, mailSent, link: `${appUrl()}/invitacion/${token}` };
 }

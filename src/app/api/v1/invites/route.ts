@@ -37,6 +37,6 @@ export const POST = handle(async (req: Request) => {
   if (remaining <= 0) throw new ApiError(403, "no_invites", "Ya usaste tus invitaciones.");
 
   const inv = await createInvite(prisma, userId, email);
-  await sendInviteCode({ to: email, inviterName: user.name, code: inv.code, link: inviteLink(inv.code) }).catch(() => {});
-  return Response.json({ code: inv.code, link: inviteLink(inv.code), invite: inviteDto(inv), ...(await listFor(userId)) }, { status: 201 });
+  const mailSent = await sendInviteCode({ to: email, inviterName: user.name, code: inv.code, link: inviteLink(inv.code) }).catch(() => false);
+  return Response.json({ code: inv.code, link: inviteLink(inv.code), mail_sent: mailSent, invite: inviteDto(inv), ...(await listFor(userId)) }, { status: 201 });
 });

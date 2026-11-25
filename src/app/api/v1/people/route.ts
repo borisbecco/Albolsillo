@@ -29,7 +29,7 @@ export const POST = handle(async (req: Request) => {
   const b = await readBody(req, Create);
   const me = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
   if (b.email && b.email === me.email) throw new ApiError(400, "validation", "Ese es tu propio email.");
-  let person = await prisma.person.create({ data: { userId, name: b.name, email: b.email, status: "contact" } });
-  if (b.email) person = await invitePerson(userId, person.id, b.email);
-  return Response.json({ person: personDto(person) }, { status: 201 });
+  const person = await prisma.person.create({ data: { userId, name: b.name, email: b.email, status: "contact" } });
+  const inv = b.email ? await invitePerson(userId, person.id, b.email) : null;
+  return Response.json({ person: personDto(inv?.person ?? person), mail_sent: inv?.mailSent ?? null, link: inv?.link ?? null }, { status: 201 });
 });

@@ -8,7 +8,8 @@ const TEMPLATES = path.join(process.cwd(), "src", "emails");
 
 export const appUrl = () => (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
-async function send(to: string, subject: string, rawHtml: string, devNote: string) {
+/** Manda el mail. Devuelve true si salió de verdad (sin RESEND_API_KEY o con error, false). */
+async function send(to: string, subject: string, rawHtml: string, devNote: string): Promise<boolean> {
   // El logo de las plantillas apunta a un CDN de ejemplo: se sirve desde la app (PNG de 300 px, @2x).
   const html = rawHtml.replaceAll("https://cdn.albolsillo.app/brand/albolsillo-logo-horizontal-fondo-claro.png", `${appUrl()}/brand/logo-mail.png`);
   // Desarrollo: con MAIL_DUMP_DIR, cada mail se guarda también como HTML para revisarlo.
@@ -20,7 +21,7 @@ async function send(to: string, subject: string, rawHtml: string, devNote: strin
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     console.info(`[mail] (sin RESEND_API_KEY) Para: ${to} · ${subject}\n${devNote}`);
-    return;
+    return false;
   }
   const { error } = await new Resend(key).emails.send({
     from: process.env.MAIL_FROM ?? "Albolsillo <hola@albolsillo.app>",
@@ -30,6 +31,7 @@ async function send(to: string, subject: string, rawHtml: string, devNote: strin
     html,
   });
   if (error) console.error("[mail] error al enviar", error);
+  return !error;
 }
 
 function describeAgent(ua: string | null) {
@@ -92,7 +94,7 @@ export async function sendInvite(opts: {
     .replaceAll("Lucía Fernández", full)
     .replaceAll("Lucía", first);
 
-  await send(opts.to, `${opts.inviterName.split(" ")[0]} te invitó a dividir gastos en Albolsillo`, html, `Link: ${link}`);
+  return send(opts.to, `${opts.inviterName.split(" ")[0]} te invitó a dividir gastos en Albolsillo`, html, `Link: ${link}`);
 }
 
 const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -279,5 +281,5 @@ export async function sendInviteCode(opts: { to: string; inviterName: string; co
     .replaceAll("https://albolsillo.app/invitacion/ABC123", opts.link)
     .replaceAll("Lucía Fernández", full)
     .replaceAll("Lucía", first);
-  await send(opts.to, `${opts.inviterName.split(" ")[0]} te invitó a Albolsillo`, html, `Código: ${opts.code} · ${opts.link}`);
+  return send(opts.to, `${opts.inviterName.split(" ")[0]} te invitó a Albolsillo`, html, `Código: ${opts.code} · ${opts.link}`);
 }
