@@ -50,6 +50,16 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
    `curl -fsS -X POST "$APP_URL/api/v1/cron/inbox" -H "Authorization: Bearer $CRON_SECRET"`.
    Lee los mails no leídos, crea los gastos detectados y borra los mails.
 
+## Bases de datos y backups
+- **Dos bases separadas.** En `.env`: `DATABASE_URL` = la base de **desarrollo** (otro Postgres en Railway) y
+  `PROD_DATABASE_URL` = la de **producción** (solo para backups). La app en Railway usa la suya propia.
+  Así las pruebas y las migraciones nuevas nunca tocan los datos reales.
+- **Backup:** `npm run db:backup` guarda todas las tablas de producción en `backups/albolsillo-AAAAMMDD-HHMM.json.gz`
+  (no se sube a git: tiene datos personales). `-- --dev` hace backup de la de desarrollo.
+- **Restaurar:** `npm run db:restore -- backups/<archivo> --confirm=<host>` borra la base de `DATABASE_URL` y carga el
+  backup. No corre si `PROD_DATABASE_URL` no está definida, y para restaurar producción pide además `--prod`.
+- Para una base de desarrollo nueva: `npx prisma migrate deploy` y después restaurar un backup de producción.
+
 ## Desarrollo
 - `npm test` corre las pruebas de `tests/` (montos, plan de pagos, recurrentes, lectura de avisos y casilla de reenvío)
   con el corredor de Node, sin base ni servidor. Corrélas antes de subir cambios en `src/lib`.
