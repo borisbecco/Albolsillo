@@ -47,6 +47,11 @@ export async function readBody<T extends z.ZodType>(req: Request, schema: T): Pr
 }
 
 /** IP del cliente detrás del proxy de Railway. */
+/**
+ * IP del cliente para los límites de intentos. El primer valor de X-Forwarded-For lo puede inventar
+ * el cliente (y saltearse los límites): se usa X-Real-IP, que pone el proxy de Railway, o si no el
+ * último valor de X-Forwarded-For (el que agregó el último proxy).
+ */
 export function clientIp(req: Request) {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "local";
+  return req.headers.get("x-real-ip")?.trim() || req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "local";
 }

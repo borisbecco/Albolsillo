@@ -4,12 +4,15 @@ import { ApiError, handle } from "@/lib/http";
 import { requireUserId } from "@/lib/auth/session";
 import { BANK_BY_ID } from "@/lib/banks";
 import { parseStatement } from "@/lib/import/statement";
+import { rateLimit } from "@/lib/rate-limit";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
 // POST /imports (multipart: card_id, file): lee el resumen PDF y devuelve las filas para revisar.
 export const POST = handle(async (req: Request) => {
   const userId = await requireUserId(req);
+  // Leer PDFs e imágenes (OCR) consume mucho: pocos por minuto.
+  rateLimit(`import:${userId}`, 10);
   const form = await req.formData().catch(() => null);
   const cardId = form?.get("card_id");
   const file = form?.get("file");

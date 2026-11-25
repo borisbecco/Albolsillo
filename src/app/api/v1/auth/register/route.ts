@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { ApiError, handle, readBody } from "@/lib/http";
+import { ApiError, clientIp, handle, readBody } from "@/lib/http";
+import { rateLimit } from "@/lib/rate-limit";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession, toUserDto } from "@/lib/auth/session";
 import { findValidInvite, invitesRequired } from "@/lib/invites";
@@ -15,6 +16,9 @@ const Body = z.object({
 });
 
 export const POST = handle(async (req: Request) => {
+  // Registro: pocas cuentas por conexión (también frena probar códigos de invitación).
+  // (en desarrollo, con REGISTRATION_OPEN=1, sin límite para las pruebas)
+  if (process.env.REGISTRATION_OPEN !== "1") rateLimit(`register:${clientIp(req)}`, 5, 10 * 60_000);
   const body = await readBody(req, Body);
 
   const exists = await prisma.user.findUnique({ where: { email: body.email }, select: { id: true } });

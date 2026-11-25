@@ -6,6 +6,7 @@ import { requireUserId } from "@/lib/auth/session";
 import { todayAR } from "@/lib/notify";
 import { createDetected, detectedDto } from "@/lib/auto/detected";
 import { parseNotice, walletFromText } from "@/lib/auto/parse";
+import { rateLimit } from "@/lib/rate-limit";
 
 const MAX = 8 * 1024 * 1024;
 
@@ -34,6 +35,8 @@ async function imageText(data: Buffer) {
  */
 export const POST = handle(async (req: Request) => {
   const userId = await requireUserId(req);
+  // Leer PDFs e imágenes (OCR) consume mucho: pocos por minuto.
+  rateLimit(`share:${userId}`, 10);
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   if (!file || typeof file === "string") throw new ApiError(400, "validation", "Elegí el comprobante (imagen o PDF).");

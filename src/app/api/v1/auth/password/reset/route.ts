@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { ApiError, handle, readBody } from "@/lib/http";
+import { ApiError, clientIp, handle, readBody } from "@/lib/http";
+import { rateLimit } from "@/lib/rate-limit";
 import { hashPassword } from "@/lib/auth/password";
 import { revokeAllSessions, sha256 } from "@/lib/auth/session";
 import { MIN_PASSWORD, MSG } from "@/lib/auth/validate";
@@ -11,6 +12,7 @@ const Body = z.object({
 });
 
 export const POST = handle(async (req: Request) => {
+  rateLimit(`reset:${clientIp(req)}`, 10);
   const { token, password } = await readBody(req, Body);
 
   const reset = await prisma.passwordReset.findUnique({ where: { tokenHash: sha256(token) } });

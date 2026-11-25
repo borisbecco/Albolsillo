@@ -14,6 +14,8 @@ const Body = z.object({
 export const POST = handle(async (req: Request) => {
   const body = await readBody(req, Body);
   rateLimit(`login:${clientIp(req)}:${body.email}`);
+  // Y en total por conexión (probar muchas cuentas desde el mismo lugar).
+  rateLimit(`login-ip:${clientIp(req)}`, 30);
 
   const user = await prisma.user.findFirst({ where: { email: body.email, deletedAt: null } });
   const ok = await verifyPassword(user?.passwordHash ?? (await dummyHash()), body.password);

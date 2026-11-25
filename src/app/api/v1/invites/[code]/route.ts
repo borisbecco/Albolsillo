@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/db";
-import { ApiError, handle } from "@/lib/http";
+import { ApiError, handle, clientIp } from "@/lib/http";
 import { requireUserId } from "@/lib/auth/session";
 import { findValidInvite, inviteDto } from "@/lib/invites";
+import { rateLimit } from "@/lib/rate-limit";
 
 type Ctx = { params: Promise<{ code: string }> };
 
 /** GET /invites/:code (sin sesión): valida el código para el registro. */
-export const GET = handle(async (_req: Request, { params }: Ctx) => {
+export const GET = handle(async (req: Request, { params }: Ctx) => {
+  // Público (pantalla de registro): con límite para que no se puedan probar códigos al azar.
+  rateLimit(`invite-check:${clientIp(req)}`, 30);
   const { code } = await params;
   const inv = await findValidInvite(prisma, code);
   if (!inv) return Response.json({ valid: false, inviter_name: null });
