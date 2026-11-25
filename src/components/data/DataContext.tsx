@@ -13,6 +13,7 @@ import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
 import { currentMonth } from "@/lib/month";
 import { CATEGORY_BY_ID } from "@/lib/categories";
+import { demoData } from "@/lib/demo";
 
 // Datos de la app (bootstrap) y operaciones sobre movimientos.
 // Regla: nunca se pierde lo cargado. Un alta que no llega al servidor queda en el dispositivo
@@ -201,6 +202,8 @@ type Data = {
   voidTx: (txId: string) => Promise<boolean>;
   /** Carga el resumen nuevo; devuelve cuántas cuotas se sumaron como gasto. */
   loadStatement: (cardId: string, st: StatementDraft) => Promise<number | null>;
+  /** El recorrido guiado está mostrando el caso de ejemplo (usuario sin nada cargado). */
+  demo: boolean;
   failed: Tx | null;
   retryFailed: () => void;
   dismissFailed: () => void;
@@ -241,7 +244,7 @@ function delta(t: Pick<TxDto, "type" | "gross_amount" | "account_id">, dir: 1 | 
 }
 
 export function DataProvider({ initial, children }: { initial: Bootstrap; children: ReactNode }) {
-  const { user, flash, setUser } = useShell();
+  const { user, flash, setUser, tourStep } = useShell();
   const [cards, setCards] = useState(initial.cards);
   const [bills, setBills] = useState(initial.bills);
   const [billPayments, setBillPayments] = useState(initial.bill_payments);
@@ -1179,7 +1182,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
 
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
-  const value: Data = {
+  const value: Omit<Data, "demo"> = {
     transactions,
     accounts,
     cards,
@@ -1252,7 +1255,13 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     transfer,
   };
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  // Recorrido guiado de un usuario sin nada cargado: las pantallas muestran un caso de ejemplo
+  // (solo en memoria; al terminar el recorrido vuelven los datos reales).
+  const demo = tourStep !== null && !transactions.length && !accounts.length && !cards.length;
+  const demoSet = useMemo(() => (demo ? demoData(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date())) : null), [demo]);
+  const shown: Data = demoSet ? { ...value, ...demoSet, demo: true } : { ...value, demo: false };
+
+  return <Ctx.Provider value={shown}>{children}</Ctx.Provider>;
 }
 
 export function useData() {

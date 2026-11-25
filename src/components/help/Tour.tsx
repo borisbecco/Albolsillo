@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { TOUR } from "@/lib/help";
 import { VIEWS } from "@/lib/nav";
 import { useShell } from "@/components/shell/ShellContext";
+import { useData } from "@/components/data/DataContext";
 import h from "./help.module.css";
 import { Bolsi } from "@/components/bolsi/Bolsi";
 
@@ -23,6 +24,7 @@ function findTarget(target: string): HTMLElement | null {
 /** Recorrido guiado: 7 pasos que resaltan elementos de la app. Se marca como visto al terminar o saltar. */
 export function Tour() {
   const { tourStep, setTourStep, updatePrefs, flash } = useShell();
+  const { demo } = useData();
   const router = useRouter();
   const pathname = usePathname();
   const [rect, setRect] = useState<Rect | null>(null);
@@ -111,6 +113,7 @@ export function Tour() {
           <div className={h.tourCopy}>
             <span className={h.tourStep}>
               PASO {i + 1} DE {TOUR.length}
+              {demo && <span className={h.demoTag}>Datos de ejemplo</span>}
             </span>
             <strong>{step.title}</strong>
             <p>{step.text}</p>
