@@ -1255,9 +1255,15 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     transfer,
   };
 
-  // Recorrido guiado de un usuario sin nada cargado: las pantallas muestran un caso de ejemplo
-  // (solo en memoria; al terminar el recorrido vuelven los datos reales).
-  const demo = tourStep !== null && !transactions.length && !accounts.length && !cards.length;
+  // Recorrido guiado: si los datos reales no alcanzan para que existan las partes que señala
+  // (el resumen de Inicio aparece con 3 de los "Primeros pasos", Movimientos necesita gastos del mes
+  // y el plan una tarjeta), las pantallas muestran un caso de ejemplo. Solo en memoria; al terminar
+  // el recorrido vuelven los datos reales.
+  const tourMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()).slice(0, 7);
+  const txThisMonth = transactions.some((t) => t.date.startsWith(tourMonth));
+  const firstStepsDone = [txThisMonth, accounts.length > 0, cards.length > 0 || bills.length > 0, budgets.some((b) => b.month === tourMonth), goals.length > 0].filter(Boolean).length;
+  const realIsEnough = txThisMonth && cards.length > 0 && firstStepsDone >= 3;
+  const demo = tourStep !== null && !realIsEnough;
   const demoSet = useMemo(() => (demo ? demoData(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date())) : null), [demo]);
   const shown: Data = demoSet ? { ...value, ...demoSet, demo: true } : { ...value, demo: false };
 
