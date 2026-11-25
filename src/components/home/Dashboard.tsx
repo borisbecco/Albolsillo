@@ -12,6 +12,7 @@ import { FxCard } from "./FxCard";
 import { DetectedBanner } from "@/components/auto/DetectedBanner";
 import { Hero } from "./Hero";
 import { SalaryBanner } from "./SalaryBanner";
+import { RecurringBanner } from "./RecurringBanner";
 import { Numbers } from "./Numbers";
 import { useSummary } from "./useSummary";
 import h from "./dashboard.module.css";
@@ -22,6 +23,7 @@ export function Home() {
   return done < 3 ? (
     <div className={h.wrap}>
       <SalaryBanner />
+      <RecurringBanner />
       <FirstSteps />
     </div>
   ) : (
@@ -37,6 +39,7 @@ function Dashboard() {
     <div className={h.wrap}>
       <DetectedBanner />
       <SalaryBanner />
+      <RecurringBanner />
       <Hero />
       <div className={h.row2} style={{ alignItems: "center" }}>
         <CardsCarousel />

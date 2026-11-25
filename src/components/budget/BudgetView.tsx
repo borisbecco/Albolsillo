@@ -24,7 +24,8 @@ export function BudgetView() {
   });
   const budgeted = rows.reduce((s, r) => s + r.limit, 0);
   const spent = rows.reduce((s, r) => s + r.spent, 0);
-  const left = budgeted - spent;
+  // Lo que queda solo cuenta las categorías con límite (las que no tienen no se pueden "pasar").
+  const left = rows.filter((r) => r.limit > 0).reduce((s, r) => s + r.limit - r.spent, 0);
 
   return (
     <div className={b.wrap}>
@@ -50,14 +51,16 @@ export function BudgetView() {
 
       <div className={b.grid}>
         {rows.map((r) => {
-          const p = r.limit ? r.spent / r.limit : r.spent > 0 ? 1 : 0;
-          const color = p >= 1 ? "var(--red)" : p >= 0.8 ? "var(--amb)" : "var(--acc)";
+          // Sin límite: se muestra lo gastado, sin porcentaje ni alarma.
+          const noLimit = !r.limit;
+          const p = noLimit ? 0 : r.spent / r.limit;
+          const color = noLimit ? "var(--mut)" : p >= 1 ? "var(--red)" : p >= 0.8 ? "var(--amb)" : "var(--acc)";
           const rest = r.limit - r.spent;
           return (
             <section key={r.id} className={b.card}>
               <div className={b.cardTop}>
                 <span className={b.kind}>{r.kind === "fix" ? "Fijo" : "Variable"}</span>
-                <span style={{ color, fontWeight: 600, fontSize: 12 }}>{Math.round(p * 100)}%</span>
+                <span style={{ color, fontWeight: 600, fontSize: 12 }}>{noLimit ? "Sin límite" : `${Math.round(p * 100)}%`}</span>
               </div>
               <div className={b.ring}>
                 <svg viewBox="0 0 120 120" aria-hidden>
@@ -77,7 +80,9 @@ export function BudgetView() {
               <div className={b.info}>
                 <strong>{r.name}</strong>
                 <span className={b.spent}>{formatMoney(r.spent, "ARS")}</span>
-                <span style={{ color: rest < 0 ? "var(--red)" : "var(--mut)" }}>{rest < 0 ? `Excedido ${formatMoney(-rest, "ARS")}` : `Quedan ${formatMoney(rest, "ARS")}`}</span>
+                <span style={{ color: !noLimit && rest < 0 ? "var(--red)" : "var(--mut)" }}>
+                  {noLimit ? "Poné un límite si querés controlarla" : rest < 0 ? `Excedido ${formatMoney(-rest, "ARS")}` : `Quedan ${formatMoney(rest, "ARS")}`}
+                </span>
               </div>
               <LimitInput
                 key={`${month}-${r.limit}`}
@@ -114,7 +119,7 @@ function LimitInput({ value, custom, disabled, label, onSave }: { value: number;
         onBlur={commit}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         inputMode="numeric"
-        placeholder="0"
+        placeholder="Sin límite"
         disabled={disabled}
         aria-label={label}
         data-custom={custom}

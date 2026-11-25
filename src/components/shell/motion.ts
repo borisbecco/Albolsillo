@@ -40,7 +40,8 @@ export function useIndicator<T extends HTMLElement>(activeKey: string, scope = "
     // Otro contenedor (p. ej. las pestañas de otra sección): se ubica sin deslizarse.
     if (lastScope.current !== scope) placed.current = false;
     lastScope.current = scope;
-    const measure = () => {
+    // slide: se desliza (cambio de pestaña); si no, se acomoda al instante (cambió un tamaño).
+    const measure = (slide: boolean) => {
       const el = c.querySelector<HTMLElement>(`[data-ind="${CSS.escape(activeKey)}"]`);
       if (!el) return setBox(null);
       // Posición de diseño (offset*): no la afecta el achique del botón presionado ni el scroll.
@@ -50,18 +51,21 @@ export function useIndicator<T extends HTMLElement>(activeKey: string, scope = "
         x += n.offsetLeft;
         y += n.offsetTop;
       }
-      setBox({ x, y, w: el.offsetWidth, h: el.offsetHeight, animate: placed.current });
-      placed.current = true;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      // Misma posición: no se toca (así no se corta un deslizamiento en curso).
+      setBox((b) => (b && b.x === x && b.y === y && b.w === w && b.h === h ? b : { x, y, w, h, animate: slide }));
     };
-    measure();
+    measure(placed.current);
+    placed.current = true;
     // Se vuelve a medir si cambia el tamaño del contenedor o de la pestaña activa
     // (p. ej. cuando carga la fuente de los íconos, que antes ocupan como texto).
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(() => measure(false));
     ro.observe(c);
     const target = c.querySelector<HTMLElement>(`[data-ind="${CSS.escape(activeKey)}"]`);
     if (target) ro.observe(target);
     let alive = true;
-    void document.fonts?.ready.then(() => alive && measure());
+    void document.fonts?.ready.then(() => alive && measure(false));
     return () => {
       alive = false;
       ro.disconnect();
