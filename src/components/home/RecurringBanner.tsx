@@ -28,8 +28,8 @@ export function RecurringBanner() {
   const [skipped, setSkipped] = useState<string[]>(() => readSkipped(month));
   const [busy, setBusy] = useState<string | null>(null);
 
-  // El sueldo tiene su propio aviso si está configurado.
-  const due = pendingRecurring(transactions, today, (t) => !!Number(user.salary) && t.category_id === "sueldo").filter((d) => !skipped.includes(d.key));
+  // El sueldo y los otros ingresos tienen su propio aviso si están configurados.
+  const due = pendingRecurring(transactions, today, (t) => (!!Number(user.salary) && t.category_id === "sueldo") || (!!Number(user.usd_income) && !!user.other_income_day && t.category_id === "otros_in")).filter((d) => !skipped.includes(d.key));
   if (!due.length) return null;
 
   const skip = (key: string) => {

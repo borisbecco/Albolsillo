@@ -41,6 +41,10 @@ const Body = z.union([
     /** Cuenta donde te depositan el sueldo, o un banco/billetera nuevo para crearla */
     salary_account_id: z.uuid().nullable().optional(),
     salary_bank: z.string().trim().min(1).max(60).nullable().optional(),
+    /** Lo mismo para los otros ingresos, más el día en que entran */
+    other_income_account_id: z.uuid().nullable().optional(),
+    other_income_bank: z.string().trim().min(1).max(60).nullable().optional(),
+    other_income_day: day.nullable().optional(),
     cards: z.array(CardIn).max(20),
     bills: z.array(BillIn).max(50),
     strategy: z.enum(["intereses", "avalancha", "bola"]),
@@ -62,22 +66,28 @@ export const POST = handle(async (req: Request) => {
 
   const result = await prisma.$transaction(async (db) => {
     const now = new Date();
-    // Cuenta del sueldo: una existente (de la misma moneda) o una nueva con saldo 0.
-    let salaryAccountId: string | null | undefined = b.salary_account_id;
-    let newAccount = null;
-    if (b.salary_bank) {
-      newAccount = await db.account.create({
-        data: { userId, name: b.salary_bank, kind: findEntity(b.salary_bank)?.kind === "billetera" ? "billetera" : "banco", currency: b.salary_currency, balance: "0" },
-      });
-      salaryAccountId = newAccount.id;
-    } else if (salaryAccountId) {
-      const acc = await db.account.findFirst({ where: { id: salaryAccountId, userId, deletedAt: null } });
-      if (!acc) throw new ApiError(422, "validation", "Elegí una de tus cuentas para el sueldo.");
-      if (acc.currency !== b.salary_currency) throw new ApiError(422, "validation", `El sueldo es en ${b.salary_currency === "USD" ? "dólares" : "pesos"}: elegí una cuenta en esa moneda.`);
-    }
+    // Cuenta de cada ingreso: una existente (de la misma moneda) o una nueva con saldo 0.
+    // Si sueldo y otros ingresos van al mismo banco nuevo y en la misma moneda, se crea una sola.
+    const created = new Map<string, Awaited<ReturnType<typeof db.account.create>>>();
+    const resolve = async (accountId: string | null | undefined, bank: string | null | undefined, currency: "ARS" | "USD", what: string) => {
+      if (bank) {
+        const k = `${bank.toLowerCase()}|${currency}`;
+        if (!created.has(k)) {
+          created.set(k, await db.account.create({ data: { userId, name: bank, kind: findEntity(bank)?.kind === "billetera" ? "billetera" : "banco", currency, balance: "0" } }));
+        }
+        return created.get(k)!.id;
+      }
+      if (!accountId) return accountId;
+      const acc = await db.account.findFirst({ where: { id: accountId, userId, deletedAt: null } });
+      if (!acc) throw new ApiError(422, "validation", `Elegí una de tus cuentas para ${what}.`);
+      if (acc.currency !== currency) throw new ApiError(422, "validation", `${what[0].toUpperCase()}${what.slice(1)} es en ${currency === "USD" ? "dólares" : "pesos"}: elegí una cuenta en esa moneda.`);
+      return accountId;
+    };
+    const salaryAccountId = await resolve(b.salary_account_id, b.salary_bank, b.salary_currency, "el sueldo");
+    const otherIncomeAccountId = await resolve(b.other_income_account_id, b.other_income_bank, b.other_income_currency, "los otros ingresos");
     const user = await db.user.update({
       where: { id: userId },
-      data: { salaryAccountId, salary: b.salary, payday: b.payday, usdIncome: b.usd_income, salaryCurrency: b.salary_currency, otherIncomeCurrency: b.other_income_currency, payStrategy: b.strategy, onboardedAt: now },
+      data: { salaryAccountId, otherIncomeAccountId, otherIncomeDay: b.other_income_day, salary: b.salary, payday: b.payday, usdIncome: b.usd_income, salaryCurrency: b.salary_currency, otherIncomeCurrency: b.other_income_currency, payStrategy: b.strategy, onboardedAt: now },
     });
 
     // Tarjetas
@@ -122,8 +132,8 @@ export const POST = handle(async (req: Request) => {
       db.card.findMany({ where: { userId, deletedAt: null }, orderBy: { createdAt: "asc" } }),
       db.bill.findMany({ where: { userId, deletedAt: null }, orderBy: [{ dueDay: "asc" }, { createdAt: "asc" }] }),
     ]);
-    return { user, cards, bills, newAccount };
+    return { user, cards, bills, newAccounts: [...created.values()] };
   }, { timeout: 20_000 }); // varias consultas contra una base remota
 
-  return Response.json({ user: toUserDto(result.user), cards: result.cards.map(cardDto), bills: result.bills.map(billDto), account: result.newAccount ? accountDto(result.newAccount) : null });
+  return Response.json({ user: toUserDto(result.user), cards: result.cards.map(cardDto), bills: result.bills.map(billDto), accounts: result.newAccounts.map(accountDto) });
 });

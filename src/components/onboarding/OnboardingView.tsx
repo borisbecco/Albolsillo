@@ -9,9 +9,7 @@ import { maskAmountEvent, parseAmount, toDecimal, toInput, type Currency } from 
 import { currentMonth } from "@/lib/month";
 import type { UserDto } from "@/lib/auth/session";
 import { CardFace } from "@/components/cards/CardFace";
-import { EntityCombo } from "@/components/debts/EntityCombo";
-import { Logo } from "@/components/shell/Logo";
-import { entityDomain, norm, type EntityKind } from "@/lib/entities";
+import { DepositPicker, depositPayload, type Deposit } from "./DepositPicker";
 import { useData } from "@/components/data/DataContext";
 import { useShell } from "@/components/shell/ShellContext";
 import o from "./onboarding.module.css";
@@ -37,7 +35,6 @@ const digits = (v: string, max: number) => v.replace(/\D/g, "").slice(0, max);
 const dayOk = (v: string) => Number(v) >= 1 && Number(v) <= 31;
 const fromDec = (v: string | null) => (v && Number(v) ? toInput(v) : "");
 const newKey = () => crypto.randomUUID();
-const SALARY_KINDS: EntityKind[] = ["banco", "billetera"];
 
 /** Categoría de un gasto fijo por su nombre (solo de gastos fijos; si no, Servicios). */
 function billCategory(name: string) {
@@ -59,15 +56,11 @@ export function OnboardingView() {
   const [usd, setUsd] = useState(fromDec(user.usd_income));
   const [salaryCur, setSalaryCur] = useState<Currency>(user.salary_currency ?? "ARS");
   const [otherCur, setOtherCur] = useState<Currency>(user.other_income_currency ?? "USD");
-  // Dónde te depositan el sueldo: una cuenta tuya o un banco nuevo (se crea al guardar).
-  const [salaryAcc, setSalaryAcc] = useState<string | null>(() => (accounts.some((a) => a.id === user.salary_account_id) ? user.salary_account_id : null));
-  const [salaryBank, setSalaryBank] = useState("");
-  const salaryAccounts = accounts.filter((a) => a.currency === salaryCur && a.kind !== "efectivo");
-  const pickSalaryBank = (v: string) => {
-    const same = salaryAccounts.find((a) => norm(a.name) === norm(v));
-    setSalaryAcc(same ? same.id : null);
-    setSalaryBank(same ? "" : v);
-  };
+  // Dónde entra cada ingreso: una cuenta tuya o un banco nuevo (se crea al guardar).
+  const startAcc = (id: string | null | undefined): Deposit => ({ acc: id && accounts.some((a) => a.id === id) ? id : null, bank: "" });
+  const [salaryDep, setSalaryDep] = useState<Deposit>(() => startAcc(user.salary_account_id));
+  const [otherDep, setOtherDep] = useState<Deposit>(() => startAcc(user.other_income_account_id));
+  const [otherDay, setOtherDay] = useState(user.other_income_day ? String(user.other_income_day) : "");
   const [cards, setCards] = useState<CardRow[]>(() =>
     savedCards.map((c) => ({
       key: c.id,
@@ -101,6 +94,7 @@ export function OnboardingView() {
   /** Valida el paso actual; devuelve el mensaje de error o "". */
   function validate(s: number): string {
     if (s === 0 && payday && !dayOk(payday)) return "El día de cobro va de 1 a 31";
+    if (s === 0 && otherDay && !dayOk(otherDay)) return "El día de los otros ingresos va de 1 a 31";
     if (s === 1) {
       for (const c of cards) {
         if (!c.name.trim()) return "Poné un nombre a cada tarjeta (ej. Visa Galicia)";
@@ -146,8 +140,11 @@ export function OnboardingView() {
       usd_income: parseAmount(usd) ? toDecimal(parseAmount(usd)) : null,
       salary_currency: salaryCur,
       other_income_currency: otherCur,
-      salary_account_id: salaryAcc && salaryAccounts.some((a) => a.id === salaryAcc) ? salaryAcc : null,
-      salary_bank: salaryAcc ? null : salaryBank.trim() || null,
+      ...(({ account_id, bank }) => ({ salary_account_id: account_id, salary_bank: bank }))(depositPayload(salaryDep, accounts, salaryCur)),
+      ...(parseAmount(usd)
+        ? (({ account_id, bank }) => ({ other_income_account_id: account_id, other_income_bank: bank }))(depositPayload(otherDep, accounts, otherCur))
+        : { other_income_account_id: null, other_income_bank: null }),
+      other_income_day: parseAmount(usd) && otherDay ? Number(otherDay) : null,
       strategy,
       cards: cards.map((c) => ({
         id: c.id,
@@ -216,13 +213,7 @@ export function OnboardingView() {
               <label className={o.field}>
                 <span className={o.fieldHead}>
                   Sueldo mensual neto
-                  <CurSeg
-                    value={salaryCur}
-                    onChange={(c) => {
-                      setSalaryCur(c);
-                      if (salaryAcc && accounts.find((a) => a.id === salaryAcc)?.currency !== c) setSalaryAcc(null);
-                    }}
-                  />
+                  <CurSeg value={salaryCur} onChange={setSalaryCur} />
                 </span>
                 <input className={o.big} value={salary} onChange={(e) => edit(setSalary)(maskAmountEvent(e))} inputMode="decimal" placeholder="2.400.000" autoFocus />
               </label>
@@ -230,6 +221,14 @@ export function OnboardingView() {
                 <span className={o.fieldHead}>Día de cobro</span>
                 <input className={o.big} value={payday} onChange={(e) => edit(setPayday)(digits(e.target.value, 2))} inputMode="numeric" placeholder="1" />
               </label>
+              <DepositPicker
+                label="¿Dónde te depositan el sueldo?"
+                accounts={accounts}
+                currency={salaryCur}
+                value={salaryDep}
+                onChange={setSalaryDep}
+                hint="El día de cobro te proponemos sumarlo a esa cuenta con un toque."
+              />
               <label className={o.field}>
                 <span className={o.fieldHead}>
                   Otros ingresos mensuales
@@ -237,34 +236,27 @@ export function OnboardingView() {
                 </span>
                 <input className={o.big} value={usd} onChange={(e) => edit(setUsd)(maskAmountEvent(e))} inputMode="decimal" placeholder="0" />
               </label>
-              <div className={`${o.field} ${o.depositRow}`}>
-                <span className={o.fieldHead}>¿Dónde te depositan el sueldo?</span>
-                {salaryAccounts.length > 0 && (
-                  <div className={o.depositChips} role="group" aria-label="Cuenta del sueldo">
-                    {salaryAccounts.map((a) => (
-                      <button
-                        key={a.id}
-                        type="button"
-                        className={o.depositChip}
-                        aria-pressed={salaryAcc === a.id}
-                        onClick={() => {
-                          setSalaryAcc(salaryAcc === a.id ? null : a.id);
-                          setSalaryBank("");
-                        }}
-                      >
-                        <Logo domain={entityDomain(a.name)} icon="account_balance" size={24} />
-                        {a.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <EntityCombo key={salaryAcc ?? "nuevo"} value={salaryAcc ? "" : salaryBank} onChange={pickSalaryBank} kinds={SALARY_KINDS} />
-                <span className={o.depositHint}>
-                  {salaryBank && !salaryAcc
-                    ? `Creamos la cuenta ${salaryBank} con saldo $ 0. Después cargá su saldo en Cuentas.`
-                    : "El día de cobro te proponemos sumarlo a esa cuenta con un toque."}
-                </span>
-              </div>
+              <label className={o.field}>
+                <span className={o.fieldHead}>Día en que entran</span>
+                <input
+                  className={o.big}
+                  value={otherDay}
+                  onChange={(e) => edit(setOtherDay)(digits(e.target.value, 2))}
+                  inputMode="numeric"
+                  placeholder={payday || "1"}
+                  disabled={!parseAmount(usd)}
+                />
+              </label>
+              {parseAmount(usd) > 0 && (
+                <DepositPicker
+                  label="¿Dónde los recibís?"
+                  accounts={accounts}
+                  currency={otherCur}
+                  value={otherDep}
+                  onChange={setOtherDep}
+                  hint="Ese día te proponemos sumarlos a esa cuenta con un toque."
+                />
+              )}
             </div>
           )}
 

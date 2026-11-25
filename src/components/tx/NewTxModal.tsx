@@ -50,6 +50,7 @@ function Form() {
 
   // El sueldo entra, de entrada, en la cuenta donde te lo depositan.
   const salaryAcc = accounts.find((a) => a.id === user.salary_account_id && a.currency === currency);
+  const otherAcc = accounts.find((a) => a.id === user.other_income_account_id && a.currency === currency);
   const changeType = (t: "in" | "out") => {
     setType(t);
     setCat(DEFAULT_CATEGORY[t]);
@@ -200,6 +201,7 @@ function Form() {
                 setCat(c.id);
                 setCatTouched(true);
                 if (c.id === "sueldo" && !source && salaryAcc) setSource(salaryAcc.id);
+                if (c.id === "otros_in" && !source && otherAcc) setSource(otherAcc.id);
               }}
             >
               <span className={`${s.catIcon} material-symbols-rounded`} style={{ background: catTint(c.id), color: catColor(c.id) }}>
