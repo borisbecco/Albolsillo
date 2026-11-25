@@ -513,6 +513,29 @@
   margin: -4px 0;
 }
 
+/* En compu, más grande: que Bolsi y su animación se vean bien */
+@media (min-width: 760px) {
+  .toast {
+    bottom: 36px;
+    gap: 14px;
+    padding: 12px 26px 12px 14px;
+    border-radius: 24px;
+    font-size: 16px;
+    min-height: 84px;
+  }
+  .toast [data-bolsi] {
+    width: 64px;
+    height: 70px;
+    margin: -8px 0;
+  }
+  .toast .toastAction {
+    margin-left: 10px;
+    padding: 9px 16px;
+    border-radius: 14px;
+    font-size: 15px;
+  }
+}
+
 /* ─── Responsive ─── */
 
 @media (max-width: 979px) {
