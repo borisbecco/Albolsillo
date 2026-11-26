@@ -3,12 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiClientError, api } from "@/lib/api-client";
 import type { UserDto } from "@/lib/auth/session";
-import type { AccountDto, BillDto, CardDto, InstallmentDto, PersonDto, TxDto } from "@/lib/dto";
-import type { ParsedRow } from "@/lib/import/statement";
-import type { GoalDto, InvestmentDto } from "@/lib/savings";
-import type { SharedDto } from "@/lib/shared";
+import type { AccountDto, BillDto, CardDto, TxDto } from "@/lib/dto";
 import type { LoanDto } from "@/lib/loans";
-import type { DetectedDto } from "@/lib/auto/detected";
 import type { Currency } from "@/lib/money";
 import { useShell } from "@/components/shell/ShellContext";
 import { currentMonth, todayAR } from "@/lib/month";
@@ -16,253 +12,31 @@ import { CATEGORY_BY_ID } from "@/lib/categories";
 import { demoData } from "@/lib/demo";
 import { learnableKey, merchantKey } from "@/lib/merchant-key";
 import { guessCategory } from "@/lib/merchants";
+import { delta, loadPending, savePending, sortTx, type Core } from "./helpers";
+import type { Bootstrap, BudgetRow, Data, FxResponse, OnboardingDraft, Tx, TxDraft } from "./types";
+import { useAccountActions } from "./accounts";
+import { useAuto } from "./auto";
+import { useDebts } from "./debts";
+import { useSavings } from "./savings";
+import { useShared } from "./shared";
+
+// Los tipos se siguen importando desde acá.
+export type * from "./types";
 
 // Datos de la app (bootstrap) y operaciones sobre movimientos.
 // Regla: nunca se pierde lo cargado. Un alta que no llega al servidor queda en el dispositivo
 // (localStorage) marcada como "failed" y se puede reintentar. La sincronización completa
 // sin conexión (POST /sync + IndexedDB) llega más adelante.
+//
+// Este archivo es el núcleo (movimientos y su sincronización, cotización, categorías aprendidas,
+// recarga y recorrido). Cada tema tiene su parte: debts.ts, savings.ts, shared.ts, auto.ts y accounts.ts.
 
-export type Bootstrap = {
-  user: UserDto;
-  accounts: AccountDto[];
-  cards: CardDto[];
-  people: PersonDto[];
-  transactions: TxDto[];
-  bills: BillDto[];
-  bill_payments: BillPayment[];
-  budgets: BudgetRow[];
-  goals: GoalDto[];
-  investments: InvestmentDto[];
-  shared: SharedDto[];
-  installments: InstallmentDto[];
-  loans: LoanDto[];
-  detected: DetectedDto[];
-  merchant_rules?: { key: string; category_id: string }[];
-};
-
-export type LoanDraft = { lender: string | null; name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string; paid_this_month?: boolean };
-
-export type ImportPreview = {
-  import_id: string;
-  bank: string | null;
-  period: string | null;
-  balance_ars: string | null;
-  min_payment: string | null;
-  due_date: string | null;
-  /** learned: la categoría viene de una que elegiste antes para ese comercio. */
-  rows: (ParsedRow & { duplicate: boolean; learned?: boolean })[];
-};
-
-export type SharedDraft = {
-  description: string;
-  date: string;
-  category_id: string;
-  total: string;
-  currency: Currency;
-  paid_by: string;
-  participants: string[];
-  account_id?: string | null;
-  card_id?: string | null;
-};
-
-export type IpcRow = { month: string; value: number };
-export type GoalDraft = { name: string; icon: string; target: string; currency: Currency; due_month: string | null };
-export type InvestmentDraft = {
-  kind: InvestmentDto["kind"];
-  name: string;
-  amount: string;
-  currency: Currency;
-  tna: string | null;
-  start_date: string;
-  days: number | null;
-  account_id: string;
-};
-
-export type BudgetRow = { month: string; category_id: string; amount: string };
-
-export type BillPayment = { bill_id: string; month: string; transaction_id: string | null };
-export type CardDraft = { name: string; balance: string; balance_usd?: string; min_payment: string; due_day: number; close_day: number; tna: string; last4: string | null };
-export type BillDraft = {
-  name: string;
-  amount: string;
-  currency: Currency;
-  due_day: number;
-  category_id: string;
-  auto_debit: boolean;
-  account_id: string | null;
-  card_id: string | null;
-};
-
-export type OnboardingDraft = {
-  salary: string | null;
-  payday: number | null;
-  usd_income: string | null;
-  salary_currency?: Currency;
-  other_income_currency?: Currency;
-  salary_account_id?: string | null;
-  salary_bank?: string | null;
-  other_income_account_id?: string | null;
-  other_income_bank?: string | null;
-  other_income_day?: number | null;
-  strategy: UserDto["pay_strategy"];
-  cards: { id?: string; name: string; balance: string; min_payment: string; due_day: number; tna: string; last4: string | null }[];
-  bills: { id?: string; name: string; amount: string; currency: Currency; due_day: number; category_id: string }[];
-};
-
-export type TxStatus = "synced" | "pending" | "failed";
-export type Tx = TxDto & { status: TxStatus };
-
-export type TxDraft = {
-  type: "in" | "out";
-  date: string;
-  description: string;
-  category_id: string;
-  amount: string; // decimal "1234.50"
-  currency: Currency;
-  account_id: string | null;
-  card_id: string | null;
-  recurring: boolean;
-  /** Compra con tarjeta en cuotas (1 = un pago). */
-  installments?: number;
-};
-
-export type CardPayDraft = { amount: string; account_id: string | null; currency: Currency };
-export type StatementDraft = { balance: string; balance_usd: string; minimum: string; close_day: number; due_day: number };
-
-export type FxQuote = { buy: string; sell: string; updated_at: string };
-export type FxResponse = Partial<Record<"oficial" | "blue" | "bolsa" | "tarjeta", FxQuote>> & { stale: boolean };
-
-type Data = {
-  transactions: Tx[];
-  accounts: AccountDto[];
-  cards: CardDto[];
-  bills: BillDto[];
-  people: PersonDto[];
-  saveOnboarding: (d: OnboardingDraft | { skipped: true }) => Promise<boolean>;
-  billPayments: BillPayment[];
-  isBillPaid: (billId: string, month: string) => boolean;
-  saveCard: (id: string | null, c: CardDraft) => Promise<boolean>;
-  deleteCard: (id: string) => Promise<boolean>;
-  saveBill: (id: string | null, b: BillDraft) => Promise<boolean>;
-  deleteBill: (id: string) => Promise<boolean>;
-  payBill: (billId: string, month: string) => Promise<boolean>;
-  unpayBill: (billId: string, month: string) => Promise<boolean>;
-  budgets: BudgetRow[];
-  /** Límite de la categoría en el mes: el guardado o el predeterminado. */
-  budgetFor: (month: string, categoryId: string) => { amount: number; custom: boolean };
-  saveBudget: (month: string, categoryId: string, amount: string | null) => Promise<boolean>;
-  goals: GoalDto[];
-  saveGoal: (id: string | null, g: GoalDraft) => Promise<boolean>;
-  deleteGoal: (id: string) => Promise<boolean>;
-  contribute: (goalId: string, amount: string) => Promise<GoalDto | null>;
-  investments: InvestmentDto[];
-  createInvestment: (i: InvestmentDraft) => Promise<boolean>;
-  closeInvestment: (id: string, amount: string) => Promise<AccountDto | null | false>;
-  /** Inflación mensual (%) por mes, de la API de IPC. */
-  ipc: IpcRow[];
-  shared: SharedDto[];
-  /** mailSent/link: si se invitó (con email), si salió el mail y el link para pasarlo a mano. */
-  addPerson: (name: string, email: string | null) => Promise<{ person: PersonDto; mailSent: boolean | null; link: string | null } | null>;
-  /** null si falló; si no, si salió el mail y el link para pasarlo a mano. */
-  invitePerson: (id: string, email?: string) => Promise<{ mailSent: boolean; link: string } | null>;
-  deletePerson: (id: string) => Promise<boolean>;
-  addShared: (d: SharedDraft) => Promise<boolean>;
-  deleteShared: (id: string) => Promise<boolean>;
-  settle: (personId: string, amount: string) => Promise<boolean>;
-  /** Altas que todavía no llegaron al servidor (pendientes o con error). */
-  pendingCount: number;
-  /** Reintenta todas las altas pendientes (al volver la conexión). */
-  retryPending: () => Promise<number>;
-  installments: InstallmentDto[];
-  loans: LoanDto[];
-  saveLoan: (id: string | null, l: LoanDraft) => Promise<boolean>;
-  deleteLoan: (id: string) => Promise<boolean>;
-  payLoan: (id: string, month: string, opts?: { amount?: string; account_id?: string | null }) => Promise<boolean>;
-  unpayLoan: (id: string) => Promise<boolean>;
-  importStatement: (cardId: string, file: File) => Promise<ImportPreview | null>;
-  confirmImport: (importId: string, rowIds: string[], categories: Record<string, string>) => Promise<number | null>;
-  startMonth: (d: { month: string; budget_mode: "keep" | "infl" | "spent"; budgets: { category_id: string; amount: number }[]; drop_bills: string[] }) => Promise<boolean>;
-  /** Cotizaciones del día (null mientras carga). */
-  fx: FxResponse | null;
-  /** Pesos por dólar según la cotización elegida (null mientras carga). */
-  rate: number | null;
-  /** Convierte un monto a la moneda en que el usuario eligió ver los montos. */
-  toDisplay: (amount: number, currency: Currency) => number;
-  createTx: (d: TxDraft) => Promise<void>;
-  updateTx: (id: string, d: Partial<TxDraft>) => Promise<boolean>;
-  deleteTx: (id: string) => Promise<boolean>;
-  /** Borra uno o varios movimientos y ofrece Deshacer durante unos segundos. */
-  deleteTxs: (ids: string[]) => Promise<boolean>;
-  /** Vuelve a pedir todos los datos al servidor (después de operaciones con varios efectos). */
-  reload: () => Promise<void>;
-  /** Gastos detectados pendientes de confirmar. */
-  detected: DetectedDto[];
-  confirmDetected: (ids: string[], learn: { id: string; category_id: string }[], edits: Record<string, { category_id?: string; account_id?: string | null }>) => Promise<{ count: number; learned: number } | null>;
-  discardDetected: (id: string) => Promise<boolean>;
-  /** Sube un comprobante (imagen o PDF) y lo agrega a la bandeja. */
-  shareReceipt: (file: Blob, name?: string) => Promise<DetectedDto | null>;
-  /** Registra el pago del resumen; devuelve el id del movimiento (para deshacer). */
-  payCard: (cardId: string, p: CardPayDraft) => Promise<string | null>;
-  voidTx: (txId: string) => Promise<boolean>;
-  /** Carga el resumen nuevo; devuelve cuántas cuotas se sumaron como gasto. */
-  loadStatement: (cardId: string, st: StatementDraft) => Promise<number | null>;
-  /** El recorrido guiado está mostrando el caso de ejemplo (usuario sin nada cargado). */
-  demo: boolean;
-  /** Categoría sugerida para un comercio: la que elegiste antes o, si no, la de la lista. */
-  suggestCategory: (description: string) => string | null;
-  failed: Tx | null;
-  retryFailed: () => void;
-  dismissFailed: () => void;
-  createAccount: (a: AccountDraft) => Promise<AccountDto | null>;
-  updateAccount: (id: string, a: Partial<Omit<AccountDraft, "currency">>) => Promise<boolean>;
-  deleteAccount: (id: string) => Promise<boolean>;
-  transfer: (t: TransferDraft) => Promise<boolean>;
-};
-
-export type AccountDraft = { name: string; kind: AccountDto["kind"]; currency: Currency; balance: string };
-export type TransferDraft = { from_account_id: string; to_account_id: string; amount: string; to_amount?: string };
 
 const Ctx = createContext<Data | null>(null);
 
-const pendingKey = (userId: string) => `ab-pending-${userId}`;
-
-function loadPending(userId: string): Tx[] {
-  try {
-    return JSON.parse(localStorage.getItem(pendingKey(userId)) ?? "[]") as Tx[];
-  } catch {
-    return [];
-  }
-}
-
-function savePending(userId: string, list: Tx[]) {
-  try {
-    const keep = list.filter((t) => t.status !== "synced");
-    if (keep.length) localStorage.setItem(pendingKey(userId), JSON.stringify(keep));
-    else localStorage.removeItem(pendingKey(userId));
-  } catch {}
-}
-
-const sortTx = (list: Tx[]) =>
-  [...list].sort((a, b) => (a.date === b.date ? b.updated_at.localeCompare(a.updated_at) : b.date.localeCompare(a.date)));
-
-function delta(t: Pick<TxDto, "type" | "gross_amount" | "account_id">, dir: 1 | -1) {
-  return t.account_id ? { id: t.account_id, v: dir * (t.type === "in" ? 1 : -1) * Number(t.gross_amount) } : null;
-}
 
 export function DataProvider({ initial, children }: { initial: Bootstrap; children: ReactNode }) {
   const { user, flash, setUser, tourStep } = useShell();
-  const [cards, setCards] = useState(initial.cards);
-  const [bills, setBills] = useState(initial.bills);
-  const [billPayments, setBillPayments] = useState(initial.bill_payments);
-  const [budgets, setBudgets] = useState(initial.budgets);
-  const [goals, setGoals] = useState(initial.goals);
-  const [investments, setInvestments] = useState(initial.investments);
-  const [ipc, setIpc] = useState<IpcRow[]>([]);
-  const [people, setPeople] = useState(initial.people);
-  const [shared, setShared] = useState(initial.shared);
-  const [installments, setInstallments] = useState(initial.installments);
-  const [loans, setLoans] = useState(initial.loans);
-  const [detected, setDetected] = useState<DetectedDto[]>(initial.detected ?? []);
   // Categorías aprendidas (comercio normalizado → categoría). Se actualizan al elegir una a mano.
   const [rules, setRules] = useState<Record<string, string>>(() => Object.fromEntries((initial.merchant_rules ?? []).map((r) => [r.key, r.category_id])));
   const learn = useCallback((description: string, categoryId: string) => {
@@ -298,6 +72,54 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       }),
     );
   }, []);
+
+  const fail = useCallback(
+    (e: unknown, fallback: string) => flash(e instanceof ApiClientError ? e.message : fallback, "errorguardar"),
+    [flash],
+  );
+  const replaceAccount = useCallback((a: AccountDto | null) => {
+    if (a) setAccounts((l) => l.map((x) => (x.id === a.id ? a : x)));
+  }, []);
+  const reloadAll = useCallback(() => reloadRef.current(), []);
+  const core: Core = useMemo(
+    () => ({ flash, fail, setTransactions, txRef, replaceAccount, moveBalances, reload: reloadAll }),
+    [flash, fail, replaceAccount, moveBalances, reloadAll],
+  );
+
+  // Cada tema con su estado y sus acciones.
+  const {
+    cards,
+    bills,
+    billPayments,
+    installments,
+    loans,
+    setCards,
+    setBills,
+    setBillPayments,
+    setInstallments,
+    setLoans,
+    saveCard,
+    deleteCard,
+    saveBill,
+    deleteBill,
+    payBill,
+    unpayBill,
+    isBillPaid,
+    saveLoan,
+    deleteLoan,
+    payLoan,
+    unpayLoan,
+    payCard,
+    voidTx,
+    loadStatement,
+    importStatement,
+    confirmImport,
+  } = useDebts(core, initial);
+  const { budgets, goals, investments, ipc, setBudgets, setGoals, setInvestments, budgetFor, saveBudget, saveGoal, deleteGoal, contribute, createInvestment, closeInvestment } =
+    useSavings(core, initial);
+  const { people, shared, setPeople, setShared, addPerson, invitePerson, deletePerson, addShared, deleteShared, settle } = useShared(core, initial);
+  const { detected, setDetected, confirmDetected, discardDetected, shareReceipt } = useAuto(core, initial);
+  const { createAccount, updateAccount, deleteAccount, transfer } = useAccountActions(core, setAccounts);
 
   // Altas en viaje al servidor, por id. Editar o borrar espera a que terminen, para no mandar
   // un segundo alta con el mismo id (el servidor devolvería la versión vieja).
@@ -369,7 +191,6 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
 
   useEffect(() => {
     api<FxResponse>("/rates/fx").then(setFx).catch(() => {});
-    api<{ ipc: IpcRow[] }>("/rates/ipc?from=2020-01").then((r) => setIpc(r.ipc)).catch(() => {});
   }, []);
 
   const rate = useMemo(() => {
@@ -490,7 +311,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         return false;
       }
     },
-    [patchTx, moveBalances, flash],
+    [patchTx, moveBalances, flash, setBillPayments, setLoans],
   );
 
   const reload = useCallback(async () => {
@@ -514,7 +335,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         sortTx([...b.transactions.map((t) => ({ ...t, status: "synced" as const })), ...list.filter((t) => t.status !== "synced")]),
       );
     } catch {}
-  }, []);
+  }, [setCards, setBills, setBillPayments, setBudgets, setGoals, setInvestments, setPeople, setShared, setInstallments, setLoans, setDetected]);
 
   useEffect(() => {
     reloadRef.current = reload;
@@ -571,68 +392,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     [flash, reload],
   );
 
-  // ─── Cuentas: se espera la respuesta del servidor (no son optimistas) ───
 
-  const fail = useCallback(
-    (e: unknown, fallback: string) => flash(e instanceof ApiClientError ? e.message : fallback, "errorguardar"),
-    [flash],
-  );
-
-  const createAccount = useCallback(
-    async (a: AccountDraft) => {
-      try {
-        const res = await api<{ account: AccountDto }>("/accounts", { method: "POST", body: JSON.stringify(a) });
-        setAccounts((list) => [...list, res.account]);
-        return res.account;
-      } catch (e) {
-        fail(e, "No pudimos agregar la cuenta. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail],
-  );
-
-  const updateAccount = useCallback(
-    async (id: string, a: Partial<Omit<AccountDraft, "currency">>) => {
-      try {
-        const res = await api<{ account: AccountDto }>(`/accounts/${id}`, { method: "PATCH", body: JSON.stringify(a) });
-        setAccounts((list) => list.map((x) => (x.id === id ? res.account : x)));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos guardar la cuenta. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
-
-  const deleteAccount = useCallback(
-    async (id: string) => {
-      try {
-        await api(`/accounts/${id}`, { method: "DELETE" });
-        setAccounts((list) => list.filter((x) => x.id !== id));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos eliminar la cuenta. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
-
-  const transfer = useCallback(
-    async (t: TransferDraft) => {
-      try {
-        const res = await api<{ accounts: AccountDto[] }>("/transfers", { method: "POST", body: JSON.stringify(t) });
-        setAccounts((list) => list.map((x) => res.accounts.find((u) => u.id === x.id) ?? x));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos hacer la transferencia. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
 
   const saveOnboarding = useCallback(
     async (d: OnboardingDraft | { skipped: true }) => {
@@ -652,308 +412,15 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         return false;
       }
     },
-    [fail, setUser],
+    [fail, setUser, setCards, setBills],
   );
 
-  // ─── Tarjetas y gastos fijos (se espera al servidor) ───
 
-  const saveCard = useCallback(
-    async (id: string | null, c: CardDraft) => {
-      try {
-        const res = await api<{ card: CardDto }>(id ? `/cards/${id}` : "/cards", { method: id ? "PATCH" : "POST", body: JSON.stringify(c) });
-        setCards((l) => (id ? l.map((x) => (x.id === id ? res.card : x)) : [...l, res.card]));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos guardar la tarjeta. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
 
-  const deleteCard = useCallback(
-    async (id: string) => {
-      try {
-        await api(`/cards/${id}`, { method: "DELETE" });
-        setCards((l) => l.filter((x) => x.id !== id));
-        flash("Tarjeta eliminada", "bienvenida", {
-          label: "Deshacer",
-          fn: async () => {
-            try {
-              const r = await api<{ card: CardDto }>(`/cards/${id}/restore`, { method: "POST" });
-              setCards((l) => [...l, r.card]);
-              flash("Listo, la recuperamos");
-            } catch (e) {
-              fail(e, "No pudimos recuperarla.");
-            }
-          },
-        });
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos eliminar la tarjeta. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, flash],
-  );
 
-  const saveBill = useCallback(
-    async (id: string | null, b: BillDraft) => {
-      try {
-        const res = await api<{ bill: BillDto }>(id ? `/bills/${id}` : "/bills", { method: id ? "PATCH" : "POST", body: JSON.stringify(b) });
-        setBills((l) => (id ? l.map((x) => (x.id === id ? res.bill : x)) : [...l, res.bill]).sort((a, z) => a.due_day - z.due_day));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos guardar el gasto fijo. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
 
-  const deleteBill = useCallback(
-    async (id: string) => {
-      try {
-        await api(`/bills/${id}`, { method: "DELETE" });
-        setBills((l) => l.filter((x) => x.id !== id));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos eliminar el gasto fijo. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
 
-  const replaceAccount = useCallback((a: AccountDto | null) => {
-    if (a) setAccounts((l) => l.map((x) => (x.id === a.id ? a : x)));
-  }, []);
 
-  const payBill = useCallback(
-    async (billId: string, month: string) => {
-      try {
-        const res = await api<{ transaction: TxDto; account: AccountDto | null }>(`/bills/${billId}/pay`, {
-          method: "POST",
-          body: JSON.stringify({ month, today: todayAR() }),
-        });
-        setBillPayments((l) => [...l.filter((p) => !(p.bill_id === billId && p.month === month)), { bill_id: billId, month, transaction_id: res.transaction.id }]);
-        setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
-        replaceAccount(res.account);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos marcarlo como pagado. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  const unpayBill = useCallback(
-    async (billId: string, month: string) => {
-      const p = billPayments.find((x) => x.bill_id === billId && x.month === month);
-      try {
-        const res = await api<{ account: AccountDto | null }>(`/bills/${billId}/pay?month=${month}`, { method: "DELETE" });
-        setBillPayments((l) => l.filter((x) => !(x.bill_id === billId && x.month === month)));
-        if (p?.transaction_id) setTransactions((l) => l.filter((t) => t.id !== p.transaction_id));
-        replaceAccount(res.account);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos deshacer el pago. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, billPayments, replaceAccount],
-  );
-
-  const isBillPaid = useCallback((billId: string, month: string) => billPayments.some((p) => p.bill_id === billId && p.month === month), [billPayments]);
-
-  const budgetFor = useCallback(
-    (month: string, categoryId: string) => {
-      const row = budgets.find((b) => b.month === month && b.category_id === categoryId);
-      return row ? { amount: Number(row.amount), custom: true } : { amount: CATEGORY_BY_ID[categoryId]?.budget ?? 0, custom: false };
-    },
-    [budgets],
-  );
-
-  const saveBudget = useCallback(
-    async (month: string, categoryId: string, amount: string | null) => {
-      try {
-        const res = await api<{ budget: BudgetRow | null }>("/budgets", { method: "PUT", body: JSON.stringify({ month, category_id: categoryId, amount }) });
-        setBudgets((l) => [...l.filter((b) => !(b.month === month && b.category_id === categoryId)), ...(res.budget ? [res.budget] : [])]);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos guardar el límite. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
-
-  // ─── Metas e inversiones ───
-
-  const saveGoal = useCallback(
-    async (id: string | null, g: GoalDraft) => {
-      try {
-        const res = await api<{ goal: GoalDto }>(id ? `/goals/${id}` : "/goals", { method: id ? "PATCH" : "POST", body: JSON.stringify(g) });
-        setGoals((l) => (id ? l.map((x) => (x.id === id ? res.goal : x)) : [...l, res.goal]));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos guardar la meta. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
-
-  const deleteGoal = useCallback(
-    async (id: string) => {
-      try {
-        await api(`/goals/${id}`, { method: "DELETE" });
-        setGoals((l) => l.filter((x) => x.id !== id));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos eliminar la meta. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
-
-  const contribute = useCallback(
-    async (goalId: string, amount: string) => {
-      try {
-        const res = await api<{ goal: GoalDto; account: AccountDto | null }>(`/goals/${goalId}/contributions`, { method: "POST", body: JSON.stringify({ amount }) });
-        setGoals((l) => l.map((x) => (x.id === goalId ? res.goal : x)));
-        replaceAccount(res.account);
-        return res.goal;
-      } catch (e) {
-        fail(e, "No pudimos sumar el aporte. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  const createInvestment = useCallback(
-    async (i: InvestmentDraft) => {
-      try {
-        const res = await api<{ investment: InvestmentDto; account: AccountDto }>("/investments", { method: "POST", body: JSON.stringify(i) });
-        setInvestments((l) => [...l, res.investment]);
-        replaceAccount(res.account);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos registrar la inversión. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  const closeInvestment = useCallback(
-    async (id: string, amount: string) => {
-      try {
-        const res = await api<{ account: AccountDto | null }>(`/investments/${id}/close`, { method: "POST", body: JSON.stringify({ amount }) });
-        setInvestments((l) => l.filter((x) => x.id !== id));
-        replaceAccount(res.account);
-        return res.account;
-      } catch (e) {
-        fail(e, "No pudimos cerrar la inversión. Probá de nuevo.");
-        return false as const;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  // ─── Contactos y gastos compartidos ───
-
-  const addPerson = useCallback(
-    async (name: string, email: string | null) => {
-      try {
-        const res = await api<{ person: PersonDto; mail_sent: boolean | null; link: string | null }>("/people", { method: "POST", body: JSON.stringify({ name, email }) });
-        setPeople((l) => [...l, res.person]);
-        return { person: res.person, mailSent: res.mail_sent, link: res.link };
-      } catch (e) {
-        fail(e, "No pudimos agregar el contacto. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail],
-  );
-
-  const invitePerson = useCallback(
-    async (id: string, email?: string) => {
-      try {
-        const res = await api<{ person: PersonDto; mail_sent: boolean; link: string }>(`/people/${id}/invite`, { method: "POST", body: JSON.stringify(email ? { email } : {}) });
-        setPeople((l) => l.map((p) => (p.id === id ? res.person : p)));
-        return { mailSent: res.mail_sent, link: res.link };
-      } catch (e) {
-        fail(e, "No pudimos mandar la invitación. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail],
-  );
-
-  const deletePerson = useCallback(
-    async (id: string) => {
-      try {
-        await api(`/people/${id}`, { method: "DELETE" });
-        setPeople((l) => l.filter((p) => p.id !== id));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos eliminar el contacto. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
-
-  const addShared = useCallback(
-    async (d: SharedDraft) => {
-      try {
-        const res = await api<{ shared: SharedDto; transaction: TxDto | null; account: AccountDto | null }>("/shared", { method: "POST", body: JSON.stringify(d) });
-        setShared((l) => [res.shared, ...l]);
-        if (res.transaction) setTransactions((l) => sortTx([{ ...res.transaction!, status: "synced" }, ...l]));
-        replaceAccount(res.account);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos guardar el gasto compartido. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  const deleteShared = useCallback(
-    async (id: string) => {
-      try {
-        await api(`/shared/${id}`, { method: "DELETE" });
-        setShared((l) => l.filter((x) => x.id !== id));
-        const removed = txRef.current.filter((t) => t.shared_expense_id === id);
-        setTransactions((l) => l.filter((t) => t.shared_expense_id !== id));
-        moveBalances(...removed.map((t) => delta(t, -1)));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos eliminarlo. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, moveBalances],
-  );
-
-  const settle = useCallback(
-    async (personId: string, amount: string) => {
-      try {
-        const res = await api<{ shared: SharedDto }>("/shared/settle", { method: "POST", body: JSON.stringify({ person_id: personId, amount }) });
-        setShared((l) => [res.shared, ...l]);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos registrar el pago. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
 
   const pendingCount = transactions.filter((t) => t.status !== "synced").length;
 
@@ -977,244 +444,11 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         return false;
       }
     },
-    [fail, setUser],
+    [fail, setUser, setBudgets, setBills],
   );
 
-  // ─── Préstamos ───
 
-  const saveLoan = useCallback(
-    async (id: string | null, l: LoanDraft) => {
-      try {
-        const res = await api<{ loan: LoanDto }>(id ? `/loans/${id}` : "/loans", { method: id ? "PATCH" : "POST", body: JSON.stringify(l) });
-        setLoans((list) => (id ? list.map((x) => (x.id === id ? res.loan : x)) : [...list, res.loan]));
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos guardar el préstamo. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail],
-  );
 
-  const deleteLoan = useCallback(
-    async (id: string) => {
-      try {
-        await api(`/loans/${id}`, { method: "DELETE" });
-        setLoans((list) => list.filter((x) => x.id !== id));
-        flash("Préstamo eliminado", "bienvenida", {
-          label: "Deshacer",
-          fn: async () => {
-            try {
-              const r = await api<{ loan: LoanDto }>(`/loans/${id}/restore`, { method: "POST" });
-              setLoans((list) => [...list, r.loan]);
-              flash("Listo, lo recuperamos");
-            } catch (e) {
-              fail(e, "No pudimos recuperarlo.");
-            }
-          },
-        });
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos eliminar el préstamo. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, flash],
-  );
-
-  const payLoan = useCallback(
-    async (id: string, month: string, opts: { amount?: string; account_id?: string | null } = {}) => {
-      try {
-        const res = await api<{ loan: LoanDto; transaction: TxDto; account: AccountDto | null }>(`/loans/${id}/pay`, {
-          method: "POST",
-          body: JSON.stringify({ month, ...opts, today: todayAR() }),
-        });
-        setLoans((list) => list.map((x) => (x.id === id ? res.loan : x)));
-        setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
-        replaceAccount(res.account);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos registrar la cuota. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  const unpayLoan = useCallback(
-    async (id: string) => {
-      try {
-        const res = await api<{ loan: LoanDto; removed_transaction_id: string | null; account: AccountDto | null }>(`/loans/${id}/pay`, { method: "DELETE" });
-        setLoans((list) => list.map((x) => (x.id === id ? res.loan : x)));
-        if (res.removed_transaction_id) setTransactions((l) => l.filter((t) => t.id !== res.removed_transaction_id));
-        replaceAccount(res.account);
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos deshacer el pago. Probá de nuevo.");
-        return false;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  // ─── Pagos y resúmenes de tarjeta ───
-
-  const payCard = useCallback(
-    async (cardId: string, p: CardPayDraft) => {
-      try {
-        const res = await api<{ card: CardDto; transaction: TxDto; account: AccountDto | null }>(`/cards/${cardId}/payments`, { method: "POST", body: JSON.stringify(p) });
-        setCards((l) => l.map((c) => (c.id === cardId ? res.card : c)));
-        setTransactions((l) => sortTx([{ ...res.transaction, status: "synced" }, ...l]));
-        replaceAccount(res.account);
-        return res.transaction.id;
-      } catch (e) {
-        fail(e, "No pudimos registrar el pago. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  /** Anula un pago (o cualquier movimiento) sin el aviso genérico; vuelve a pedir los datos. */
-  const voidTx = useCallback(
-    async (txId: string) => {
-      try {
-        await api(`/transactions/${txId}`, { method: "DELETE" });
-        await reload();
-        return true;
-      } catch (e) {
-        fail(e, "No pudimos anularlo.");
-        return false;
-      }
-    },
-    [fail, reload],
-  );
-
-  const loadStatement = useCallback(
-    async (cardId: string, st: StatementDraft) => {
-      try {
-        const res = await api<{ card: CardDto; transactions: TxDto[]; installments: InstallmentDto[]; undo_token: string }>(`/cards/${cardId}/statements`, {
-          method: "POST",
-          body: JSON.stringify(st),
-        });
-        setCards((l) => l.map((c) => (c.id === cardId ? res.card : c)));
-        setInstallments((l) => [...l.filter((q) => q.card_id !== cardId), ...res.installments]);
-        if (res.transactions.length) setTransactions((l) => sortTx([...res.transactions.map((t) => ({ ...t, status: "synced" as const })), ...l]));
-        const n = res.transactions.length;
-        flash(n ? `Resumen de ${res.card.name} cargado. Sumamos ${n} ${n === 1 ? "cuota" : "cuotas"} como gasto` : `Resumen de ${res.card.name} cargado`, "gasto", {
-          label: "Deshacer",
-          fn: async () => {
-            try {
-              const r = await api<{ card: CardDto; installments: InstallmentDto[]; removed: string[] }>(`/cards/${cardId}/statements/undo`, {
-                method: "POST",
-                body: JSON.stringify({ undo_token: res.undo_token }),
-              });
-              setCards((l) => l.map((c) => (c.id === cardId ? r.card : c)));
-              setInstallments((l) => [...l.filter((q) => q.card_id !== cardId), ...r.installments]);
-              setTransactions((l) => l.filter((t) => !r.removed.includes(t.id)));
-              flash("Listo, volvimos al resumen anterior");
-            } catch (e) {
-              fail(e, "No pudimos deshacerlo.");
-            }
-          },
-        });
-        return n;
-      } catch (e) {
-        fail(e, "No pudimos guardar el resumen. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail, flash],
-  );
-
-  // ─── Carga automática: gastos detectados ───
-
-  const confirmDetected = useCallback(
-    async (ids: string[], learn: { id: string; category_id: string }[], edits: Record<string, { category_id?: string; account_id?: string | null }>) => {
-      try {
-        const r = await api<{ transactions: TxDto[]; accounts: AccountDto[]; learned: number; pending: DetectedDto[] }>("/detected/confirm", {
-          method: "POST",
-          body: JSON.stringify({ ids, learn, edits }),
-        });
-        setTransactions((l) => sortTx([...r.transactions.map((t) => ({ ...t, status: "synced" as const })), ...l]));
-        r.accounts.forEach((a) => replaceAccount(a));
-        setDetected(r.pending);
-        return { count: r.transactions.length, learned: r.learned };
-      } catch (e) {
-        fail(e, "No pudimos sumar los gastos. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail, replaceAccount],
-  );
-
-  const discardDetected = useCallback(
-    async (id: string) => {
-      const prev = detected;
-      setDetected((l) => l.filter((d) => d.id !== id));
-      try {
-        await api(`/detected/${id}/discard`, { method: "POST" });
-        return true;
-      } catch (e) {
-        setDetected(prev);
-        fail(e, "No pudimos descartarlo.");
-        return false;
-      }
-    },
-    [detected, fail],
-  );
-
-  const shareReceipt = useCallback(
-    async (file: Blob, name = "comprobante") => {
-      const form = new FormData();
-      form.append("file", file, name);
-      try {
-        const r = await api<{ detected: DetectedDto }>("/detected/share", { method: "POST", body: form });
-        setDetected((l) => [r.detected, ...l]);
-        return r.detected;
-      } catch (e) {
-        fail(e, "No pudimos leer el comprobante.");
-        return null;
-      }
-    },
-    [fail],
-  );
-
-  // ─── Importar resumen ───
-
-  const importStatement = useCallback(
-    async (cardId: string, file: File) => {
-      const form = new FormData();
-      form.append("card_id", cardId);
-      form.append("file", file);
-      try {
-        return await api<ImportPreview>("/imports", { method: "POST", body: form });
-      } catch (e) {
-        fail(e, "No pudimos leer el resumen. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail],
-  );
-
-  const confirmImport = useCallback(
-    async (importId: string, rowIds: string[], categories: Record<string, string>) => {
-      try {
-        const res = await api<{ imported: number; transactions: TxDto[]; card: CardDto; installments: InstallmentDto[] }>(`/imports/${importId}/confirm`, {
-          method: "POST",
-          body: JSON.stringify({ row_ids: rowIds, categories }),
-        });
-        setTransactions((l) => sortTx([...res.transactions.map((t) => ({ ...t, status: "synced" as const })), ...l]));
-        setCards((l) => l.map((c) => (c.id === res.card.id ? res.card : c)));
-        setInstallments((l) => [...l.filter((i) => i.card_id !== res.card.id), ...res.installments]);
-        return res.imported;
-      } catch (e) {
-        fail(e, "No pudimos importar los movimientos. Probá de nuevo.");
-        return null;
-      }
-    },
-    [fail],
-  );
 
   const failed = transactions.find((t) => t.id === failedId && t.status === "failed") ?? null;
 
