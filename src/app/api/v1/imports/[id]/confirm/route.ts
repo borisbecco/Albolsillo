@@ -9,6 +9,7 @@ import type { ParsedRow } from "@/lib/import/statement";
 import { merchantDomain } from "@/lib/merchants";
 import { toDate } from "@/lib/transactions";
 import { todayAR } from "@/lib/month";
+import { learnRule } from "@/lib/rules";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -39,6 +40,8 @@ export const POST = handle(async (req: Request, { params }: Ctx) => {
       for (const r of chosen) {
         const cat = b.categories[r.row_id];
         const categoryId = cat && CATEGORY_BY_ID[cat]?.type === "out" ? cat : r.suggested_category;
+        // Si corregiste la categoría en la revisión, se aprende para ese comercio.
+        if (cat && cat !== r.suggested_category && (r.kind === "purchase" || r.kind === "installment")) await learnRule(db, userId, r.description, categoryId);
         const tx = await db.transaction.create({
           data: {
             userId,

@@ -25,7 +25,7 @@ export function NewTxModal() {
 function Form() {
   const router = useRouter();
   const { closeNewTx, flash, setAccountFormOpen, user, newTxPrefill } = useShell();
-  const { accounts, cards, people, createTx, addShared } = useData();
+  const { accounts, cards, people, createTx, addShared, suggestCategory } = useData();
   const isMobile = useIsMobile();
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +69,8 @@ function Form() {
     setDesc(v);
     // El comercio sugiere la categoría hasta que el usuario elige una a mano.
     if (!catTouched) {
-      const g = guessCategory(v);
+      // Primero la categoría que elegiste antes para ese comercio; si no, la de la lista.
+      const g = suggestCategory(v);
       if (g && pickableCategories(type).some((c) => c.id === g)) setCat(g);
     }
   };

@@ -158,6 +158,11 @@ function Flow({ initialCard, onClose }: { initialCard: string | null; onClose: (
                             ))}
                           </select>
                         )}
+                        {!disabled && r.learned && cats[r.row_id] === r.suggested_category && (
+                          <span className={m.learned} title="La elegiste antes para este comercio">
+                            ✓ aprendida
+                          </span>
+                        )}
                       </span>
                     </span>
                     <b className={m.amount}>{formatMoney(Number(r.amount), r.currency, { decimals: true })}</b>

@@ -2,9 +2,10 @@ import { randomInt } from "node:crypto";
 import { Prisma, type DetectedExpense } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { CATEGORY_BY_ID } from "@/lib/categories";
-import { entityDomain, findEntity, norm } from "@/lib/entities";
+import { entityDomain, findEntity } from "@/lib/entities";
 import { guessCategory, merchantDomain } from "@/lib/merchants";
 import { toDate } from "@/lib/transactions";
+import { merchantKey } from "@/lib/merchant-key";
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
@@ -22,11 +23,7 @@ export async function newAddressCode(db: Db) {
 }
 
 /** Clave del comercio para las categorías aprendidas: minúsculas, sin tildes ni signos. */
-export const merchantKey = (m: string) =>
-  norm(m)
-    .replace(/[^a-z0-9 ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+export { merchantKey };
 
 export function detectedDto(d: DetectedExpense) {
   return {

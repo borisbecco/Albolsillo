@@ -68,7 +68,7 @@ function CardPaymentDetail({ tx }: { tx: Tx }) {
 }
 
 function Detail({ tx }: { tx: Tx }) {
-  const { setDetailId, flash } = useShell();
+  const { setDetailId } = useShell();
   const { accounts, cards, updateTx, deleteTxs } = useData();
   const close = () => setDetailId(null);
 
@@ -103,10 +103,8 @@ function Detail({ tx }: { tx: Tx }) {
       ...splitSource(source),
     });
     setBusy(false);
-    if (ok) {
-      close();
-      flash("Movimiento actualizado");
-    }
+    // El aviso ("Movimiento actualizado" o la propuesta de pasar los demás del mismo comercio) lo muestra updateTx.
+    if (ok) close();
   };
 
   const remove = async () => {

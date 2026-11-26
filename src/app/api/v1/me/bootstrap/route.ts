@@ -18,7 +18,7 @@ export const GET = handle(async (req: Request) => {
 
   const live = { userId, deletedAt: null };
   const months = Array.from({ length: 6 }, (_, i) => addMonths(month, i - 5));
-  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared, installments, loans, detected] = await Promise.all([
+  const [user, accounts, cards, people, transactions, bills, billPayments, budgets, goals, investments, shared, installments, loans, detected, rules] = await Promise.all([
     prisma.user.findFirst({ where: { id: userId, deletedAt: null } }),
     prisma.account.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.card.findMany({ where: live, orderBy: { createdAt: "asc" } }),
@@ -36,6 +36,7 @@ export const GET = handle(async (req: Request) => {
     prisma.cardInstallment.findMany({ where: { ...live, cancelledAt: null }, orderBy: { createdAt: "asc" } }),
     prisma.loan.findMany({ where: live, orderBy: { createdAt: "asc" } }),
     prisma.detectedExpense.findMany({ where: { userId, status: "pending" }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 200 }),
+    prisma.merchantRule.findMany({ where: { userId }, select: { merchantKey: true, categoryId: true } }),
   ]);
   if (!user) throw new ApiError(401, "session_expired", "Tu sesión venció.");
 
@@ -55,5 +56,7 @@ export const GET = handle(async (req: Request) => {
     investments: investments.map(investmentDto),
     shared: shared.map(sharedDto),
     detected: detected.map(detectedDto),
+    // Categorías aprendidas por comercio (para sugerir al cargar a mano)
+    merchant_rules: rules.map((r) => ({ key: r.merchantKey, category_id: r.categoryId })),
   });
 });

@@ -6,6 +6,7 @@ import { CATEGORY_BY_ID } from "@/lib/categories";
 import { merchantDomain } from "@/lib/merchants";
 import { TxPatch, applyToBalance, checkTxRefs, toDate } from "@/lib/transactions";
 import { deleteTransactions, undoToken } from "@/lib/tx-delete";
+import { learnRule, sameMerchantInOtros } from "@/lib/rules";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -64,7 +65,14 @@ export const PATCH = handle(async (req: Request, { params }: Ctx) => {
     return row;
   });
 
-  return Response.json({ transaction: txDto(updated) });
+  // Categoría elegida a mano: se aprende para ese comercio y se avisa cuántos más del mismo comercio siguen en "Otros".
+  let similar = 0;
+  if (p.category_id && p.category_id !== prev.categoryId && updated.type === "out") {
+    const learned = await learnRule(prisma, userId, updated.description, updated.categoryId);
+    if (learned) similar = (await sameMerchantInOtros(prisma, userId, updated.description, updated.id)).length;
+  }
+
+  return Response.json({ transaction: txDto(updated), similar });
 });
 
 // DELETE /transactions/:id (borrado lógico con deshacer)

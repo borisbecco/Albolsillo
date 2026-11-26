@@ -8,6 +8,7 @@ import { txDto } from "@/lib/dto";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import { merchantDomain } from "@/lib/merchants";
 import { TxInput, applyToBalance, checkTxRefs, monthRange, toDate } from "@/lib/transactions";
+import { learnRule } from "@/lib/rules";
 
 const PAGE = 200;
 
@@ -131,5 +132,7 @@ export const POST = handle(async (req: Request) => {
     });
 
   const status = "duplicate" in created ? 200 : 201;
+  // La categoría elegida para un comercio se aprende (la próxima vez se sugiere sola).
+  if (status === 201 && t.type === "out" && t.description) await learnRule(prisma, userId, t.description, t.category_id).catch(() => false);
   return Response.json({ transaction: txDto(created) }, { status });
 });

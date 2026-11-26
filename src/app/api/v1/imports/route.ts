@@ -5,6 +5,8 @@ import { requireUserId } from "@/lib/auth/session";
 import { BANK_BY_ID } from "@/lib/banks";
 import { parseStatement } from "@/lib/import/statement";
 import { rateLimit } from "@/lib/rate-limit";
+import { rulesMap } from "@/lib/rules";
+import { merchantKey } from "@/lib/merchant-key";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -48,7 +50,12 @@ export const POST = handle(async (req: Request) => {
     select: { date: true, grossAmount: true },
   });
   const seen = new Set(existing.map((t) => `${t.date.toISOString().slice(0, 10)}|${t.grossAmount.toFixed(2)}`));
-  const rows = parsed.rows.map((r) => ({ ...r, duplicate: seen.has(`${r.date}|${r.amount}`) }));
+  // Categorías aprendidas: si ya elegiste una para ese comercio, se sugiere esa.
+  const rules = await rulesMap(prisma, userId);
+  const rows = parsed.rows.map((r) => {
+    const learned = r.kind === "purchase" || r.kind === "installment" ? rules.get(merchantKey(r.description)) : undefined;
+    return { ...r, ...(learned && { suggested_category: learned, learned: true }), duplicate: seen.has(`${r.date}|${r.amount}`) };
+  });
 
   const data$ = {
     bank,

@@ -14,6 +14,8 @@ import { useShell } from "@/components/shell/ShellContext";
 import { currentMonth, todayAR } from "@/lib/month";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import { demoData } from "@/lib/demo";
+import { learnableKey, merchantKey } from "@/lib/merchant-key";
+import { guessCategory } from "@/lib/merchants";
 
 // Datos de la app (bootstrap) y operaciones sobre movimientos.
 // Regla: nunca se pierde lo cargado. Un alta que no llega al servidor queda en el dispositivo
@@ -35,6 +37,7 @@ export type Bootstrap = {
   installments: InstallmentDto[];
   loans: LoanDto[];
   detected: DetectedDto[];
+  merchant_rules?: { key: string; category_id: string }[];
 };
 
 export type LoanDraft = { lender: string | null; name: string; installment: string; due_day: number; n: number; of: number; tna: string; balance: string; paid_this_month?: boolean };
@@ -46,7 +49,8 @@ export type ImportPreview = {
   balance_ars: string | null;
   min_payment: string | null;
   due_date: string | null;
-  rows: (ParsedRow & { duplicate: boolean })[];
+  /** learned: la categoría viene de una que elegiste antes para ese comercio. */
+  rows: (ParsedRow & { duplicate: boolean; learned?: boolean })[];
 };
 
 export type SharedDraft = {
@@ -204,6 +208,8 @@ type Data = {
   loadStatement: (cardId: string, st: StatementDraft) => Promise<number | null>;
   /** El recorrido guiado está mostrando el caso de ejemplo (usuario sin nada cargado). */
   demo: boolean;
+  /** Categoría sugerida para un comercio: la que elegiste antes o, si no, la de la lista. */
+  suggestCategory: (description: string) => string | null;
   failed: Tx | null;
   retryFailed: () => void;
   dismissFailed: () => void;
@@ -257,6 +263,14 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
   const [installments, setInstallments] = useState(initial.installments);
   const [loans, setLoans] = useState(initial.loans);
   const [detected, setDetected] = useState<DetectedDto[]>(initial.detected ?? []);
+  // Categorías aprendidas (comercio normalizado → categoría). Se actualizan al elegir una a mano.
+  const [rules, setRules] = useState<Record<string, string>>(() => Object.fromEntries((initial.merchant_rules ?? []).map((r) => [r.key, r.category_id])));
+  const learn = useCallback((description: string, categoryId: string) => {
+    const k = merchantKey(description);
+    if (!learnableKey(k) || categoryId === "otros" || categoryId === "otros_in") return;
+    setRules((r) => (r[k] === categoryId ? r : { ...r, [k]: categoryId }));
+  }, []);
+  const suggestCategory = useCallback((description: string) => rules[merchantKey(description)] ?? guessCategory(description), [rules]);
   const [transactions, setTransactions] = useState<Tx[]>(() =>
     sortTx(initial.transactions.map((t) => ({ ...t, status: "synced" as const }))),
   );
@@ -405,9 +419,10 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         status: "pending",
       };
       setTransactions((list) => sortTx([t, ...list]));
+      if (d.type === "out" && d.description) learn(d.description, d.category_id);
       await send(t);
     },
-    [send, flash],
+    [send, flash, learn],
   );
 
   const updateTx = useCallback(
@@ -422,9 +437,29 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       }
       patchTx(id, (t) => ({ ...t, ...d, gross_amount: d.amount ?? t.gross_amount, amount: d.amount ?? t.amount }));
       try {
-        const res = await api<{ transaction: TxDto }>(`/transactions/${id}`, { method: "PATCH", body: JSON.stringify(d) });
+        const res = await api<{ transaction: TxDto; similar?: number }>(`/transactions/${id}`, { method: "PATCH", body: JSON.stringify(d) });
         patchTx(id, () => ({ ...res.transaction, status: "synced" }));
         moveBalances(delta(prev, -1), delta(res.transaction, 1));
+        const t = res.transaction;
+        const changedCat = d.category_id && d.category_id !== prev.category_id;
+        if (changedCat && t.type === "out") learn(t.description, t.category_id);
+        const n = res.similar ?? 0;
+        if (changedCat && n > 0) {
+          const catName = CATEGORY_BY_ID[t.category_id]?.name ?? "esa categoría";
+          flash(`Movimiento actualizado. Hay ${n} más de «${t.description}» en Otros`, "ingreso", {
+            label: `Pasar a ${catName}`,
+            fn: async () => {
+              try {
+                const r = await api<{ transactions: TxDto[] }>("/transactions/recategorize", { method: "POST", body: JSON.stringify({ transaction_id: t.id, category_id: t.category_id }) });
+                const byId = new Map(r.transactions.map((x) => [x.id, x]));
+                setTransactions((list) => list.map((x) => (byId.has(x.id) ? { ...byId.get(x.id)!, status: "synced" as const } : x)));
+                flash(`Listo: ${r.transactions.length} ${r.transactions.length === 1 ? "movimiento pasó" : "movimientos pasaron"} a ${catName}`);
+              } catch (e) {
+                flash(e instanceof ApiClientError ? e.message : "No pudimos cambiarlos. Probá de nuevo.", "errorguardar");
+              }
+            },
+          });
+        } else flash("Movimiento actualizado");
         return true;
       } catch (e) {
         patchTx(id, () => prev);
@@ -432,7 +467,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
         return false;
       }
     },
-    [patchTx, send, settled, moveBalances, flash],
+    [patchTx, send, settled, moveBalances, flash, learn],
   );
 
   const deleteTx = useCallback(
@@ -472,6 +507,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
       setInstallments(b.installments);
       setLoans(b.loans);
       setDetected(b.detected ?? []);
+      if (b.merchant_rules) setRules(Object.fromEntries(b.merchant_rules.map((r) => [r.key, r.category_id])));
       setAccounts(b.accounts);
       // Lo que todavía no llegó al servidor se conserva.
       setTransactions((list) =>
@@ -1253,6 +1289,7 @@ export function DataProvider({ initial, children }: { initial: Bootstrap; childr
     updateAccount,
     deleteAccount,
     transfer,
+    suggestCategory,
   };
 
   // Recorrido guiado: si los datos reales no alcanzan para que existan las partes que señala
