@@ -5,6 +5,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import path from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const useDev = process.argv.includes("--dev");
@@ -14,7 +15,7 @@ if (!url) {
   process.exit(1);
 }
 const host = new URL(url).host;
-const db = new PrismaClient({ datasourceUrl: url });
+const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 
 try {
   const tables = (

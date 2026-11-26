@@ -8,6 +8,7 @@
 // Necesita Google Chrome instalado (E2E_CHANNEL=msedge para usar Edge; E2E_HEADED=1 para verlo).
 import { spawn, spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const PORT = 3123;
@@ -50,7 +51,7 @@ const stop = () => {
 };
 
 async function cleanup() {
-  const db = new PrismaClient({ datasourceUrl: dbUrl });
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: dbUrl }) });
   try {
     const { count } = await db.user.deleteMany({ where: { email: { endsWith: "@test.local" } } });
     console.log(`Usuarios de prueba borrados: ${count}`);

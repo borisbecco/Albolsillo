@@ -3,6 +3,7 @@
 // El --confirm tiene que ser el host exacto de DATABASE_URL (se muestra si falta), para no pisar otra base por error.
 import { readFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const file = process.argv.slice(2).find((a) => !a.startsWith("--"));
@@ -28,7 +29,7 @@ if (new URL(process.env.PROD_DATABASE_URL).host === host && !process.argv.includ
 }
 
 const backup = JSON.parse(gunzipSync(await readFile(file)).toString());
-const db = new PrismaClient({ datasourceUrl: url });
+const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 try {
   const tables = (
     await db.$queryRawUnsafe(`select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'`)

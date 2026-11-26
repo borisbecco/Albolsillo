@@ -2,6 +2,7 @@
 //   npm run db:users            → emails tapados a medias
 //   npm run db:users -- --full  → emails completos
 //   npm run db:users -- --dev   → la base de desarrollo
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const useDev = process.argv.includes("--dev");
@@ -11,7 +12,7 @@ if (!url) {
   console.error("Falta PROD_DATABASE_URL (o DATABASE_URL) en .env");
   process.exit(1);
 }
-const db = new PrismaClient({ datasourceUrl: url });
+const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 const mask = (e) => {
   if (full) return e;
   const [u, d] = e.split("@");

@@ -1,8 +1,8 @@
 // Carga las categorías fijas de v1 (definidas en src/lib/categories.ts).
-import { PrismaClient } from "@prisma/client";
+import { createPrisma } from "../src/lib/db";
 import { CATEGORIES } from "../src/lib/categories";
 
-const prisma = new PrismaClient();
+const prisma = createPrisma();
 
 async function main() {
   for (const c of CATEGORIES) {

@@ -77,7 +77,7 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
 
 ## Estructura
 ```
-prisma/            schema.prisma (modelo de datos) y seed.ts (categorías)
+prisma/            schema.prisma (modelo de datos) y seed.ts (categorías); la conexión y el seed se configuran en prisma.config.ts
 public/brand/      logos, isotipo, ícono
 public/bolsi/      las 10 poses de Bolsi (SVG)
 src/emails/        plantillas HTML de los 4 mails (las usa el servidor)
