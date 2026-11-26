@@ -64,6 +64,9 @@ El diseño de referencia (prototipos, modelo de datos, API, mails y marca) está
 ## Desarrollo
 - `npm test` corre las pruebas de `tests/` (montos, plan de pagos, recurrentes, lectura de avisos y casilla de reenvío)
   con el corredor de Node, sin base ni servidor. Corrélas antes de subir cambios en `src/lib`.
+- `npm run test:e2e` corre las pruebas de pantalla de `tests/e2e/` en Chrome: arma la app, la levanta en el puerto 3123
+  contra la base de desarrollo, crea usuarios `@test.local` y los borra al final (unos 5 minutos). `-- prestamos` corre
+  solo las que tengan ese nombre; `-- --no-build` usa el último build. Se niega a correr si `DATABASE_URL` es producción.
 - Sin `RESEND_API_KEY`, los mails se escriben en la consola. Con `MAIL_DUMP_DIR=/una/carpeta` también se guardan como HTML.
 - **Registro abierto** por defecto: cualquiera se crea una cuenta. Para cerrarlo y pedir código de invitación (`XXXX-XXXX`), cargá `INVITE_ONLY=1` en Railway. Las invitaciones de Perfil (5 por usuario) funcionan en los dos casos y registran quién invitó a quién. `REGISTRATION_OPEN=1` es solo para pruebas (abre el registro y saca el límite de intentos): no lo pongas en Railway.
 - Carga automática sin Gmail: con `INBOX_DEV_ENDPOINT=1`, `POST /api/v1/dev/inbound-mail` recibe un mail crudo
